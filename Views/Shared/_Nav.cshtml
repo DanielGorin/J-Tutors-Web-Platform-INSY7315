@@ -1,0 +1,51 @@
+﻿@{
+    // Which menu to show? Default to Public if not set by the page.
+    var navSection = (ViewData["NavSection"] as string ?? "Public").ToLowerInvariant();
+    var actionName = (ViewContext.RouteData.Values["action"]?.ToString() ?? "").ToLowerInvariant();
+    string Active(string action) => actionName == action.ToLowerInvariant() ? "active" : "";
+}
+
+<nav class="navbar navbar-expand-sm app-navbar mb-3">
+    <div class="container-fluid">
+        <!-- Brand -->
+        @if (navSection == "user")
+        {
+            <a class="navbar-brand" asp-controller="Home" asp-action="Dashboard">JTutors</a>
+        }
+        else
+        {
+            <a class="navbar-brand" asp-controller="Home" asp-action="Info">JTutors</a>
+        }
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="label">Menu</span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+                @if (navSection == "user")
+                {
+                    <li class="nav-item"><a class="nav-link @Active("Dashboard")" asp-controller="Home" asp-action="Dashboard">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UEvents")" asp-controller="Home" asp-action="UEvents">New Events</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UEventHistory")" asp-controller="Home" asp-action="UEventHistory">Events History</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("USessions")" asp-controller="Home" asp-action="USessions">My Sessions</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Booking")" asp-controller="Home" asp-action="Booking">Book</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("FileLibrary")" asp-controller="Home" asp-action="FileLibrary">File Library</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Points")" asp-controller="Home" asp-action="Points">Points</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Leaderboard")" asp-controller="Home" asp-action="Leaderboard">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Profile")" asp-controller="Home" asp-action="Profile">Profile</a></li>
+                }
+                else
+                {
+                    <li class="nav-item"><a class="nav-link @Active("Info")" asp-controller="Home" asp-action="Info">Info</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Login")" asp-controller="Home" asp-action="Login">Login</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Register")" asp-controller="Home" asp-action="Register">Register</a></li>
+                }
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                @* future: user dropdown/logout *@
+            </div>
+        </div>
+    </div>
+</nav>

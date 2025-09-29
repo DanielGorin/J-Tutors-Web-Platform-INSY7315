@@ -1,0 +1,179 @@
+﻿@{
+    ViewData["Title"] = "New Events";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "User";
+}
+
+<!-- Scoped styles for UEvents only -->
+<style>
+    .uevents .form-control, .uevents select {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+        .uevents .form-control::placeholder {
+            color: var(--muted-text-color) !important;
+        }
+
+        .uevents .form-control:focus, .uevents select:focus {
+            outline: none !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        }
+
+    /* Status chips */
+    .uevents .chip {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-color);
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+
+    .uevents .chip-available {
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    .uevents .chip-participating {
+        color: var(--info-color);
+        border-color: var(--info-color);
+    }
+
+    .uevents .chip-full {
+        color: var(--error-color);
+        border-color: var(--error-color);
+    }
+
+    .uevents .chip-unavailable {
+        color: var(--warning-color);
+        border-color: var(--warning-color);
+    }
+
+    /* Meta list */
+    .uevents .meta {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .uevents .meta-item {
+        font-size: 14px;
+        color: var(--muted-text-color);
+    }
+
+    /* Card spacing */
+    .uevents .event-card {
+        height: 100%;
+    }
+
+    .uevents .event-actions .btn {
+        min-width: 120px;
+    }
+</style>
+
+<div class="uevents">
+
+    <!-- Header / Nav -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">New Events</h1>
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Controls: Search & Filters -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="searchEvents" class="form-label">Search events</label>
+                <input id="searchEvents" type="text" class="form-control" placeholder="Search by title, description, or location" />
+            </div>
+            <div class="col-md-3">
+                <label for="sortEvents" class="form-label">Sort by</label>
+                <select id="sortEvents" class="form-select">
+                    <option value="date">Date</option>
+                    <option value="points">Points Reward</option>
+                    <option value="duration">Duration</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="onlyAvailable" />
+                    <label class="form-check-label" for="onlyAvailable">Show only available</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row g-3">
+        @* No live data yet; empty state below. When binding, render one .col-md-6 col-lg-4 per event. *@
+
+        <!-- Empty state -->
+        <div class="col-12">
+            <div class="card shadow p-24 text-center text-muted">
+                No upcoming events to display yet.
+            </div>
+        </div>
+
+        @* ----------------------------------------------------------------
+        Example event card structure (REFERENCE ONLY — do not render now)
+        <div class="col-md-6 col-lg-4">
+        <div class="card shadow p-24 event-card">
+        <h3 class="mb-8">[ Event Title ]</h3>
+        <p class="mb-16">[ Short description / details copy ]</p>
+
+        <div class="meta mb-16">
+        <div class="meta-item"><strong>Date:</strong> [ 2025-10-12 ]</div>
+        <div class="meta-item"><strong>Start:</strong> [ 14:00 ]</div>
+        <div class="meta-item"><strong>Duration:</strong> [ 2h 30m ]</div>
+        <div class="meta-item"><strong>Points:</strong> [ 25 pts ]</div>
+        </div>
+
+        <div class="mb-16">
+        <!-- Render status chips based on computed state -->
+        <span class="chip chip-available">Available</span>
+        <!-- or -->
+        <span class="chip chip-participating">Participating</span>
+        <!-- or -->
+        <span class="chip chip-full">Full</span>
+        <!-- or -->
+        <span class="chip chip-unavailable">Unavailable</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center event-actions">
+        <!-- Actions (mutually exclusive per state) -->
+        <button class="btn btn-sm btn-outline-primary">Apply</button>
+        <button class="btn btn-sm btn-outline-secondary">Leave</button>
+        <button class="btn btn-sm btn-outline-secondary" disabled>Full</button>
+        <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
+        </div>
+        </div>
+        </div>
+        ---------------------------------------------------------------- *@
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Enable UEvents Functionality
+   - Bind collection of upcoming events available to the user
+     (title, description, date, startTime, duration, pointsReward, capacity, participant flags)
+   - Compute status per event:
+       • Participating
+       • Available (eligible, not full, not already participating)
+       • Full (capacity reached)
+       • Unavailable (not eligible or conflicts)
+   - Render chips accordingly and show the correct action set:
+       • Participating → show "Leave"
+       • Available → show "Apply"
+       • Full/Unavailable → show disabled state
+   - Implement search, sort, and "only available" filter
+   - Hook Apply/Leave buttons to future endpoints (with toast/alert feedback)
+--------------------------------------------------------------------- *@

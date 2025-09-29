@@ -1,0 +1,513 @@
+﻿@{
+    ViewData["Title"] = "My Sessions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "User";
+}
+
+<!-- Scoped styles for USessions only -->
+<style>
+    .usessions .form-control, .usessions select, .usessions input[type="range"] {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+        .usessions .form-control::placeholder {
+            color: var(--muted-text-color) !important;
+        }
+
+        .usessions .form-control:focus, .usessions select:focus {
+            outline: none !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        }
+
+    /* Cards & chips */
+    .usessions .chip {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .usessions .chip-pending {
+        color: var(--warning-color);
+        border-color: var(--warning-color);
+    }
+
+    .usessions .chip-accepted {
+        color: var(--info-color);
+        border-color: var(--info-color);
+    }
+
+    .usessions .chip-paid {
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    /* Calendar */
+    .us-cal .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .us-cal .calendar-title {
+        font-weight: 700;
+    }
+
+    .us-cal .calendar-dow, .us-cal .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+    }
+
+    .us-cal .dow {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--muted-text-color);
+        text-align: center;
+        padding: 4px 0;
+    }
+
+    .us-cal .day {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 6px;
+        text-align: center;
+        user-select: none;
+        background-color: var(--surface-color);
+        cursor: pointer;
+        position: relative;
+        min-height: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+
+        .us-cal .day.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .us-cal .day.today {
+            outline: 2px dashed var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        .us-cal .day.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.15rem var(--accent-color);
+            font-weight: 700;
+        }
+
+    .us-cal .day-number {
+        font-size: 14px;
+    }
+
+    .us-cal .dots {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .us-cal .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+    }
+
+    .us-cal .dot-pending {
+        background: var(--warning-color);
+    }
+
+    .us-cal .dot-accepted {
+        background: var(--info-color);
+    }
+
+    .us-cal .dot-paid {
+        background: var(--success-color);
+    }
+
+    .us-cal .more {
+        font-size: 10px;
+        color: var(--muted-text-color);
+    }
+
+    /* Day detail list */
+    .usessions .session-row {
+        border-left: 4px solid var(--border-color);
+        background-color: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+    }
+
+        .usessions .session-row.pending {
+            border-left-color: var(--warning-color);
+        }
+
+        .usessions .session-row.accepted {
+            border-left-color: var(--info-color);
+        }
+
+        .usessions .session-row.paid {
+            border-left-color: var(--success-color);
+        }
+
+    .usessions .caption {
+        color: var(--muted-text-color);
+    }
+</style>
+
+<div class="usessions">
+    <!-- Header / Nav -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">My Sessions</h1>
+        <div class="d-flex gap-2">
+            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+            <a asp-controller="Home" asp-action="Booking" class="btn btn-outline-primary">Book</a>
+        </div>
+    </div>
+
+    <!-- Summary: Next Session & Pending Sessions -->
+    <div class="row g-3 mb-16">
+        <div class="col-md-6">
+            <div class="card shadow p-24 h-100">
+                <h3 class="mb-8">Next Session</h3>
+                <div id="nextSessionCard">
+                    <div class="text-muted">No upcoming sessions yet.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Pending Sessions</h3>
+                    <a asp-controller="Home" asp-action="Booking" class="btn btn-sm btn-outline-primary">New Booking</a>
+                </div>
+                <div id="pendingSessionsList" class="mt-12">
+                    <div class="text-muted">No pending sessions.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar + Day Details -->
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card shadow p-24 us-cal">
+                <div class="d-flex justify-content-between align-items-center mb-12">
+                    <div>
+                        <div class="caption">Month</div>
+                        <div id="calTitle" class="calendar-title">[ … ]</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="prevMonth" class="btn btn-sm btn-outline-secondary" type="button">Prev</button>
+                        <button id="nextMonth" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+                    </div>
+                </div>
+
+                <!-- Days of week -->
+                <div class="calendar-dow">
+                    <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div>
+                    <div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+                </div>
+
+                <!-- Full-month grid -->
+                <div id="calDays" class="calendar-grid mt-2"></div>
+
+                <!-- Legend -->
+                <div class="mt-12">
+                    <span class="chip chip-pending">Pending</span>
+                    <span class="chip chip-accepted">Accepted</span>
+                    <span class="chip chip-paid">Paid</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Sessions on <span id="detailDate">[ Select a day ]</span></h3>
+                </div>
+                <div id="daySessionsList" class="mt-12">
+                    <div class="text-muted">Pick a day in the calendar to view its sessions.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        /*
+         UI-only USessions page.
+         Data shape (commented sample):
+         const sessions = [
+           // { id: 'S-001', date: '2025-10-03', start: '14:00', hours: 2, subject: 'Maths', students: 3, status: 'pending'  },
+           // { id: 'S-002', date: '2025-10-05', start: '09:00', hours: 2, subject: 'English', students: 2, status: 'accepted' },
+           // { id: 'S-003', date: '2025-10-12', start: '16:30', hours: 1, subject: 'Science', students: 1, status: 'paid'     },
+         ];
+        */
+        (function () {
+            // Live array (empty for now; wire real data later)
+            const sessions = [];
+
+            // DOM
+            const calTitle = document.getElementById('calTitle');
+            const calDays = document.getElementById('calDays');
+            const prevBtn = document.getElementById('prevMonth');
+            const nextBtn = document.getElementById('nextMonth');
+            const detailDateEl = document.getElementById('detailDate');
+            const daySessionsList = document.getElementById('daySessionsList');
+            const nextSessionCard = document.getElementById('nextSessionCard');
+            const pendingSessionsList = document.getElementById('pendingSessionsList');
+
+            // State
+            let viewDate = new Date(); viewDate.setDate(1);
+            let selectedIso = null;
+
+            // Helpers
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const iso = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+            const toDate = (isoStr) => { const [y, m, dd] = isoStr.split('-').map(Number); return new Date(y, m - 1, dd); };
+            const cmpIso = (a, b) => (a > b) - (a < b);
+            const todayIso = iso(new Date());
+
+            function groupByDate(arr) {
+                const map = new Map();
+                for (const s of arr) {
+                    if (!map.has(s.date)) map.set(s.date, []);
+                    map.get(s.date).push(s);
+                }
+                return map;
+            }
+
+            function renderCalendar() {
+                calTitle.textContent = `${monthNames[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+                calDays.innerHTML = '';
+
+                const firstDayIdx = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
+                const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+
+                // group sessions by date for dots
+                const byDate = groupByDate(sessions);
+
+                // leading blanks
+                for (let i = 0; i < firstDayIdx; i++) {
+                    const blank = document.createElement('div');
+                    blank.className = 'day empty';
+                    calDays.appendChild(blank);
+                }
+
+                // month days
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'day';
+                    const cellIso = `${viewDate.getFullYear()}-${pad2(viewDate.getMonth() + 1)}-${pad2(d)}`;
+
+                    // number
+                    const n = document.createElement('div');
+                    n.className = 'day-number';
+                    n.textContent = d;
+                    cell.appendChild(n);
+
+                    // dots
+                    const dotsWrap = document.createElement('div');
+                    dotsWrap.className = 'dots';
+                    const list = byDate.get(cellIso) || [];
+                    if (list.length) {
+                        // show up to 3 dots by status priority: paid, accepted, pending (or any order)
+                        const statuses = list.map(s => s.status);
+                        const first3 = statuses.slice(0, 3);
+                        for (const st of first3) {
+                            const dot = document.createElement('span');
+                            dot.className = 'dot ' + (st === 'pending' ? 'dot-pending' : st === 'accepted' ? 'dot-accepted' : 'dot-paid');
+                            dot.title = st.charAt(0).toUpperCase() + st.slice(1);
+                            dotsWrap.appendChild(dot);
+                        }
+                        if (statuses.length > 3) {
+                            const more = document.createElement('span');
+                            more.className = 'more';
+                            more.textContent = `+${statuses.length - 3}`;
+                            dotsWrap.appendChild(more);
+                        }
+                    }
+                    cell.appendChild(dotsWrap);
+
+                    // today/selected
+                    if (cellIso === todayIso) cell.classList.add('today');
+                    if (cellIso === selectedIso) cell.classList.add('selected');
+
+                    // click
+                    cell.addEventListener('click', () => {
+                        selectedIso = cellIso;
+                        renderCalendar(); // re-apply selected style
+                        renderDayList();
+                    });
+
+                    calDays.appendChild(cell);
+                }
+            }
+
+            function renderDayList() {
+                daySessionsList.innerHTML = '';
+                if (!selectedIso) {
+                    detailDateEl.textContent = '[ Select a day ]';
+                    daySessionsList.innerHTML = `<div class="text-muted">Pick a day in the calendar to view its sessions.</div>`;
+                    return;
+                }
+                detailDateEl.textContent = selectedIso;
+
+                const list = sessions.filter(s => s.date === selectedIso).sort((a, b) => (a.start > b.start) - (a.start < b.start));
+                if (!list.length) {
+                    daySessionsList.innerHTML = `<div class="text-muted">No sessions on this day.</div>`;
+                    return;
+                }
+
+                for (const s of list) {
+                    const row = document.createElement('div');
+                    row.className = `session-row ${s.status}`;
+
+                    row.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div><strong>${escapeHtml(s.subject || 'Session')}</strong></div>
+                                <div class="caption mt-4">Time: ${s.start || '--:--'} • Hours: ${s.hours ?? '-'} • Students: ${s.students ?? '-'}</div>
+                                <div class="caption mt-4">Ref: ${s.id || '—'}</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="chip ${chipClass(s.status)}">${labelStatus(s.status)}</span>
+                                <div class="mt-8">
+                                    ${actionButtonsHtml(s.status)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    daySessionsList.appendChild(row);
+                }
+            }
+
+            function renderNextAndPending() {
+                // Next: earliest upcoming accepted/paid (then pending) on/after today
+                const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+                const upcoming = sessions
+                    .filter(s => toDate(s.date) >= todayStart && (s.status === 'accepted' || s.status === 'paid' || s.status === 'pending'))
+                    .sort((a, b) => cmpIso(a.date, b.date) || ((a.start > b.start) - (a.start < b.start)));
+
+                nextSessionCard.innerHTML = '';
+                if (!upcoming.length) {
+                    nextSessionCard.innerHTML = `<div class="text-muted">No upcoming sessions yet.</div>`;
+                } else {
+                    const s = upcoming.find(x => x.status !== 'pending') || upcoming[0];
+                    const card = document.createElement('div');
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div><strong>${escapeHtml(s.subject || 'Session')}</strong></div>
+                                <div class="caption mt-4">Date: ${s.date} • Time: ${s.start || '--:--'} • Hours: ${s.hours ?? '-'}</div>
+                                <div class="caption mt-4">Students: ${s.students ?? '-'}</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="chip ${chipClass(s.status)}">${labelStatus(s.status)}</span>
+                                <div class="mt-8">${actionButtonsHtml(s.status)}</div>
+                            </div>
+                        </div>
+                    `;
+                    nextSessionCard.appendChild(card);
+                }
+
+                // Pending list
+                pendingSessionsList.innerHTML = '';
+                const pend = sessions.filter(s => s.status === 'pending').sort((a, b) => cmpIso(a.date, b.date));
+                if (!pend.length) {
+                    pendingSessionsList.innerHTML = `<div class="text-muted">No pending sessions.</div>`;
+                } else {
+                    for (const s of pend) {
+                        const row = document.createElement('div');
+                        row.className = 'session-row pending';
+                        row.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div><strong>${escapeHtml(s.subject || 'Session')}</strong></div>
+                                    <div class="caption mt-4">Date: ${s.date} • Time: ${s.start || '--:--'} • Hours: ${s.hours ?? '-'}</div>
+                                    <div class="caption mt-4">Students: ${s.students ?? '-'}</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="chip chip-pending">Pending</span>
+                                    <div class="mt-8">
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        pendingSessionsList.appendChild(row);
+                    }
+                }
+            }
+
+            // UI helpers
+            function chipClass(status) {
+                if (status === 'pending') return 'chip-pending';
+                if (status === 'accepted') return 'chip-accepted';
+                return 'chip-paid';
+            }
+            function labelStatus(status) {
+                if (status === 'pending') return 'Pending';
+                if (status === 'accepted') return 'Accepted';
+                return 'Paid';
+            }
+            function actionButtonsHtml(status) {
+                // UI-only — future: wire to endpoints
+                if (status === 'pending') {
+                    return `<button class="btn btn-sm btn-outline-secondary" disabled>Cancel</button>`;
+                }
+                if (status === 'accepted') {
+                    return `<button class="btn btn-sm btn-outline-primary" disabled>View</button>
+                            <button class="btn btn-sm btn-primary" disabled>Pay</button>`;
+                }
+                // paid
+                return `<button class="btn btn-sm btn-outline-primary" disabled>View</button>`;
+            }
+            function escapeHtml(s) {
+                return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            }
+
+            // Month nav
+            prevBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); });
+            nextBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); });
+
+            // Initial render (empty data → empty states)
+            renderCalendar();
+            renderDayList();
+            renderNextAndPending();
+
+            // FUTURE: When you load real data, set `sessions = [...]` and call:
+            // renderCalendar(); renderDayList(); renderNextAndPending();
+        })();
+    </script>
+}
+@* --------------------------------------------------------------------
+   FUTURE FUNCTIONALITY (to make this page live)
+   - Load user's sessions: { id, date (YYYY-MM-DD), start, hours, subject, students, status }
+   - Calendar dots reflect day aggregation; clicking a day filters the right-hand list
+   - "Next Session" = earliest accepted/paid (else pending) on/after today
+   - Pending list = all sessions with status=pending (cancel action later)
+   - Wire actions: Cancel (pending), Pay (accepted), View (detail)
+   - Auth guard: require sign-in
+--------------------------------------------------------------------- *@

@@ -1,0 +1,199 @@
+﻿@{
+    ViewData["Title"] = "Events History";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "User";
+}
+
+<!-- Scoped styles for Events History only -->
+<style>
+    .uevent-history .form-control,
+    .uevent-history select {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+        .uevent-history .form-control::placeholder {
+            color: var(--muted-text-color) !important;
+        }
+
+        .uevent-history .form-control:focus,
+        .uevent-history select:focus {
+            outline: none !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        }
+
+    /* Status chips */
+    .uevent-history .chip {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-color);
+        margin: 0;
+    }
+
+    .uevent-history .chip-completed {
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    .uevent-history .chip-missed {
+        color: var(--error-color);
+        border-color: var(--error-color);
+    }
+
+    .uevent-history .chip-cancelled {
+        color: var(--warning-color);
+        border-color: var(--warning-color);
+    }
+</style>
+
+<div class="uevent-history">
+
+    <!-- Header / Nav -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Events History</h1>
+        <div class="d-flex gap-2">
+            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+            <a asp-controller="Home" asp-action="UEvents" class="btn btn-outline-primary">New Events</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <label for="searchHistory" class="form-label">Search</label>
+                <input id="searchHistory" type="text" class="form-control" placeholder="Search by title or description" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="dateFrom" class="form-label">From</label>
+                <input id="dateFrom" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="dateTo" class="form-label">To</label>
+                <input id="dateTo" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="statusFilter" class="form-label">Status</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="all">All</option>
+                    <option value="completed">Completed</option>
+                    <option value="missed">No-Show</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="pointsFilter" class="form-label">Points</label>
+                <select id="pointsFilter" class="form-select">
+                    <option value="all">All</option>
+                    <option value="earned">Earned &gt; 0</option>
+                    <option value="zero">0 Points</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end mt-16">
+            <button class="btn btn-outline-primary" disabled>Apply Filters</button>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card shadow p-24">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Start</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Points Earned</th>
+                        <th class="text-end">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* No data yet — empty state: 
+                    <tr>
+                        <td colspan="7">
+                            <div class="text-center p-24 text-muted">No historical events to display yet.</div>
+                        </td>
+                    </tr>*@
+
+                    @* ----------------------------------------------------------------*@
+                    Example row structure (REFERENCE ONLY — do not render now)
+
+                    <tr>
+                    <td>
+                    <div class="d-flex flex-column">
+                    <strong>Park Clean-Up</strong>
+                    <span class="caption">Community service at Greenfield Park</span>
+                    </div>
+                    </td>
+                    <td>2025-08-12</td>
+                    <td>09:00</td>
+                    <td>2h 00m</td>
+                    <td><span class="chip chip-completed">Completed</span></td>
+                    <td>25</td>
+                    <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary">View Receipt</a>
+                    <!-- or disabled if none -->
+                    <!-- <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button> -->
+                    </td>
+                    </tr>
+
+                    <tr>
+                    <td><strong>Food Drive</strong></td>
+                    <td>2025-07-01</td>
+                    <td>14:30</td>
+                    <td>3h 30m</td>
+                    <td><span class="chip chip-missed">No-Show</span></td>
+                    <td>0</td>
+                    <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button>
+                    </td>
+                    </tr>
+
+                    <tr>
+                    <td><strong>Beach Sweep</strong></td>
+                    <td>2025-06-18</td>
+                    <td>08:00</td>
+                    <td>2h 00m</td>
+                    <td><span class="chip chip-cancelled">Cancelled</span></td>
+                    <td>0</td>
+                    <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button>
+                    </td>
+                    </tr>
+                    @*---------------------------------------------------------------- *@
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Placeholder -->
+        <div class="d-flex justify-content-between align-items-center mt-16">
+            <div class="caption text-muted">Showing 0 of 0</div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Enable Events History Functionality
+   - Bind user's past events with: title, description, date, startTime,
+     duration, status (completed/missed/cancelled), pointsEarned, receiptId
+   - Implement filters: text query, date range, status, points
+   - Sort by date (desc/asc); server-driven pagination
+   - "View Receipt" → open receipt detail or download (and audit)
+   - Auth guard: require sign-in
+--------------------------------------------------------------------- *@

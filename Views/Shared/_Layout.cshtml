@@ -1,43 +1,53 @@
 ﻿@{
-    var theme = ViewData["ThemeClass"] ?? "light-theme"; // fallback if ViewData isn't set
+    var title = ViewData["Title"] as string ?? "JTutors";
+    // Optional: allow views to set theme via ViewData["ThemeClass"] = "dark-theme"/"light-theme"
+    var themeClass = (ViewData["ThemeClass"] as string) ?? "light-theme";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - J_Tutors_Web_Platform</title>
+    <title>@title - JTutors</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/J_Tutors_Web_Platform.styles.css" asp-append-version="true" />
+
+    <!-- Navbar theme-aware tweaks (uses your CSS variables) -->
+    <style>
+        .app-navbar {
+            background-color: var(--surface-color) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+            .app-navbar .navbar-brand,
+            .app-navbar .nav-link {
+                color: var(--text-color) !important;
+            }
+
+                .app-navbar .nav-link.active {
+                    color: var(--primary-color) !important;
+                    border-bottom: 2px solid var(--primary-color);
+                }
+
+            .app-navbar .navbar-toggler {
+                border-color: var(--border-color) !important;
+                color: var(--text-color) !important;
+            }
+
+                .app-navbar .navbar-toggler .label {
+                    font-size: 14px;
+                    color: var(--muted-text-color);
+                }
+    </style>
 </head>
-<body class="@theme">
+<body class="@themeClass">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">J_Tutors_Web_Platform</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        @await Html.PartialAsync("_Nav")
     </header>
 
     <div class="container">
-        @* Theme debug/info block for development *@
-        @await Html.PartialAsync("_ThemeSwitcher")
-
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -45,7 +55,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - J_Tutors_Web_Platform - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year - JTutors
         </div>
     </footer>
 

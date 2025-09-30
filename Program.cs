@@ -45,11 +45,28 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER
             //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD
             //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING
-            //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER Sessions
+            //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS
             //----------------------------------------------------
 
             //ADMIN:
             //----------------------------------------------------
+            //pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD
+            //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR
+            //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
+            //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS
+            //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
+            pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
+            //pattern: "{controller=Home}/{action=AFiles}/{id?}"); // ADMIN FILES MANAGEMENT
+            //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT
+            //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD
+            //pattern: "{controller=Home}/{action=AAnalytics}/{id?}"); // ADMIN ANALYTICS
+            //pattern: "{controller=Home}/{action=AAccount}/{id?}"); // ADMIN ACCOUNT
+
+
+
+
+
+
 
             //----------------------------------------------------
 

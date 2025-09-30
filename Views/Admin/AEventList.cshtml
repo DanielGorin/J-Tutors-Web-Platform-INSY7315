@@ -1,0 +1,448 @@
+﻿@{
+    ViewData["Title"] = "Events";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin"; // navbar shows Admin links
+}
+
+<!-- Scoped styles for Admin Events -->
+<style>
+    .aevents, .aevents .card {
+        color: var(--text-color) !important;
+    }
+
+        .aevents .caption, .aevents .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .aevents .form-control, .aevents .form-select, .aevents textarea {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .aevents .form-control::placeholder, .aevents textarea::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .aevents .form-control:focus, .aevents .form-select:focus, .aevents textarea:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Table theme */
+        .aevents .table, .aevents .table th, .aevents .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+            vertical-align: middle;
+        }
+
+            .aevents .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .aevents .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .aevents .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+                cursor: pointer;
+            }
+
+        /* Chips */
+        .aevents .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .aevents .chip-open {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .aevents .chip-full {
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+
+        .aevents .chip-ended {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .aevents .chip-completed {
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        /* Tabs (UI only) */
+        .aevents .tabs .btn {
+            border-radius: 999px;
+            padding: 8px 14px;
+        }
+
+        .aevents .btn-tab-active {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+        /* Row action buttons */
+        .aevents .table .btn-sm {
+            min-width: 84px;
+        }
+
+        /* Inline forms */
+        .aevents .inline-form h4 {
+            margin-bottom: 12px;
+        }
+</style>
+
+<div id="top" class="aevents">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Events</h1>
+        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Tabs + Create button -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex flex-wrap align-items-center justify-content-between">
+            <div class="tabs d-flex gap-2">
+                <!-- UI-only tabs. Mark one as active for demo -->
+                <button class="btn btn-outline-primary btn-tab-active" disabled>Upcoming (3)</button>
+                <button class="btn btn-outline-primary" disabled>Past (2)</button>
+                <button class="btn btn-outline-primary" disabled>Completed (2)</button>
+            </div>
+            <div>
+                <a class="btn btn-primary" href="#createForm">Create Event</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <label class="form-label" for="evSearch">Search</label>
+                <input id="evSearch" class="form-control" placeholder="Search by name, description, or location" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="dateFrom">From</label>
+                <input id="dateFrom" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="dateTo">To</label>
+                <input id="dateTo" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="locationFilter">Location</label>
+                <input id="locationFilter" class="form-control" placeholder="e.g., Greenfield Park" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="capacityStatus">Capacity</label>
+                <select id="capacityStatus" class="form-select">
+                    <option value="all">All</option>
+                    <option value="open">Open</option>
+                    <option value="full">Full</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="pointsMin">Min Points</label>
+                <input id="pointsMin" type="number" class="form-control" placeholder="0" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="pointsMax">Max Points</label>
+                <input id="pointsMax" type="number" class="form-control" placeholder="100" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label class="form-label" for="sortBy">Sort by</label>
+                <select id="sortBy" class="form-select">
+                    <option value="date">Date</option>
+                    <option value="points">Points</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-2 d-flex align-items-end">
+                <button class="btn btn-outline-primary w-100" disabled>Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======= UPCOMING TAB (Demo static as active) ======= -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Upcoming</h3>
+            <div class="d-flex gap-2">
+                <span class="chip">Total: 3</span>
+                <span class="chip chip-open">Open: 2</span>
+                <span class="chip chip-full">Full: 1</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Start</th>
+                        <th>Duration</th>
+                        <th>Location</th>
+                        <th>Capacity</th>
+                        <th>Points</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ===== DEMO DATA (replace/remove when wiring) ===== *@
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="1"><strong>Event 1</strong></a>
+                            <div class="caption">Description: Park clean-up. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-10-12</td>
+                        <td>09:00</td>
+                        <td>2h 00m</td>
+                        <td>Greenfield Park</td>
+                        <td>Goal 20 · Current 12</td>
+                        <td>25</td>
+                        <td><span class="chip chip-open">Open</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" disabled>Edit</button>
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="2"><strong>Event 2</strong></a>
+                            <div class="caption">Description: Beach sweep. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-10-15</td>
+                        <td>08:30</td>
+                        <td>3h 00m</td>
+                        <td>Bayview</td>
+                        <td>Goal 15 · Current 15</td>
+                        <td>30</td>
+                        <td><span class="chip chip-full">Full</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" disabled>Edit</button>
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="3"><strong>Event 3</strong></a>
+                            <div class="caption">Description: Food drive packing. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-10-20</td>
+                        <td>14:00</td>
+                        <td>1h 30m</td>
+                        <td>Community Hall</td>
+                        <td>Goal 10 · Current 4</td>
+                        <td>15</td>
+                        <td><span class="chip chip-open">Open</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" disabled>Edit</button>
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Delete</button>
+                        </td>
+                    </tr>
+                    @* ===== /DEMO DATA ================================ *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======= PAST TAB (UI only, shown for completeness) ======= -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Past</h3>
+            <div class="d-flex gap-2">
+                <span class="chip">Total: 2</span>
+                <span class="chip chip-ended">Ended: 2</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Ended</th>
+                        <th>Location</th>
+                        <th>Participants</th>
+                        <th>Points</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ===== DEMO DATA ===== *@
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="4"><strong>Event 4</strong></a>
+                            <div class="caption">Description: Library sort. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-09-10</td>
+                        <td>16:30</td>
+                        <td>Central Library</td>
+                        <td>Goal 8 · Final 7</td>
+                        <td>10</td>
+                        <td><span class="chip chip-ended">Ended</span></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="4" class="btn btn-sm btn-outline-primary">Open</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="5"><strong>Event 5</strong></a>
+                            <div class="caption">Description: Park trees tag. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-09-02</td>
+                        <td>12:00</td>
+                        <td>Greenfield Park</td>
+                        <td>Goal 12 · Final 9</td>
+                        <td>20</td>
+                        <td><span class="chip chip-ended">Ended</span></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="5" class="btn btn-sm btn-outline-primary">Open</a>
+                        </td>
+                    </tr>
+                    @* ===== /DEMO DATA ===== *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======= COMPLETED TAB (UI only) ======= -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Completed</h3>
+            <div class="d-flex gap-2">
+                <span class="chip">Total: 2</span>
+                <span class="chip chip-completed">Points Issued</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Participants</th>
+                        <th>Points</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ===== DEMO DATA ===== *@
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="6"><strong>Event 6</strong></a>
+                            <div class="caption">Description: River clean. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-08-14</td>
+                        <td>Riverside</td>
+                        <td>Final 18</td>
+                        <td>25</td>
+                        <td><span class="chip chip-completed">Completed</span></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="6" class="btn btn-sm btn-outline-secondary">View</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="7"><strong>Event 7</strong></a>
+                            <div class="caption">Description: Shelter sort. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>2025-08-01</td>
+                        <td>City Shelter</td>
+                        <td>Final 10</td>
+                        <td>15</td>
+                        <td><span class="chip chip-completed">Completed</span></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="7" class="btn btn-sm btn-outline-secondary">View</a>
+                        </td>
+                    </tr>
+                    @* ===== /DEMO DATA ===== *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======= Inline Create (UI placeholder) ======= -->
+    <div id="createForm" class="card shadow p-24 inline-form mb-16">
+        <h4>Create Event (UI only for now)</h4>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label" for="evName">Event Name</label>
+                <input id="evName" class="form-control" placeholder="Event 8" />
+            </div>
+            <div class="col-lg-6">
+                <label class="form-label" for="evLocation">Location</label>
+                <input id="evLocation" class="form-control" placeholder="Community Centre" />
+            </div>
+            <div class="col-6 col-lg-3">
+                <label class="form-label" for="evDate">Date</label>
+                <input id="evDate" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-3">
+                <label class="form-label" for="evStart">Start</label>
+                <input id="evStart" type="time" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-3">
+                <label class="form-label" for="evDuration">Duration (HH:MM)</label>
+                <input id="evDuration" class="form-control" placeholder="02:00" />
+            </div>
+            <div class="col-6 col-lg-3">
+                <label class="form-label" for="evPoints">Points Reward</label>
+                <input id="evPoints" type="number" class="form-control" placeholder="25" />
+            </div>
+            <div class="col-6 col-lg-3">
+                <label class="form-label" for="evGoal">Goal Participants</label>
+                <input id="evGoal" type="number" class="form-control" placeholder="20" />
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="evDescription">Description</label>
+                <textarea id="evDescription" rows="3" class="form-control" placeholder="Description: What the event is about. The quick brown fox jumped over the lazy dog."></textarea>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" disabled>Save</button>
+                <a class="btn btn-outline-secondary" href="#top">Cancel</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up AEvents
+   - Tabs:
+       • Upcoming, Past, Completed → server filter or separate actions
+   - Filters:
+       • Search, date range, location, capacity (open/full), points range
+       • Sort: date/points/name
+   - CRUD:
+       • Create new event (save to DB), Edit existing, Delete with confirm
+   - Row click:
+       • AEventDetail(id) → manage participants, close event, allocate points
+   - Counts:
+       • Compute quick counts per tab (open/full/completed)
+   - Security:
+       • Admin-only guard
+--------------------------------------------------------------------- *@

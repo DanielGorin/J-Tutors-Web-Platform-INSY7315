@@ -1,0 +1,629 @@
+﻿@{
+    ViewData["Title"] = "Sessions & Calendar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin";
+}
+
+<!-- Scoped styles for Sessions & Calendar only -->
+<style>
+    .asc, .asc .card {
+        color: var(--text-color) !important;
+    }
+
+        .asc .caption, .asc .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .asc .form-control, .asc select {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .asc .form-control::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .asc .form-control:focus, .asc select:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Chips */
+        .asc .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            margin-right: 8px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            cursor: default;
+        }
+
+        .asc .chip-slot {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .asc .chip-pending {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .asc .chip-accepted {
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .asc .chip-paid {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        /* Month calendar */
+        .asc .month-head {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+            .asc .month-head div {
+                text-align: center;
+                font-weight: bold;
+                font-family: Verdana, sans-serif;
+                font-size: 14px;
+                color: var(--muted-text-color);
+            }
+
+        .asc .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .asc .day-cell {
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .asc .day-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .asc .day-num {
+            font-weight: bold;
+            font-family: Verdana, sans-serif;
+            font-size: 14px;
+        }
+
+        .asc .day-items {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .asc .day-item {
+            padding: 6px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: transparent;
+            transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+        }
+
+            .asc .day-item:hover {
+                background: rgba(0,0,0,0.03);
+            }
+            /* selected/highlighted calendar item */
+            .asc .day-item.selected {
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 2px var(--accent-color);
+                background: transparent;
+            }
+
+            .asc .day-item .time {
+                font-weight: 700;
+                margin-right: 6px;
+            }
+
+        /* Selected session panel */
+        .asc .kv {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 6px 12px;
+        }
+
+            .asc .kv .k {
+                color: var(--muted-text-color);
+            }
+
+        .asc .actions .btn {
+            min-width: 120px;
+        }
+
+        /* Sessions table */
+        .asc .table, .asc .table th, .asc .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+        }
+
+            .asc .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .asc .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .asc .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+                cursor: pointer;
+            }
+
+        .asc .w-110 {
+            width: 110px;
+        }
+</style>
+
+<div class="asc">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Sessions &amp; Calendar</h1>
+        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Month</label>
+                <select class="form-select">
+                    <option>September 2025</option>
+                    <option>October 2025</option>
+                    <option>November 2025</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="all">All</option>
+                    <option value="slot">Slots</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="paid">Paid</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Subject</label>
+                <select class="form-select" id="subjectFilter">
+                    <option value="all">All Subjects</option>
+                    <option>Maths</option>
+                    <option>English</option>
+                    <option>Science</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-outline-primary w-100" disabled>Apply Filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GRID: Calendar (left) • Selected Session + Manage Slots (right) -->
+    <div class="row g-3 mb-16">
+        <!-- Calendar -->
+        <div class="col-lg-8">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">September 2025</h3>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="Admin" asp-action="ACalendar" class="btn btn-sm btn-outline-primary">Open Calendar</a>
+                        <a asp-controller="Admin" asp-action="ASessions" class="btn btn-sm btn-outline-secondary">Manage Sessions</a>
+                    </div>
+                </div>
+
+                <!-- Weekday headers -->
+                <div class="month-head">
+                    <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+                </div>
+
+                <!-- Month Grid (Demo) -->
+                <div class="month-grid">
+                    <!-- 1st row -->
+                    @* Day 1 *@
+                    <div class="day-cell">
+                        <div class="day-top">
+                            <div class="day-num">1</div>
+                            <div class="caption">Mon</div>
+                        </div>
+                        <div class="day-items">
+                            <div class="chip chip-slot">Slot 09:00</div>
+                            <div class="day-item"
+                                 data-id="S-1001" data-status="pending" data-student="Student 1"
+                                 data-subject="Maths" data-date="2025-09-01" data-time="10:00"
+                                 data-duration="2h" data-students="2" data-price="R 600" data-points="10%">
+                                <span class="time">10:00</span> Pending · Maths · Student 1
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Day 2 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">2</div><div class="caption">Tue</div></div>
+                        <div class="day-items">
+                            <div class="day-item"
+                                 data-id="S-1002" data-status="accepted" data-student="Student 2"
+                                 data-subject="English" data-date="2025-09-02" data-time="11:30"
+                                 data-duration="1.5h" data-students="1" data-price="R 450" data-points="0%">
+                                <span class="time">11:30</span> Accepted · English · Student 2
+                            </div>
+                            <div class="chip chip-slot">Slot 16:00</div>
+                        </div>
+                    </div>
+
+                    @* Day 3 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">3</div><div class="caption">Wed</div></div>
+                        <div class="day-items">
+                            <div class="chip chip-paid">Paid 14:00</div>
+                        </div>
+                    </div>
+
+                    @* Day 4 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">4</div><div class="caption">Thu</div></div>
+                        <div class="day-items">
+                            <div class="chip chip-slot">Slot 13:00</div>
+                            <div class="day-item"
+                                 data-id="S-1003" data-status="accepted" data-student="Student 3"
+                                 data-subject="Maths" data-date="2025-09-04" data-time="16:00"
+                                 data-duration="1h" data-students="1" data-price="R 320" data-points="5%">
+                                <span class="time">16:00</span> Accepted · Maths · Student 3
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Day 5 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">5</div><div class="caption">Fri</div></div>
+                        <div class="day-items">
+                            <div class="day-item"
+                                 data-id="S-1004" data-status="pending" data-student="Student 4"
+                                 data-subject="Science" data-date="2025-09-05" data-time="09:00"
+                                 data-duration="2h" data-students="3" data-price="R 900" data-points="15%">
+                                <span class="time">09:00</span> Pending · Science · Student 4
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Day 6 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">6</div><div class="caption">Sat</div></div>
+                        <div class="day-items">
+                            <div class="day-item"
+                                 data-id="S-1005" data-status="accepted" data-student="Student 5"
+                                 data-subject="Biology" data-date="2025-09-06" data-time="10:00"
+                                 data-duration="2h" data-students="2" data-price="R 640" data-points="0%">
+                                <span class="time">10:00</span> Accepted · Biology · Student 5
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Day 7 *@
+                    <div class="day-cell">
+                        <div class="day-top"><div class="day-num">7</div><div class="caption">Sun</div></div>
+                        <div class="day-items">
+                            <div class="chip chip-slot">Slot 09:00</div>
+                        </div>
+                    </div>
+
+                    @for (var d = 8; d <= 30; d++)
+                    {
+                        <div class="day-cell">
+                            <div class="day-top">
+                                <div class="day-num">@d</div>
+                                <div class="caption">@((new string[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })[(d - 1) % 7])</div>
+                            </div>
+                            <div class="day-items">
+                                @* empty for demo *@
+                            </div>
+                        </div>
+                    }
+                </div>
+                <!-- /Month Grid -->
+            </div>
+        </div>
+
+        <!-- Right column: Selected Session + Manage Slots -->
+        <div class="col-lg-4">
+            <!-- Selected Session -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Selected Session</h3>
+                    <a asp-controller="Admin" asp-action="AUsersList" class="btn btn-sm btn-outline-secondary">Open Users</a>
+                </div>
+
+                <div id="noSelection" class="caption">Select a session from the calendar or the list below.</div>
+
+                <div id="selection" style="display:none;">
+                    <div class="kv mb-12">
+                        <div class="k">ID</div>        <div id="selId">—</div>
+                        <div class="k">Status</div>    <div id="selStatus">—</div>
+                        <div class="k">Student</div>   <div id="selStudent">—</div>
+                        <div class="k">Subject</div>   <div id="selSubject">—</div>
+                        <div class="k">Date</div>      <div id="selDate">—</div>
+                        <div class="k">Time</div>      <div id="selTime">—</div>
+                        <div class="k">Duration</div>  <div id="selDuration">—</div>
+                        <div class="k">Students</div>  <div id="selStudents">—</div>
+                        <div class="k">Price</div>     <div id="selPrice">—</div>
+                        <div class="k">Points Used</div><div id="selPoints">—</div>
+                    </div>
+
+                    <div class="actions d-flex flex-wrap gap-2">
+                        <button id="btnAccept" class="btn btn-outline-primary" disabled>Accept</button>
+                        <button id="btnDeny" class="btn btn-outline-secondary" disabled>Deny</button>
+                        <button id="btnPaid" class="btn btn-primary" disabled>Mark Paid</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Slots -->
+            <div class="card shadow p-24">
+                <h3 class="mb-8">Manage Slots</h3>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Time</label>
+                        <input type="time" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Duration (mins)</label>
+                        <input type="number" class="form-control" placeholder="e.g., 60" />
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-outline-primary w-100" disabled>Add Slot</button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-16">
+                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove Selected Slots</button>
+                </div>
+                <div class="caption mt-8">Select slots on the calendar to remove (future wiring).</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALL SESSIONS LIST -->
+    <div class="card shadow p-24">
+        <div class="d-flex justify-content-between align-items-center mb-12">
+            <h3 class="mb-0">All Sessions</h3>
+            <div class="d-flex gap-2">
+                <input id="searchSessions" class="form-control" placeholder="Search by student/subject" style="width: 260px;" />
+                <select id="statusListFilter" class="form-select w-110">
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="paid">Paid</option>
+                </select>
+                <button class="btn btn-outline-primary" disabled>Apply</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle" id="sessionsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Student</th>
+                        <th>Subject</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Dur.</th>
+                        <th>Students</th>
+                        <th>Status</th>
+                        <th class="text-end">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Demo rows — click to populate selection & highlight calendar *@
+                    <tr class="session-row"
+                        data-id="S-1001" data-status="pending" data-student="Student 1"
+                        data-subject="Maths" data-date="2025-09-01" data-time="10:00"
+                        data-duration="2h" data-students="2" data-price="R 600" data-points="10%">
+                        <td>S-1001</td>
+                        <td>Student 1</td>
+                        <td>Maths</td>
+                        <td>2025-09-01</td>
+                        <td>10:00</td>
+                        <td>2h</td>
+                        <td>2</td>
+                        <td><span class="chip chip-pending">Pending</span></td>
+                        <td class="text-end">R 600</td>
+                    </tr>
+
+                    <tr class="session-row"
+                        data-id="S-1002" data-status="accepted" data-student="Student 2"
+                        data-subject="English" data-date="2025-09-02" data-time="11:30"
+                        data-duration="1.5h" data-students="1" data-price="R 450" data-points="0%">
+                        <td>S-1002</td>
+                        <td>Student 2</td>
+                        <td>English</td>
+                        <td>2025-09-02</td>
+                        <td>11:30</td>
+                        <td>1.5h</td>
+                        <td>1</td>
+                        <td><span class="chip chip-accepted">Accepted</span></td>
+                        <td class="text-end">R 450</td>
+                    </tr>
+
+                    <tr class="session-row"
+                        data-id="S-1003" data-status="accepted" data-student="Student 3"
+                        data-subject="Maths" data-date="2025-09-04" data-time="16:00"
+                        data-duration="1h" data-students="1" data-price="R 320" data-points="5%">
+                        <td>S-1003</td>
+                        <td>Student 3</td>
+                        <td>Maths</td>
+                        <td>2025-09-04</td>
+                        <td>16:00</td>
+                        <td>1h</td>
+                        <td>1</td>
+                        <td><span class="chip chip-accepted">Accepted</span></td>
+                        <td class="text-end">R 320</td>
+                    </tr>
+
+                    <tr class="session-row"
+                        data-id="S-1004" data-status="pending" data-student="Student 4"
+                        data-subject="Science" data-date="2025-09-05" data-time="09:00"
+                        data-duration="2h" data-students="3" data-price="R 900" data-points="15%">
+                        <td>S-1004</td>
+                        <td>Student 4</td>
+                        <td>Science</td>
+                        <td>2025-09-05</td>
+                        <td>09:00</td>
+                        <td>2h</td>
+                        <td>3</td>
+                        <td><span class="chip chip-pending">Pending</span></td>
+                        <td class="text-end">R 900</td>
+                    </tr>
+
+                    <tr class="session-row"
+                        data-id="S-1006" data-status="paid" data-student="Student 6"
+                        data-subject="Maths" data-date="2025-09-03" data-time="14:00"
+                        data-duration="1h" data-students="1" data-price="R 320" data-points="0%">
+                        <td>S-1006</td>
+                        <td>Student 6</td>
+                        <td>Maths</td>
+                        <td>2025-09-03</td>
+                        <td>14:00</td>
+                        <td>1h</td>
+                        <td>1</td>
+                        <td><span class="chip chip-paid">Paid</span></td>
+                        <td class="text-end">R 320</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Placeholder -->
+        <div class="d-flex justify-content-between align-items-center mt-16">
+            <div class="caption text-muted">Showing 5 of 5</div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Demo wiring: populate Selected Session & highlight calendar item
+        (function () {
+            function clearCalendarHighlights() {
+                document.querySelectorAll('.asc .day-item.selected').forEach(function (el) {
+                    el.classList.remove('selected');
+                });
+            }
+
+            function highlightCalendarById(sessionId) {
+                clearCalendarHighlights();
+                var match = document.querySelector('.asc .day-item[data-id="' + sessionId + '"]');
+                if (match) match.classList.add('selected');
+            }
+
+            function populateSelection(el) {
+                const sel = document.getElementById('selection');
+                const none = document.getElementById('noSelection');
+
+                const id = el.getAttribute('data-id') || '—';
+                const status = el.getAttribute('data-status') || '—';
+                const student = el.getAttribute('data-student') || '—';
+                const subject = el.getAttribute('data-subject') || '—';
+                const date = el.getAttribute('data-date') || '—';
+                const time = el.getAttribute('data-time') || '—';
+                const duration = el.getAttribute('data-duration') || '—';
+                const students = el.getAttribute('data-students') || '—';
+                const price = el.getAttribute('data-price') || '—';
+                const points = el.getAttribute('data-points') || '—';
+
+                document.getElementById('selId').textContent = id;
+                document.getElementById('selStatus').textContent = status;
+                document.getElementById('selStudent').textContent = student;
+                document.getElementById('selSubject').textContent = subject;
+                document.getElementById('selDate').textContent = date;
+                document.getElementById('selTime').textContent = time;
+                document.getElementById('selDuration').textContent = duration;
+                document.getElementById('selStudents').textContent = students;
+                document.getElementById('selPrice').textContent = price;
+                document.getElementById('selPoints').textContent = points;
+
+                const btnAccept = document.getElementById('btnAccept');
+                const btnDeny = document.getElementById('btnDeny');
+                const btnPaid = document.getElementById('btnPaid');
+
+                btnAccept.disabled = true;
+                btnDeny.disabled = true;
+                btnPaid.disabled = true;
+
+                if (status === 'pending') {
+                    btnAccept.disabled = false;
+                    btnDeny.disabled = false;
+                } else if (status === 'accepted') {
+                    btnPaid.disabled = false;
+                }
+
+                none.style.display = 'none';
+                sel.style.display = '';
+
+                highlightCalendarById(id);
+            }
+
+            document.querySelectorAll('.asc .day-item').forEach(function (item) {
+                item.addEventListener('click', function () { populateSelection(item); });
+            });
+
+            document.querySelectorAll('.asc .session-row').forEach(function (row) {
+                row.addEventListener('click', function () { populateSelection(row); });
+            });
+
+            document.getElementById('btnAccept').addEventListener('click', function () {
+                alert('Demo: Accept session (not wired yet).');
+            });
+            document.getElementById('btnDeny').addEventListener('click', function () {
+                alert('Demo: Deny session (not wired yet).');
+            });
+            document.getElementById('btnPaid').addEventListener('click', function () {
+                alert('Demo: Mark session as Paid (not wired yet).');
+            });
+        })();
+    </script>
+}
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up Sessions & Calendar
+   - Bind calendar to real sessions/slots
+   - Accept/Deny/Paid actions → backend + refresh
+   - Slot CRUD endpoints + calendar selection handling
+   - Server-side search/filter/pagination in list
+   - Admin auth guard
+--------------------------------------------------------------------- *@

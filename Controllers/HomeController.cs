@@ -110,6 +110,47 @@ namespace J_Tutors_Web_Platform.Controllers
         {
             return View("~/Views/Admin/ADashboard.cshtml");
         }
+        public IActionResult ASessionsCalendar()
+        {
+            return View("~/Views/Admin/ASessionsCalendar.cshtml");
+        }
+        public IActionResult AUserList()
+        {
+            return View("~/Views/Admin/AUserList.cshtml");
+        }
+        public IActionResult AUserDetails()
+        {
+            return View("~/Views/Admin/AUserDetails.cshtml");
+        }
+        public IActionResult AEventList()
+        {
+            return View("~/Views/Admin/AEventList.cshtml");
+        }
+
+        public IActionResult AEventDetails()
+        {
+            return View("~/Views/Admin/AEventDetails.cshtml");
+        }
+        public IActionResult AFiles()
+        {
+            return View("~/Views/Admin/AFiles.cshtml");
+        }
+        public IActionResult APricing()
+        {
+            return View("~/Views/Admin/APricing.cshtml");
+        }
+        public IActionResult ALeaderboard()
+        {
+            return View("~/Views/Admin/ALeaderboard.cshtml");
+        }
+        public IActionResult AAnalytics()
+        {
+            return View("~/Views/Admin/AAnalytics.cshtml");
+        }
+        public IActionResult AAccount()
+        {
+            return View("~/Views/Admin/AAccount.cshtml");
+        }
 
 
 

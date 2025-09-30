@@ -1,0 +1,296 @@
+﻿@{
+    ViewData["Title"] = "Users Directory";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin"; // so the navbar shows Admin links
+}
+
+<!-- Scoped styles for Admin Users List -->
+<style>
+    .ausers, .ausers .card {
+        color: var(--text-color) !important;
+    }
+
+        .ausers .caption, .ausers .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .ausers .form-control, .ausers select {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .ausers .form-control::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .ausers .form-control:focus, .ausers select:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Table theming */
+        .ausers .table, .ausers .table th, .ausers .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+            vertical-align: middle;
+        }
+
+            .ausers .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .ausers .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .ausers .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+            }
+
+        /* Chips */
+        .ausers .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            margin: 0 0 0 8px;
+            white-space: nowrap;
+        }
+
+        .ausers .chip-visible {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .ausers .chip-hidden {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .ausers .chip-unpaid {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Slim secondary line under username */
+        .ausers .subline {
+            font-size: 14px;
+            color: var(--muted-text-color);
+        }
+
+        /* Compact utility */
+        .ausers .w-120 {
+            width: 120px;
+        }
+</style>
+
+<div class="ausers">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Users Directory</h1>
+        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Controls: Search / Filters / Sort -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label for="searchUsers" class="form-label">Search students</label>
+                <input id="searchUsers" type="text" class="form-control" placeholder="Search by username, name, subject…" />
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="visFilter" class="form-label">Leaderboard</label>
+                <select id="visFilter" class="form-select">
+                    <option value="all">All</option>
+                    <option value="visible">Visible</option>
+                    <option value="hidden">Hidden</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-2">
+                <label for="unpaidFilter" class="form-label">Unpaid Sessions</label>
+                <select id="unpaidFilter" class="form-select">
+                    <option value="all">All</option>
+                    <option value="has">Has Unpaid</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <div class="col-lg-2 d-flex align-items-end">
+                <button class="btn btn-outline-primary w-100" disabled>Apply Filters</button>
+            </div>
+        </div>
+        <div class="row g-3 mt-8">
+            <div class="col-6 col-lg-2">
+                <label for="sortBy" class="form-label">Sort by</label>
+                <select id="sortBy" class="form-select">
+                    <option value="recent">Last Activity</option>
+                    <option value="points">Current Points</option>
+                    <option value="alltime">All-time Points</option>
+                    <option value="unpaid">Unpaid Amount</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+            <div class="col-6 col-lg-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" disabled>Apply Sort</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card shadow p-24">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Points (Current / All-time)</th>
+                        <th>Unpaid Sessions</th>
+                        <th>Last Activity</th>
+                        <th>Leaderboard</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ========================= DEMO DATA — remove/replace when wired ========================= *@
+
+                    <tr>
+                        <td>
+                            <div><strong>student1</strong></div>
+                            <div class="subline">Student 1 — Last note: Event 1 completed. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>
+                            <div><strong>1 800</strong> / 2 100</div>
+                        </td>
+                        <td>
+                            <div>0 · R 0</div>
+                        </td>
+                        <td>
+                            <div>2025-09-29</div>
+                        </td>
+                        <td>
+                            Visible <span class="chip chip-visible">On</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="1" class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div><strong>student2</strong></div>
+                            <div class="subline">Student 2 — Last note: Unpaid tutoring sessions pending. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>
+                            <div><strong>1 715</strong> / 1 940</div>
+                        </td>
+                        <td>
+                            <div>2 · R 960 <span class="chip chip-unpaid">Unpaid</span></div>
+                        </td>
+                        <td>
+                            <div>2025-09-28</div>
+                        </td>
+                        <td>
+                            Visible <span class="chip chip-visible">On</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="2" class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div><strong>student3</strong></div>
+                            <div class="subline">Student 3 — Last note: Event 2 no-show recorded. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>
+                            <div><strong>250</strong> / 400</div>
+                        </td>
+                        <td>
+                            <div>0 · R 0</div>
+                        </td>
+                        <td>
+                            <div>2025-09-27</div>
+                        </td>
+                        <td>
+                            Hidden <span class="chip chip-hidden">Off</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="3" class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div><strong>student4</strong></div>
+                            <div class="subline">Student 4 — Last note: Event 3 in review. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>
+                            <div><strong>0</strong> / 120</div>
+                        </td>
+                        <td>
+                            <div>1 · R 320 <span class="chip chip-unpaid">Unpaid</span></div>
+                        </td>
+                        <td>
+                            <div>2025-09-26</div>
+                        </td>
+                        <td>
+                            Visible <span class="chip chip-visible">On</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="4" class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div><strong>student5</strong></div>
+                            <div class="subline">Student 5 — Last note: Event 4 scheduled. The quick brown fox jumped over the lazy dog.</div>
+                        </td>
+                        <td>
+                            <div><strong>900</strong> / 1 050</div>
+                        </td>
+                        <td>
+                            <div>0 · R 0</div>
+                        </td>
+                        <td>
+                            <div>2025-09-25</div>
+                        </td>
+                        <td>
+                            Visible <span class="chip chip-visible">On</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="5" class="btn btn-sm btn-outline-primary">Manage</a>
+                        </td>
+                    </tr>
+
+                    @* ========================= /DEMO DATA =================================================== *@
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Placeholder -->
+        <div class="d-flex justify-content-between align-items-center mt-16">
+            <div class="caption text-muted">Showing 5 of 5</div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up Users Directory
+   - Fetch paged list of users with { id, username, name, pointsCurrent, pointsAllTime,
+     unpaidCount, unpaidAmount, lastActivityAt, leaderboardVisible }
+   - Implement search (username/name/subject), filters (visibility/unpaid), sort (activity/points/unpaid/name)
+   - Row click or "Manage" opens AUsersDetail(id) with full profile (events, points, receipts, sessions, notes)
+   - Consider server-driven pagination; keep page size small (e.g., 25–50)
+   - Admin-only auth guard
+--------------------------------------------------------------------- *@

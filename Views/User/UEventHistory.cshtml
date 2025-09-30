@@ -1,8 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Events History";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
 }
 
@@ -53,6 +51,42 @@
         color: var(--warning-color);
         border-color: var(--warning-color);
     }
+
+    /* Dark-mode legibility: apply theme tokens to all key bits */
+    .uevent-history,
+    .uevent-history .card {
+        color: var(--text-color) !important;
+    }
+
+        .uevent-history .caption,
+        .uevent-history .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .uevent-history .table,
+        .uevent-history .table th,
+        .uevent-history .table td {
+            color: var(--text-color) !important;
+            background-color: transparent !important;
+            border-color: var(--border-color) !important;
+        }
+
+            .uevent-history .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .uevent-history .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+        .uevent-history strong {
+            color: var(--text-color) !important;
+        }
+
+        /* Optional subtle row hover that works in both themes */
+        .uevent-history .table tbody tr:hover {
+            background: rgba(0,0,0,0.03);
+        }
 </style>
 
 <div class="uevent-history">
@@ -120,21 +154,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @* No data yet — empty state: 
+                    @* Empty state 
                     <tr>
                         <td colspan="7">
                             <div class="text-center p-24 text-muted">No historical events to display yet.</div>
                         </td>
                     </tr>*@
 
-                    @* ----------------------------------------------------------------*@
-                    Example row structure (REFERENCE ONLY — do not render now)
+                    @* --------------------------------------------------------------
+                    Example row structure (REFERENCE ONLY — do not render now)*@
 
                     <tr>
                     <td>
                     <div class="d-flex flex-column">
-                    <strong>Park Clean-Up</strong>
-                    <span class="caption">Community service at Greenfield Park</span>
+                    <strong>Event 1</strong>
+                                <span class="caption">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.</span>
                     </div>
                     </td>
                     <td>2025-08-12</td>
@@ -144,13 +178,11 @@
                     <td>25</td>
                     <td class="text-end">
                     <a class="btn btn-sm btn-outline-primary">View Receipt</a>
-                    <!-- or disabled if none -->
-                    <!-- <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button> -->
                     </td>
                     </tr>
 
                     <tr>
-                    <td><strong>Food Drive</strong></td>
+                    <td><strong>Event 2</strong></td>
                     <td>2025-07-01</td>
                     <td>14:30</td>
                     <td>3h 30m</td>
@@ -162,7 +194,7 @@
                     </tr>
 
                     <tr>
-                    <td><strong>Beach Sweep</strong></td>
+                    <td><strong>Event 3</strong></td>
                     <td>2025-06-18</td>
                     <td>08:00</td>
                     <td>2h 00m</td>
@@ -172,7 +204,7 @@
                     <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button>
                     </td>
                     </tr>
-                    @*---------------------------------------------------------------- *@
+                    @* -------------------------------------------------------------- *@
                 </tbody>
             </table>
         </div>

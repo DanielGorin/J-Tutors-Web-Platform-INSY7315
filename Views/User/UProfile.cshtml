@@ -1,8 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
 }
 
@@ -44,12 +42,7 @@
     <!-- Header / Nav -->
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Your Profile</h1>
-        <div class="d-flex gap-2">
-            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
-            <a asp-controller="Home" asp-action="Events" class="btn btn-outline-secondary">Events</a>
-            <a asp-controller="Home" asp-action="Points" class="btn btn-outline-secondary">Points &amp; Receipts</a>
-            <a asp-controller="Home" asp-action="FileLibrary" class="btn btn-outline-secondary">File Library</a>
-        </div>
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
     </div>
 
     <!-- Profile Overview (registration date only) -->
@@ -63,7 +56,6 @@
         <div class="section-title">
             <h3 class="mb-0">Basic Information</h3>
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Enable Edit (UI only)</button>
                 <button type="button" class="btn btn-sm btn-primary" disabled>Save Changes</button>
             </div>
         </div>

@@ -171,6 +171,27 @@
     .usessions .caption {
         color: var(--muted-text-color);
     }
+    /* Dark-mode legibility: Sessions */
+    .usessions, .usessions .card, .usessions .session-row {
+        color: var(--text-color) !important;
+    }
+
+        .usessions .caption, .usessions .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        /* If you add any tables later */
+        .usessions .table,
+        .usessions .table th,
+        .usessions .table td {
+            color: var(--text-color) !important;
+            background-color: transparent !important;
+        }
+
+            .usessions .table thead th, .usessions .table tbody tr + tr {
+                border-color: var(--border-color) !important;
+            }
+
 </style>
 
 <div class="usessions">
@@ -256,13 +277,13 @@
     <script>
         /*
          UI-only USessions page.
-         Data shape (commented sample):
+         Data shape (commented sample):*/
          const sessions = [
-           // { id: 'S-001', date: '2025-10-03', start: '14:00', hours: 2, subject: 'Maths', students: 3, status: 'pending'  },
-           // { id: 'S-002', date: '2025-10-05', start: '09:00', hours: 2, subject: 'English', students: 2, status: 'accepted' },
-           // { id: 'S-003', date: '2025-10-12', start: '16:30', hours: 1, subject: 'Science', students: 1, status: 'paid'     },
+            { id: 'S-001', date: '2025-10-03', start: '14:00', hours: 2, subject: 'Maths', students: 3, status: 'pending'  },
+            { id: 'S-002', date: '2025-10-05', start: '09:00', hours: 2, subject: 'English', students: 2, status: 'accepted' },
+            { id: 'S-003', date: '2025-10-12', start: '16:30', hours: 1, subject: 'Science', students: 1, status: 'paid'     },
          ];
-        */
+        
         (function () {
             // Live array (empty for now; wire real data later)
             const sessions = [];

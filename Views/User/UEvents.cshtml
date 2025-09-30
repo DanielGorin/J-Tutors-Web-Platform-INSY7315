@@ -1,8 +1,6 @@
 ﻿@{
     ViewData["Title"] = "New Events";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
 }
 
@@ -78,6 +76,15 @@
     .uevents .event-actions .btn {
         min-width: 120px;
     }
+
+    /* Dark-mode legibility (view-scoped) */
+    .uevents, .uevents .card {
+        color: var(--text-color) !important;
+    }
+
+        .uevents .text-muted, .uevents .caption {
+            color: var(--muted-text-color) !important;
+        }
 </style>
 
 <div class="uevents">
@@ -112,68 +119,89 @@
         </div>
     </div>
 
-    <!-- Events Grid -->
+    <!-- Events Grid (exactly 3 demo cards) -->
     <div class="row g-3">
-        @* No live data yet; empty state below. When binding, render one .col-md-6 col-lg-4 per event. *@
 
-        <!-- Empty state -->
-        <div class="col-12">
-            <div class="card shadow p-24 text-center text-muted">
-                No upcoming events to display yet.
+        <!-- PARTICIPATING -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow p-24 event-card">
+                <h3 class="mb-8">Event 1</h3>
+                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
+
+                <div class="meta mb-16">
+                    <div class="meta-item"><strong>Date:</strong> 2025-10-12</div>
+                    <div class="meta-item"><strong>Start:</strong> 09:00</div>
+                    <div class="meta-item"><strong>Duration:</strong> 2h 00m</div>
+                    <div class="meta-item"><strong>Points:</strong> 25 pts</div>
+                    <div class="meta-item"><strong>Location:</strong> Greenpoint park</div>
+                </div>
+
+                <div class="mb-16">
+                    <span class="chip chip-participating">Participating</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center event-actions">
+                    <button class="btn btn-sm btn-outline-secondary">Leave</button>
+                    <div class="caption">You’re currently signed up.</div>
+                </div>
             </div>
         </div>
 
-        @* ----------------------------------------------------------------
-        Example event card structure (REFERENCE ONLY — do not render now)
+        <!-- AVAILABLE -->
         <div class="col-md-6 col-lg-4">
-        <div class="card shadow p-24 event-card">
-        <h3 class="mb-8">[ Event Title ]</h3>
-        <p class="mb-16">[ Short description / details copy ]</p>
+            <div class="card shadow p-24 event-card">
+                <h3 class="mb-8">Event 2</h3>
+                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
 
-        <div class="meta mb-16">
-        <div class="meta-item"><strong>Date:</strong> [ 2025-10-12 ]</div>
-        <div class="meta-item"><strong>Start:</strong> [ 14:00 ]</div>
-        <div class="meta-item"><strong>Duration:</strong> [ 2h 30m ]</div>
-        <div class="meta-item"><strong>Points:</strong> [ 25 pts ]</div>
+                <div class="meta mb-16">
+                    <div class="meta-item"><strong>Date:</strong> 2025-10-18</div>
+                    <div class="meta-item"><strong>Start:</strong> 14:00</div>
+                    <div class="meta-item"><strong>Duration:</strong> 3h 00m</div>
+                    <div class="meta-item"><strong>Points:</strong> 40 pts</div>
+                    <div class="meta-item"><strong>Location:</strong> Rondebosch library</div>
+                </div>
+
+                <div class="mb-16">
+                    <span class="chip chip-available">Available</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center event-actions">
+                    <button class="btn btn-sm btn-outline-primary">Apply</button>
+                    <div class="caption">Spots open • Eligible.</div>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-16">
-        <!-- Render status chips based on computed state -->
-        <span class="chip chip-available">Available</span>
-        <!-- or -->
-        <span class="chip chip-participating">Participating</span>
-        <!-- or -->
-        <span class="chip chip-full">Full</span>
-        <!-- or -->
-        <span class="chip chip-unavailable">Unavailable</span>
-        </div>
+        <!-- FULL -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow p-24 event-card">
+                <h3 class="mb-8">Event 3</h3>
+                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
 
-        <div class="d-flex justify-content-between align-items-center event-actions">
-        <!-- Actions (mutually exclusive per state) -->
-        <button class="btn btn-sm btn-outline-primary">Apply</button>
-        <button class="btn btn-sm btn-outline-secondary">Leave</button>
-        <button class="btn btn-sm btn-outline-secondary" disabled>Full</button>
-        <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
+                <div class="meta mb-16">
+                    <div class="meta-item"><strong>Date:</strong> 2025-10-22</div>
+                    <div class="meta-item"><strong>Start:</strong> 08:00</div>
+                    <div class="meta-item"><strong>Duration:</strong> 2h 30m</div>
+                    <div class="meta-item"><strong>Points:</strong> 30 pts</div>
+                    <div class="meta-item"><strong>Location:</strong> Capetown High </div>
+                </div>
+
+                <div class="mb-16">
+                    <span class="chip chip-full">Full</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center event-actions">
+                    <button class="btn btn-sm btn-outline-secondary" disabled>Full</button>
+                    <div class="caption">Join list closed.</div>
+                </div>
+            </div>
         </div>
-        </div>
-        </div>
-        ---------------------------------------------------------------- *@
     </div>
 </div>
 
 @* --------------------------------------------------------------------
    TODO: Enable UEvents Functionality
-   - Bind collection of upcoming events available to the user
-     (title, description, date, startTime, duration, pointsReward, capacity, participant flags)
-   - Compute status per event:
-       • Participating
-       • Available (eligible, not full, not already participating)
-       • Full (capacity reached)
-       • Unavailable (not eligible or conflicts)
-   - Render chips accordingly and show the correct action set:
-       • Participating → show "Leave"
-       • Available → show "Apply"
-       • Full/Unavailable → show disabled state
-   - Implement search, sort, and "only available" filter
-   - Hook Apply/Leave buttons to future endpoints (with toast/alert feedback)
+   - Bind upcoming events and compute status per event
+   - Show proper actions per status (Apply / Leave / disabled)
+   - Implement search/sort/filters and wire Apply/Leave later
 --------------------------------------------------------------------- *@

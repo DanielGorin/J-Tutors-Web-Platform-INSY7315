@@ -26,15 +26,15 @@
             <ul class="navbar-nav me-auto mb-2 mb-sm-0">
                 @if (navSection == "user")
                 {
-                    <li class="nav-item"><a class="nav-link @Active("Dashboard")" asp-controller="Home" asp-action="Dashboard">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UDashboard")" asp-controller="Home" asp-action="UDashboard">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UEvents")" asp-controller="Home" asp-action="UEvents">New Events</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UEventHistory")" asp-controller="Home" asp-action="UEventHistory">Events History</a></li>
                     <li class="nav-item"><a class="nav-link @Active("USessions")" asp-controller="Home" asp-action="USessions">My Sessions</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Booking")" asp-controller="Home" asp-action="Booking">Book</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("FileLibrary")" asp-controller="Home" asp-action="FileLibrary">File Library</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Points")" asp-controller="Home" asp-action="Points">Points</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Leaderboard")" asp-controller="Home" asp-action="Leaderboard">Leaderboard</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Profile")" asp-controller="Home" asp-action="Profile">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UBooking")" asp-controller="Home" asp-action="UBooking">Book</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UFileLibrary")" asp-controller="Home" asp-action="UFileLibrary">File Library</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UPointsLedger")" asp-controller="Home" asp-action="UPointsLedger">Uoints</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UPointsLeaderboard")" asp-controller="Home" asp-action="UPointsLeaderboard">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UProfile")" asp-controller="Home" asp-action="UProfile">Profile</a></li>
                 }
                 else
                 {

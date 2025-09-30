@@ -1,8 +1,6 @@
 ﻿@{
     ViewData["Title"] = "File Library";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
 }
 
@@ -28,7 +26,7 @@
         }
 
     /* Badge styles for expiry */
-    .badge-chip {
+    .filelib .badge-chip {
         display: inline-block;
         padding: 4px 10px;
         border-radius: 999px;
@@ -36,103 +34,161 @@
         border: 1px solid var(--border-color);
     }
 
-    .badge-active {
+    .filelib .badge-active {
         border-color: var(--success-color);
         color: var(--success-color);
     }
 
-    .badge-soon {
+    .filelib .badge-soon {
         border-color: var(--warning-color);
         color: var(--warning-color);
     }
 
-    .badge-expired {
+    .filelib .badge-expired {
         border-color: var(--error-color);
         color: var(--error-color);
     }
+
+    /* Dark-mode legibility: scope to this page */
+    .filelib, .filelib .card {
+        color: var(--text-color) !important;
+    }
+
+        .filelib .caption,
+        .filelib .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .filelib .table,
+        .filelib .table th,
+        .filelib .table td {
+            color: var(--text-color) !important;
+            background-color: transparent !important;
+            border-color: var(--border-color) !important;
+        }
+
+            .filelib .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .filelib .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            /* Optional subtle hover that works in both themes */
+            .filelib .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+            }
 </style>
 
-<div class="card shadow p-24 filelib">
+<div class="filelib">
+
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">File Library</h1>
         <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
     </div>
 
-    <!-- Controls: Search + Filters -->
-    <div class="row mb-16">
-        <div class="col-md-6 mb-8">
-            <label for="searchFiles" class="form-label">Search files</label>
-            <input id="searchFiles" type="text" class="form-control" placeholder="Search by name or description" />
-        </div>
-        <div class="col-md-3 mb-8">
-            <label for="sortFiles" class="form-label">Sort by</label>
-            <select id="sortFiles" class="form-select">
-                <option value="name">Name</option>
-                <option value="uploaded">Uploaded</option>
-                <option value="size">Size</option>
-                <option value="expires">Expiry</option>
-            </select>
-        </div>
-        <div class="col-md-3 mb-8 d-flex align-items-end">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="showExpired" />
-                <label class="form-check-label" for="showExpired">Show expired files</label>
+    <div class="card shadow p-24">
+        <!-- Controls: Search + Filters -->
+        <div class="row mb-16">
+            <div class="col-md-6 mb-8">
+                <label for="searchFiles" class="form-label">Search files</label>
+                <input id="searchFiles" type="text" class="form-control" placeholder="Search by name or description" />
+            </div>
+            <div class="col-md-3 mb-8">
+                <label for="sortFiles" class="form-label">Sort by</label>
+                <select id="sortFiles" class="form-select">
+                    <option value="name">Name</option>
+                    <option value="uploaded">Uploaded</option>
+                    <option value="size">Size</option>
+                    <option value="expires">Expiry</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-8 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showExpired" />
+                    <label class="form-check-label" for="showExpired">Show expired files</label>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Results Table -->
-    <div class="table-responsive">
-        <table class="table align-middle">
-            <thead>
-                <tr>
-                    <th scope="col">File</th>
-                    <th scope="col">Size</th>
-                    <th scope="col">Uploaded</th>
-                    <th scope="col">Expires</th>
-                    <th scope="col" class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @* Rows will be injected here later. No dummy data per project rules. *@
-                @* Example structure (for reference only):
-                <tr>
-                <td>
-                <div class="d-flex flex-column">
-                <span>DocumentName.pdf</span>
-                <span class="caption">Description or tags</span>
-                </div>
-                </td>
-                <td>1.2 MB</td>
-                <td>2025-09-01</td>
-                <td>
-                <span class="badge-chip badge-soon">Expires in 3 days</span>
-                <!-- or .badge-active / .badge-expired -->
-                </td>
-                <td class="text-end">
-                <a class="btn btn-sm btn-primary">Download</a>
-                </td>
-                </tr>
-                *@>
+        <!-- Results Table -->
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">File</th>
+                        <th scope="col">Size</th>
+                        <th scope="col">Uploaded</th>
+                        <th scope="col">Expires</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Demo rows for the UI preview. Remove when binding real data. *@
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span>File 1.pdf</span>
+                                <span class="caption">File description</span>
+                            </div>
+                        </td>
+                        <td>1.2 MB</td>
+                        <td>2025-09-01</td>
+                        <td><span class="badge-chip badge-active">No expiry</span></td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-primary">Download</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span>File 2.xlsx</span>
+                                <span class="caption">File description)</span>
+                            </div>
+                        </td>
+                        <td>640 KB</td>
+                        <td>2025-09-27</td>
+                        <td><span class="badge-chip badge-soon">Expires in 3 days</span></td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-primary">Download</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span>File 3.mp4</span>
+                                <span class="caption">File description</span>
+                            </div>
+                        </td>
+                        <td>24.5 MB</td>
+                        <td>2025-08-20</td>
+                        <td><span class="badge-chip badge-expired">Expired</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
+                        </td>
+                    </tr>
 
-                <!-- Empty state -->
-                <tr>
+                    @* Keep this as the empty state when there are no files:
+                    <tr>
                     <td colspan="5">
-                        <div class="text-center p-24 text-muted">
-                            No files to display yet.
-                        </div>
+                    <div class="text-center p-24 text-muted">
+                    No files to display yet.
+                    </div>
                     </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                    </tr>
+                    *@
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Pagination Placeholder -->
-    <div class="d-flex justify-content-between align-items-center mt-16">
-        <div class="caption text-muted">Showing 0 of 0</div>
-        <div>
-            <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
-            <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+        <!-- Pagination Placeholder -->
+        <div class="d-flex justify-content-between align-items-center mt-16">
+            <div class="caption text-muted">Showing 3 of 3</div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+            </div>
         </div>
     </div>
 </div>
@@ -141,10 +197,7 @@
    TODO: Enable File Library Functionality
    - Bind files authorized for the current user (name, size, uploadedAt, expiresAt, url)
    - Implement search (client or server), sort, and "show expired" filter
-   - Render expiry badge chip:
-       - active  → .badge-active
-       - soon    → .badge-soon   (e.g., < 7 days)
-       - expired → .badge-expired
+   - Render expiry badge chip: active / soon (< 7 days) / expired
    - Wire "Download" to real file endpoint & audit logging
    - Add pagination (server-driven preferred)
    - Respect access windows (hide or mark expired; block download when expired)

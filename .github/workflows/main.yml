@@ -1,0 +1,45 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 1 * * 0'  # Weekly scan (every Sunday at 1 AM)
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp' ] # change to 'javascript', 'python', etc. if needed
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Initializes the CodeQL tools
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      # Build your code (important for compiled languages like C#)
+      - name: Build project
+        run: |
+          dotnet restore
+          dotnet build --configuration Release
+
+      # Run CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"

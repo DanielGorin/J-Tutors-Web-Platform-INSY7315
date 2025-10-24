@@ -3,14 +3,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace YourApp.Models.Scheduling
+namespace J_Tutors_Web_Platform.Models.Scheduling
 {
-    namespace J_Tutors_Web_Platform.Models.Scheduling
+    public class AvailabilityBlock
     {
         [Key]
         public int AvailabilityBlockID { get; set; }
 
-        // FK: Admin
+
         public int AdminID { get; set; }
         public Admins.Admin Admin { get; set; } = default!;
 

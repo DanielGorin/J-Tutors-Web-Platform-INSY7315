@@ -52,6 +52,6 @@ namespace J_Tutors_Web_Platform.Models.Users
         public ICollection<Events.EventParticipation> EventParticipations { get; set; } = new List<Events.EventParticipation>();
         public ICollection<Scheduling.TutoringSession> TutoringSessions { get; set; } = new List<Scheduling.TutoringSession>();
         public ICollection<Points.PointsReceipt> PointsReceipts { get; set; } = new List<Points.PointsReceipt>();
-        public ICollection<Files.FileAccess> FileAccesses { get; set; } = new List<Files.FileAccess>();
+        public ICollection<AppFiles.FileShareAccess> FileAccesses { get; set; } = new List<AppFiles.FileShareAccess>();
     }
 }

@@ -1,15 +1,15 @@
-﻿
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace J_Tutors_Web_Platform.Models.Files
+namespace J_Tutors_Web_Platform.Models.AppFiles
 {
-    public class File
+    public class AppFile
     {
         [Key]
         public int FileID { get; set; }
+
         public int AdminID { get; set; }
         public Admins.Admin Admin { get; set; } = default!;
 
@@ -18,10 +18,13 @@ namespace J_Tutors_Web_Platform.Models.Files
 
         [Required, MaxLength(100)]
         public string ContentType { get; set; } = default!;
+
         [MaxLength(500)]
         public string? StorageKeyOrUrl { get; set; }
+
         public long? SizeBytes { get; set; }
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-        public ICollection<FileAccess> FileAccesses { get; set; } = new List<FileAccess>();
+
+        public ICollection<FileShareAccess> FileAccesses { get; set; } = new List<FileShareAccess>();
     }
 }

@@ -2,12 +2,13 @@
 #nullable enable
 using Microsoft.EntityFrameworkCore;
 using J_Tutors_Web_Platform.Models.Admins;
-using J_Tutors_Web_Platform.Models.Files;
+using J_Tutors_Web_Platform.Models.AppFiles;
 using J_Tutors_Web_Platform.Models.Events;
 using J_Tutors_Web_Platform.Models.Points;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Subjects;
 using J_Tutors_Web_Platform.Models.Users;
+
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Reflection.Emit;
@@ -27,7 +28,7 @@ namespace J_Tutors_Web_Platform.Data
         public DbSet<Event> Events => Set<Event>();
         public DbSet<EventParticipation> EventParticipations => Set<EventParticipation>();
         public DbSet<AppFile> Files => Set<AppFile>();
-        public DbSet<FileAccess> FileAccesses => Set<FileAccess>();
+        public DbSet<FileShareAccess> FileAccesses => Set<FileShareAccess>();
         public DbSet<PointsReceipt> PointsReceipts => Set<PointsReceipt>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -35,7 +36,7 @@ namespace J_Tutors_Web_Platform.Data
             base.OnModelCreating(modelBuilder);
 
  
-            modelBuilder.Entity<FileAccess>()
+            modelBuilder.Entity<FileShareAccess>()
                 .HasIndex(x => new { x.FileID, x.UserID })
                 .IsUnique();
 
@@ -88,13 +89,13 @@ namespace J_Tutors_Web_Platform.Data
                 .HasForeignKey(f => f.AdminID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<FileAccess>()
+            modelBuilder.Entity<FileShareAccess>()
                 .HasOne(fa => fa.File)
                 .WithMany(f => f.FileAccesses)
                 .HasForeignKey(fa => fa.FileID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<FileAccess>()
+            modelBuilder.Entity<FileShareAccess>()
                 .HasOne(fa => fa.User)
                 .WithMany(u => u.FileAccesses)
                 .HasForeignKey(fa => fa.UserID)

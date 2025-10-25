@@ -1,5 +1,4 @@
-﻿
-#nullable enable
+﻿#nullable enable
 using Microsoft.EntityFrameworkCore;
 using J_Tutors_Web_Platform.Models.Admins;
 using J_Tutors_Web_Platform.Models.AppFiles;
@@ -9,16 +8,14 @@ using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Subjects;
 using J_Tutors_Web_Platform.Models.Users;
 
-using System.Collections.Generic;
-using System.IO.Compression;
-using System.Reflection.Emit;
-
 namespace J_Tutors_Web_Platform.Data
 {
+    
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+        // Tables in the database
         public DbSet<User> Users => Set<User>();
         public DbSet<Admin> Admins => Set<Admin>();
         public DbSet<Subject> Subjects => Set<Subject>();
@@ -35,12 +32,12 @@ namespace J_Tutors_Web_Platform.Data
         {
             base.OnModelCreating(modelBuilder);
 
- 
+            // Prevent duplicate file access entries
             modelBuilder.Entity<FileShareAccess>()
                 .HasIndex(x => new { x.FileID, x.UserID })
                 .IsUnique();
 
-
+            // Event participation setup
             modelBuilder.Entity<EventParticipation>()
                 .HasOne(ep => ep.Event)
                 .WithMany(e => e.Participations)
@@ -53,6 +50,7 @@ namespace J_Tutors_Web_Platform.Data
                 .HasForeignKey(ep => ep.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Tutoring session setup
             modelBuilder.Entity<TutoringSession>()
                 .HasOne(ts => ts.User)
                 .WithMany(u => u.TutoringSessions)
@@ -71,6 +69,7 @@ namespace J_Tutors_Web_Platform.Data
                 .HasForeignKey(ts => ts.SubjectID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Pricing rule setup
             modelBuilder.Entity<PricingRule>()
                 .HasOne(pr => pr.Subject)
                 .WithMany(s => s.PricingRules)
@@ -83,6 +82,7 @@ namespace J_Tutors_Web_Platform.Data
                 .HasForeignKey(pr => pr.AdminID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // File and access setup
             modelBuilder.Entity<AppFile>()
                 .HasOne(f => f.Admin)
                 .WithMany(a => a.Files)
@@ -101,6 +101,7 @@ namespace J_Tutors_Web_Platform.Data
                 .HasForeignKey(fa => fa.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Points receipt setup
             modelBuilder.Entity<PointsReceipt>()
                 .HasOne(pr => pr.User)
                 .WithMany(u => u.PointsReceipts)

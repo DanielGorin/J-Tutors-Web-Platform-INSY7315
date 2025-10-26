@@ -58,7 +58,7 @@
         <h2 class="text-center mb-24">Create an Account</h2>
 
         <!-- Register Form -->
-        <form method="post" action="#" class="register-form">
+        <form method="post" asp-controller="Public" asp-action="Register" class="register-form">
 
             <div class="row">
                 <div class="col-md-6 mb-16">
@@ -83,12 +83,12 @@
 
             <div class="row">
                 <div class="col-md-6 mb-16">
-                    <label for="Age" class="form-label">Age</label>
-                    <input id="Age" name="Age" type="number" placeholder="18" />
+                    <label for="BirthDate" class="form-label">Date of Birth</label>
+                    <input id="BirthDate" name="BirthDate" type="date" placeholder="YYYY-MM-DD" />
                 </div>
                 <div class="col-md-6 mb-16">
                     <label for="Subject" class="form-label">Subject (optional)</label>
-                    <input id="Subject" name="Subject" type="text" placeholder="Maths, English..." />
+                    <input id="SubjectInterest" name="SubjectInterest" type="text" placeholder="Maths, English..." />
                 </div>
             </div>
 

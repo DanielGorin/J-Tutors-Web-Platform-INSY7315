@@ -1,3 +1,6 @@
+using J_Tutors_Web_Platform.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 namespace J_Tutors_Web_Platform
 {
     public class Program
@@ -5,6 +8,21 @@ namespace J_Tutors_Web_Platform
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+
+            //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
+            builder.Services.AddSingleton<AuthService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new AuthService(connectionString);
+            });
+
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => 
+            {
+                options.LoginPath = "/Public/Login"; // Redirect to login page if not authenticated
+                options.LogoutPath = "/Public/Login"; // Redirect to logout page
+            });
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
@@ -24,6 +42,7 @@ namespace J_Tutors_Web_Platform
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(
@@ -32,7 +51,7 @@ namespace J_Tutors_Web_Platform
             //----------------------------------------------------
             pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN
-            //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
+            pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
             //----------------------------------------------------
 
             //USER:

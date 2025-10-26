@@ -30,7 +30,7 @@ namespace J_Tutors_Web_Platform
                 name: "default",
             //PUBLIC
             //----------------------------------------------------
-            //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
+            pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
             //----------------------------------------------------
@@ -55,7 +55,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
             //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS
             //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
-            pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
+            //pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
             //pattern: "{controller=Home}/{action=AFiles}/{id?}"); // ADMIN FILES MANAGEMENT
             //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT
             //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD

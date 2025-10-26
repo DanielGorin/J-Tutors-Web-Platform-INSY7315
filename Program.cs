@@ -1,4 +1,5 @@
 using J_Tutors_Web_Platform.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace J_Tutors_Web_Platform
 {
@@ -15,6 +16,12 @@ namespace J_Tutors_Web_Platform
                 var configuration = sp.GetRequiredService<IConfiguration>();
                 var connectionString = configuration.GetConnectionString("AzureSql");
                 return new AuthService(connectionString);
+            });
+
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => 
+            {
+                options.LoginPath = "/Public/Login"; // Redirect to login page if not authenticated
+                options.LogoutPath = "/Public/Login"; // Redirect to logout page
             });
 
             // Add services to the container.
@@ -35,6 +42,7 @@ namespace J_Tutors_Web_Platform
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

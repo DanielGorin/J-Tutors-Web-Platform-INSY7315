@@ -1,6 +1,9 @@
 ﻿using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.Models.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
@@ -15,12 +18,35 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string Username, string Password)
+        public async Task<IActionResult> Login(string Username, string Password)
         {
             var result = _authService.Login(Username, Password);
 
             if (result == "Login Successful")
             {
+                //adding a role for student as there is not role in the db. this can be worked around with a seperate login for admins. also login only goes through users table.
+                var role = "Student";
+
+                var claims = new List<Claim>
+                {
+                    //adding claims for username and role
+                    new Claim(ClaimTypes.Name, Username),
+                    new Claim(ClaimTypes.Role, role)
+                };
+
+                //creating claims identity
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                //signing in the user with the created claims identity
+                await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity)
+                );
+
+                //testing that claims are working
+                Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
+                Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
+
+
                 return View("~/Views/Home/Index.cshtml");
             }
             else

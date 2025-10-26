@@ -1,3 +1,5 @@
+using J_Tutors_Web_Platform.Services;
+
 namespace J_Tutors_Web_Platform
 {
     public class Program
@@ -5,6 +7,15 @@ namespace J_Tutors_Web_Platform
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+
+            //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
+            builder.Services.AddSingleton<AuthService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new AuthService(connectionString);
+            });
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
@@ -32,7 +43,7 @@ namespace J_Tutors_Web_Platform
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN
-            //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
+            pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
             //----------------------------------------------------
 
             //USER:
@@ -55,7 +66,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
             //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS
             //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
-            pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
+            //pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
             //pattern: "{controller=Home}/{action=AFiles}/{id?}"); // ADMIN FILES MANAGEMENT
             //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT
             //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD

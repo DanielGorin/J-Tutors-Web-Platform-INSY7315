@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>
+
+@{
     ViewData["Title"] = "Sessions & Calendar";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "Admin";
@@ -244,97 +246,9 @@
                     <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
                 </div>
 
-                <!-- Month Grid (Demo) -->
+                <!-- Month Grid -->
                 <div class="month-grid">
-                    <!-- 1st row -->
-                    @* Day 1 *@
-                    <div class="day-cell">
-                        <div class="day-top">
-                            <div class="day-num">1</div>
-                            <div class="caption">Mon</div>
-                        </div>
-                        <div class="day-items">
-                            <div class="chip chip-slot">Slot 09:00</div>
-                            <div class="day-item"
-                                 data-id="S-1001" data-status="pending" data-student="Student 1"
-                                 data-subject="Maths" data-date="2025-09-01" data-time="10:00"
-                                 data-duration="2h" data-students="2" data-price="R 600" data-points="10%">
-                                <span class="time">10:00</span> Pending · Maths · Student 1
-                            </div>
-                        </div>
-                    </div>
-
-                    @* Day 2 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">2</div><div class="caption">Tue</div></div>
-                        <div class="day-items">
-                            <div class="day-item"
-                                 data-id="S-1002" data-status="accepted" data-student="Student 2"
-                                 data-subject="English" data-date="2025-09-02" data-time="11:30"
-                                 data-duration="1.5h" data-students="1" data-price="R 450" data-points="0%">
-                                <span class="time">11:30</span> Accepted · English · Student 2
-                            </div>
-                            <div class="chip chip-slot">Slot 16:00</div>
-                        </div>
-                    </div>
-
-                    @* Day 3 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">3</div><div class="caption">Wed</div></div>
-                        <div class="day-items">
-                            <div class="chip chip-paid">Paid 14:00</div>
-                        </div>
-                    </div>
-
-                    @* Day 4 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">4</div><div class="caption">Thu</div></div>
-                        <div class="day-items">
-                            <div class="chip chip-slot">Slot 13:00</div>
-                            <div class="day-item"
-                                 data-id="S-1003" data-status="accepted" data-student="Student 3"
-                                 data-subject="Maths" data-date="2025-09-04" data-time="16:00"
-                                 data-duration="1h" data-students="1" data-price="R 320" data-points="5%">
-                                <span class="time">16:00</span> Accepted · Maths · Student 3
-                            </div>
-                        </div>
-                    </div>
-
-                    @* Day 5 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">5</div><div class="caption">Fri</div></div>
-                        <div class="day-items">
-                            <div class="day-item"
-                                 data-id="S-1004" data-status="pending" data-student="Student 4"
-                                 data-subject="Science" data-date="2025-09-05" data-time="09:00"
-                                 data-duration="2h" data-students="3" data-price="R 900" data-points="15%">
-                                <span class="time">09:00</span> Pending · Science · Student 4
-                            </div>
-                        </div>
-                    </div>
-
-                    @* Day 6 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">6</div><div class="caption">Sat</div></div>
-                        <div class="day-items">
-                            <div class="day-item"
-                                 data-id="S-1005" data-status="accepted" data-student="Student 5"
-                                 data-subject="Biology" data-date="2025-09-06" data-time="10:00"
-                                 data-duration="2h" data-students="2" data-price="R 640" data-points="0%">
-                                <span class="time">10:00</span> Accepted · Biology · Student 5
-                            </div>
-                        </div>
-                    </div>
-
-                    @* Day 7 *@
-                    <div class="day-cell">
-                        <div class="day-top"><div class="day-num">7</div><div class="caption">Sun</div></div>
-                        <div class="day-items">
-                            <div class="chip chip-slot">Slot 09:00</div>
-                        </div>
-                    </div>
-
-                    @for (var d = 8; d <= 30; d++)
+                    @for (var d = 1; d <= 31; d++)
                     {
                         <div class="day-cell">
                             <div class="day-top">
@@ -342,7 +256,20 @@
                                 <div class="caption">@((new string[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })[(d - 1) % 7])</div>
                             </div>
                             <div class="day-items">
-                                @* empty for demo *@
+                                @if (Model != null)
+                                {
+                                    @foreach (var session in Model)
+                                    {
+                                        <!-- this is fixed to sep and 2025, fix after there if func -->
+                                        if (session.SessionDate.Day == d && session.SessionDate.Month == 9 && session.SessionDate.Year == 2025)
+                                        {
+                                            <div class="day-item">
+                                                <div class="time">@session.SessionDate.ToString("HH:mm")</div>
+                                                <div class="subject">@session.Subject</div>
+                                            </div>
+                                        }
+                                    }
+                                }              
                             </div>
                         </div>
                     }

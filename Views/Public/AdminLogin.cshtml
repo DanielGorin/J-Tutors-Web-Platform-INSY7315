@@ -1,0 +1,110 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "Public";
+}
+
+<!-- For now is copy of user login -->
+
+
+
+<!-- Scoped style just for login page -->
+<style>
+    /* Ensure both username & password fields look identical */
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+    /* Placeholder consistency */
+    .login-form input::placeholder {
+        color: var(--muted-text-color) !important;
+    }
+
+    /* Focus state */
+    .login-form input[type="text"]:focus,
+    .login-form input[type="password"]:focus {
+        outline: none !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Logo square placeholder */
+    .logo-placeholder {
+        width: 150px;
+        height: 150px;
+        background-color: var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin: 0 auto 24px auto;
+        font-size: 14px;
+        color: var(--muted-text-color);
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="card shadow p-24" style="max-width: 480px; width: 100%;">
+        <!-- Logo Placeholder -->
+        <div class="logo-placeholder">
+            Company Logo
+        </div>
+
+        <!-- Page Title -->
+        <h2 class="text-center mb-24">Sign In to J Tutors</h2>
+
+        <!-- Login Form -->
+        <form method="post" asp-controller="public" asp-action="Login" class="login-form">
+            <div class="mb-16">
+                <label for="Username" class="form-label">Username</label>
+                <input id="Username" name="Username" type="text" placeholder="Enter your username" />
+                <!-- Error placeholder -->
+                <div class="text-danger small" id="UsernameError" style="display:none;">Required</div>
+            </div>
+
+            <div class="mb-16">
+                <label for="Password" class="form-label">Password</label>
+                <input id="Password" name="Password" type="password" placeholder="Enter your password" />
+                <!-- Error placeholder -->
+                <div class="text-danger small" id="PasswordError" style="display:none;">Required</div>
+            </div>
+
+            <div class="text-center mb-16">
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </div>
+
+            <!-- Temp summary area -->
+            <div class="text-danger text-center mb-16">
+                @* Show basic errors here later *@
+            </div>
+
+            <!-- Register Link -->
+            <div class="text-center">
+                <p class="caption">
+                    Don't have an account?
+                    <a asp-controller="Home" asp-action="Register">Register here</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* -------------------------------------------------------------
+   FUTURE FUNCTIONALITY
+   - Introduce LoginViewModel { Username, Password }
+   - Enable asp-for + validation
+   - Replace action="#" with asp-action="Login"
+   - Add role-based redirect to UserDashboard/AdminDashboard
+   - Replace logo placeholder with actual company branding
+   - Show real error messages when login fails
+-------------------------------------------------------------- *@

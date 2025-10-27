@@ -1,0 +1,440 @@
+﻿@{
+    ViewData["Title"] = "User Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin"; // Show Admin links on navbar
+}
+
+<!-- Scoped styles for Admin User Details -->
+<style>
+    .auserd, .auserd .card {
+        color: var(--text-color) !important;
+    }
+
+        .auserd .caption, .auserd .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .auserd .form-control, .auserd .form-select, .auserd textarea {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .auserd .form-control::placeholder,
+            .auserd textarea::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .auserd .form-control:focus, .auserd .form-select:focus, .auserd textarea:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Table theming */
+        .auserd .table, .auserd .table th, .auserd .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+            vertical-align: middle;
+        }
+
+            .auserd .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .auserd .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .auserd .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+            }
+
+        /* Chips */
+        .auserd .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .auserd .chip-pending {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .auserd .chip-accepted {
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .auserd .chip-paid {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        /* Quick summary labels */
+        .auserd .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        /* Danger zone */
+        .auserd .danger-zone {
+            border-left: 4px solid var(--error-color);
+        }
+
+        /* Selected row highlight helper (for future wiring) */
+        .auserd .row-selected {
+            outline: 2px dashed var(--accent-color);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        /* Page header */
+        .auserd .page-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+</style>
+
+<div class="auserd">
+
+    <!-- Header -->
+    <div class="page-head mb-16">
+        <h1 class="mb-0">User Details</h1>
+        <a asp-controller="Admin" asp-action="AUsersList" class="btn btn-secondary">← Back to Users</a>
+    </div>
+
+    <!-- ===== DEMO DATA: top summary (replace when wiring) ================= -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <h3 class="mb-8">Student 1 (student1)</h3>
+                <div class="caption">Registration: 2025-08-11</div>
+                <div class="caption">Last activity: 2025-09-29</div>
+                <div class="caption">Subject focus: Maths. The quick brown fox jumped over the lazy dog.</div>
+            </div>
+            <div class="col-lg-4">
+                <div class="stat"><div>Current Points</div><strong>1 800</strong></div>
+                <div class="stat"><div>All-time Points</div><strong>2 100</strong></div>
+                <div class="stat"><div>Unpaid Sessions</div><strong>0 · R 0</strong></div>
+            </div>
+            <div class="col-lg-4">
+                <label class="form-label">Leaderboard Visibility</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="lbVisible" checked disabled>
+                    <label class="form-check-label" for="lbVisible">Visible</label>
+                </div>
+                <div class="caption mt-8">Toggle visibility on public leaderboards (future).</div>
+            </div>
+        </div>
+    </div>
+    <!-- =================================================================== -->
+
+    <div class="row g-3">
+        <!-- LEFT COLUMN -->
+        <div class="col-lg-7">
+            <!-- Basic Info -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Basic Information</h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" disabled>Enable Edit (UI only)</button>
+                        <button class="btn btn-sm btn-primary" disabled>Save</button>
+                    </div>
+                </div>
+                <div class="mt-16">
+                    <div class="row">
+                        <div class="col-md-6 mb-16">
+                            <label class="form-label" for="FirstName">First Name</label>
+                            <input id="FirstName" class="form-control" value="Student" disabled />
+                        </div>
+                        <div class="col-md-6 mb-16">
+                            <label class="form-label" for="Surname">Surname</label>
+                            <input id="Surname" class="form-control" value="1" disabled />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-16">
+                            <label class="form-label" for="Phone">Phone</label>
+                            <input id="Phone" class="form-control" value="+27 00 000 0000" disabled />
+                        </div>
+                        <div class="col-md-6 mb-16">
+                            <label class="form-label" for="Email">Email</label>
+                            <input id="Email" class="form-control" value="student1@example.com" disabled />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points & Quick Adjust -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Points & Adjustments</h3>
+                </div>
+
+                <div class="row mt-16">
+                    <div class="col-md-4">
+                        <div class="stat"><div>Current</div><strong>1 800</strong></div>
+                        <div class="stat"><div>All-time</div><strong>2 100</strong></div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-4">
+                                <button class="btn btn-outline-primary w-100" disabled>Add Points</button>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <button class="btn btn-outline-primary w-100" disabled>Deduct Points</button>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <button class="btn btn-outline-secondary w-100" disabled>View Ledger</button>
+                            </div>
+                        </div>
+                        <div class="caption mt-8">Future: Add/Deduct will create a receipt sent to the student.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unpaid Sessions & Invoice -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Unpaid Sessions</h3>
+                    <button class="btn btn-outline-primary" disabled>Generate Invoice PDF</button>
+                </div>
+
+                <div class="table-responsive mt-16">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Date</th>
+                                <th>Hours</th>
+                                <th>Subject</th>
+                                <th>Price</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* ===== DEMO DATA — replace when wired ===== *@
+                            <tr>
+                                <td>
+                                    <strong>Session 1</strong>
+                                    <div class="caption">Students: 2. The quick brown fox jumped over the lazy dog.</div>
+                                </td>
+                                <td>2025-09-22</td>
+                                <td>2.0</td>
+                                <td>Maths</td>
+                                <td>R 320</td>
+                                <td class="text-end">
+                                    <span class="chip chip-accepted">Accepted</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Session 2</strong>
+                                    <div class="caption">Students: 1. The quick brown fox jumped over the lazy dog.</div>
+                                </td>
+                                <td>2025-09-18</td>
+                                <td>1.5</td>
+                                <td>English</td>
+                                <td>R 240</td>
+                                <td class="text-end">
+                                    <span class="chip chip-accepted">Accepted</span>
+                                </td>
+                            </tr>
+                            @* ===== /DEMO DATA ========================= *@
+                        </tbody>
+                    </table>
+                </div>
+                <div class="caption">Total unpaid: <strong>R 560</strong> (DEMO)</div>
+            </div>
+
+            <!-- Files Access -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">File Access</h3>
+                    <a asp-controller="Admin" asp-action="AFiles" class="btn btn-sm btn-outline-secondary">Open Files</a>
+                </div>
+
+                <div class="table-responsive mt-16">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Expires</th>
+                                <th>Access</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* ===== DEMO DATA — replace when wired ===== *@
+                            <tr>
+                                <td>
+                                    <div>Guide_1.pdf</div>
+                                    <div class="caption">Description: Onboarding. The quick brown fox jumped over the lazy dog.</div>
+                                </td>
+                                <td>2025-10-15</td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" checked disabled id="file1" />
+                                        <label class="form-check-label" for="file1">Has Access</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div>Worksheet_2.docx</div>
+                                    <div class="caption">Description: Practice set. The quick brown fox jumped over the lazy dog.</div>
+                                </td>
+                                <td>—</td>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" disabled id="file2" />
+                                        <label class="form-check-label" for="file2">Has Access</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            @* ===== /DEMO DATA ========================= *@
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Danger Zone (Major Removal) -->
+            <div class="card shadow p-24 danger-zone mb-16">
+                <h3 class="mb-8">Danger Zone</h3>
+                <div class="caption">
+                    Major Removal deducts points from the <strong>all-time</strong> total and current balance.
+                    Use only for disciplinary or audit reasons. The quick brown fox jumped over the lazy dog.
+                </div>
+                <div class="mt-16 d-flex gap-2">
+                    <input class="form-control w-25" placeholder="Amount (pts)" disabled />
+                    <button class="btn btn-outline-danger" disabled>Major Removal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-lg-5">
+            <!-- Notes -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Private Admin Notes</h3>
+                    <button class="btn btn-sm btn-primary" disabled>Save Note</button>
+                </div>
+                <textarea rows="6" class="mt-16 form-control" placeholder="Notes visible only to admins. The quick brown fox jumped over the lazy dog." disabled></textarea>
+
+                <!-- DEMO notes list -->
+                <div class="mt-16">
+                    <div class="mb-12">
+                        <div class="caption">2025-09-28 · Added by Admin</div>
+                        <div>Followed up on Session 2 payment. The quick brown fox jumped over the lazy dog.</div>
+                    </div>
+                    <div class="mb-0">
+                        <div class="caption">2025-09-20 · Added by Admin</div>
+                        <div>Good participation in Event 1. The quick brown fox jumped over the lazy dog.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events (Recent & Upcoming) -->
+            <div class="card shadow p-24 mb-16">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Events</h3>
+                    <a asp-controller="Admin" asp-action="AEventsList" class="btn btn-sm btn-outline-secondary">Open Events</a>
+                </div>
+                <div class="table-responsive mt-16">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* ===== DEMO DATA — replace when wired ===== *@
+                            <tr>
+                                <td><strong>Event 1</strong><div class="caption">Community clean-up. The quick brown fox jumped over the lazy dog.</div></td>
+                                <td>2025-09-12</td>
+                                <td><span class="chip chip-paid">Completed</span></td>
+                                <td>25</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Event 2</strong><div class="caption">Food drive. The quick brown fox jumped over the lazy dog.</div></td>
+                                <td>2025-09-02</td>
+                                <td><span class="chip chip-accepted">Participated</span></td>
+                                <td>15</td>
+                            </tr>
+                            @* ===== /DEMO DATA ========================= *@
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Receipts -->
+            <div class="card shadow p-24">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Recent Receipts</h3>
+                    <a asp-controller="Admin" asp-action="APointsLedger" asp-route-id="1" class="btn btn-sm btn-outline-secondary">Open Ledger</a>
+                </div>
+
+                <!-- DEMO receipt cards -->
+                <div class="mt-16">
+                    <div class="mb-12">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="caption">2025-09-12</div>
+                                <div><strong>Earned:</strong> Event 1 completion</div>
+                            </div>
+                            <div class="text-end">
+                                <div style="color: var(--success-color); font-weight:700;">+25</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="caption">2025-09-05</div>
+                                <div><strong>Deducted:</strong> No-show penalty</div>
+                            </div>
+                            <div class="text-end">
+                                <div style="color: var(--error-color); font-weight:700;">-10</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up AUsersDetail
+   - Load user by id (route param): { profile, preferences, points, visibility }
+   - Points actions:
+       • Add/Deduct points → create receipt + notify student
+       • Major Removal (affects all-time + current) with confirmation dialog
+   - Unpaid sessions:
+       • List accepted/unpaid; compute totals; “Generate Invoice PDF”
+       • Link to ASessions/ACalendar to edit time/assignment
+   - Files access:
+       • Toggle file checkboxes; persist per-user access with expiry windows
+   - Notes:
+       • Save new note; show note history with author/timestamps
+   - Events:
+       • Show recent/upcoming with status & points
+   - Receipts:
+       • Recent transactions; “Open Ledger” → APointsLedger(id)
+   - Security: Admin-only guard
+--------------------------------------------------------------------- *@

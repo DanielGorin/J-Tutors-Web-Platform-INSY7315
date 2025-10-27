@@ -1,0 +1,19 @@
+﻿@{
+    Layout = "_Layout";
+
+    // use route values so it also matches "/" -> Home/Login
+    var ctrl = ((string?)Context.Request.RouteValues["controller"] ?? "").ToLowerInvariant();
+    var act = ((string?)Context.Request.RouteValues["action"] ?? "").ToLowerInvariant();
+
+    bool isPublic = ctrl == "home" && (act == "login" || act == "register" || act == "info");
+
+    // read cookie only for non-public pages
+    var pref = Context.Request.Cookies["ThemePreference"]; // "Light" | "Dark" | null
+
+    // public pages always light; elsewhere: cookie or default dark
+    string cls = isPublic
+        ? "light-theme"
+        : (pref == "Light" ? "light-theme" : "dark-theme");
+
+    ViewData["ThemeClass"] = cls;
+}

@@ -1,0 +1,237 @@
+﻿@{
+    ViewData["Title"] = "Leaderboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "User";
+}
+
+<!-- Scoped styles for Leaderboard only -->
+<style>
+    .lb .form-control, .lb select {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+        .lb .form-control::placeholder {
+            color: var(--muted-text-color) !important;
+        }
+
+        .lb .form-control:focus, .lb select:focus {
+            outline: none !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        }
+
+    /* Tabs */
+    .lb .tab-btn {
+        min-width: 140px;
+    }
+
+        .lb .tab-btn.active {
+            background-color: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+    /* Your spot card */
+    .lb .pinned-card {
+        border-left: 4px solid var(--primary-color);
+        background-color: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    /* Table */
+    .lb table thead th {
+        white-space: nowrap;
+    }
+
+    .lb .delta-chip {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .lb .delta-up {
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    .lb .delta-down {
+        color: var(--error-color);
+        border-color: var(--error-color);
+    }
+
+    .lb .delta-flat {
+        color: var(--muted-text-color);
+    }
+
+    /* Pinned (your row) highlight in table, if shown there later */
+    .lb .row-pinned {
+        background: rgba(0,0,0,0.03);
+    }
+
+    /* Small helpers */
+    .lb .caption {
+        color: var(--muted-text-color);
+    }
+    /* === Dark-mode legibility fix for Leaderboard === */
+    .lb, .lb .card, .lb .pinned-card {
+        color: var(--text-color) !important;
+    }
+
+        .lb .table,
+        .lb .table th,
+        .lb .table td,
+        .lb table,
+        .lb table th,
+        .lb table td {
+            color: var(--text-color) !important;
+            background-color: transparent !important;
+        }
+
+        /* Subtext & borders use your theme tokens */
+        .lb .caption {
+            color: var(--muted-text-color) !important;
+        }
+
+        .lb .table thead th {
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .lb .table tbody tr + tr {
+            border-top: 1px solid var(--border-color) !important;
+        }
+
+        /* Optional: subtle row hover that works in both themes */
+        .lb .table tbody tr:hover {
+            background-color: rgba(0,0,0,0.03);
+        }
+
+
+</style>
+
+<div class="lb">
+
+    <!-- Header / Nav -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Leaderboard</h1>
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Top controls: Tabs + Search -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label d-block">View</label>
+                <div class="d-inline-flex gap-2">
+                    <!-- UI only; wire up later -->
+                    <button class="btn btn-outline-primary tab-btn active" type="button">Current</button>
+                    <button class="btn btn-outline-primary tab-btn" type="button">All-Time</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="lbSearch" class="form-label">Search users</label>
+                <input id="lbSearch" type="text" class="form-control" placeholder="Search by username" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Your spot (pinned) -->
+    <div class="pinned-card shadow mb-16 d-flex justify-content-between align-items-center">
+        <div>
+            <div class="caption">Your Position</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <h3 class="mb-0">[# … ] [ YourUsername ]</h3>
+                <span class="delta-chip delta-flat">Δ 0 (30d)</span>
+            </div>
+            <div class="caption mt-8">Days in Spot: [ … ]</div>
+        </div>
+        <div class="text-end">
+            <div class="caption">Points</div>
+            <div style="font-weight:700;">[ … ]</div>
+        </div>
+    </div>
+
+    <!-- Leaderboard table -->
+    <div class="card shadow p-24">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Position</th>
+                        <th>Username</th>
+                        <th>Δ Rank (30d)</th>
+                        <th>Days in Spot</th>
+                        <th class="text-end">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Empty state 
+                    <tr>
+                        <td colspan="5">
+                            <div class="text-center p-24 text-muted">No leaderboard data to display yet.</div>
+                        </td>
+                    </tr>
+
+                     --------------------------------------------------------------
+                    Example rows (REFERENCE ONLY — do not render now)*@
+
+                    <tr>
+                    <td>1</td>
+                    <td><strong>student 1</strong></td>
+                    <td><span class="delta-chip delta-up">+2</span></td>
+                    <td>12</td>
+                    <td class="text-end">1800</td>
+                    </tr>
+
+                    <tr>
+                    <td>2</td>
+                    <td><strong>Student 2</strong></td>
+                    <td><span class="delta-chip delta-flat">0</span></td>
+                    <td>5</td>
+                    <td class="text-end">1750</td>
+                    </tr>
+
+                    <tr>
+                    <td>3</td>
+                    <td><strong>Student 3x</strong></td>
+                    <td><span class="delta-chip delta-down">-1</span></td>
+                    <td>2</td>
+                    <td class="text-end">1710</td>
+                    </tr>
+                    @*-------------------------------------------------------------- *@
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Placeholder -->
+        <div class="d-flex justify-content-between align-items-center mt-16">
+            <div class="caption">Showing 0 of 0</div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Enable Leaderboard Functionality
+   - Tabs:
+       • Current (rolling or monthly points)
+       • All-Time (cumulative points)
+   - Bind rows: { position, username, deltaRank30d, daysInSpot, points }
+   - Compute & pin "Your Spot" (even if not currently visible on page 1)
+   - Implement search + pagination; sort by points desc
+   - Δ Rank coloring: up (success), down (error), flat (muted)
+   - Accessibility: ensure row focus states & tab roles when wired
+--------------------------------------------------------------------- *@

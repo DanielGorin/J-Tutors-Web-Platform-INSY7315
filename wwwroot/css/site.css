@@ -1,0 +1,275 @@
+/* ============================================================
+   BASE: Default Reset & Layout
+============================================================ */
+html {
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+    scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body.light-theme,
+body.dark-theme {
+    font-family: Verdana, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   THEME: Light and Dark Modes
+============================================================ */
+
+/* Light Theme */
+.light-theme {
+    --bg-color: #FFFFFF;
+    --surface-color: #FAF9F7;
+    --border-color: #E6E1DC;
+    --text-color: #1C1A19;
+    --muted-text-color: #6B625D;
+    --primary-color: #0F2D4A;
+    --accent-color: #E85A4F;
+    --success-color: #2BAE66;
+    --warning-color: #D97706;
+    --error-color: #DC2626;
+    --info-color: #2563EB;
+}
+
+/* Dark Theme */
+.dark-theme {
+    --bg-color: #121315;
+    --surface-color: #1B1E22;
+    --border-color: #2A2F35;
+    --text-color: #E6E8EB;
+    --muted-text-color: #B3B9C2;
+    --primary-color: #2E73E6;
+    --accent-color: #FF7A70;
+    --success-color: #34D399;
+    --warning-color: #F59E0B;
+    --error-color: #EF4444;
+    --info-color: #60A5FA;
+}
+
+/* Apply theme colors */
+body.light-theme,
+body.dark-theme {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+a {
+    color: var(--primary-color);
+}
+
+    a:hover {
+        color: var(--accent-color);
+    }
+
+/* ============================================================
+   TYPOGRAPHY
+============================================================ */
+/* Headings */
+h1 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 40px;
+    font-weight: bold;
+}
+
+h2 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+h3 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+h4 {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+h5 {
+    font-family: Verdana, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+h6 {
+    font-family: Verdana, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Body text */
+p, span, label, input, button {
+    font-family: Verdana, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.caption {
+    font-size: 14px;
+    color: var(--muted-text-color);
+}
+
+/* Buttons */
+button, .btn {
+    font-family: 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 8px;
+}
+
+/* ============================================================
+   COMPONENTS & STATES
+============================================================ */
+
+/* Cards/Surfaces */
+.card {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+/* Inputs & Forms */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    width: 100%;
+}
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--primary-color);
+    }
+
+/* Chips / Tags */
+.chip {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    font-size: 14px;
+    margin: 4px;
+}
+
+/* Alerts */
+.alert-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.alert-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.alert-danger {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.alert-info {
+    background-color: var(--info-color);
+    color: white;
+}
+
+/* ============================================================
+   SPACING & LAYOUT RULES
+============================================================ */
+
+.mt-8 {
+    margin-top: 8px;
+}
+
+.mt-16 {
+    margin-top: 16px;
+}
+
+.mt-24 {
+    margin-top: 24px;
+}
+
+.mb-8 {
+    margin-bottom: 8px;
+}
+
+.mb-16 {
+    margin-bottom: 16px;
+}
+
+.mb-24 {
+    margin-bottom: 24px;
+}
+
+.p-8 {
+    padding: 8px;
+}
+
+.p-16 {
+    padding: 16px;
+}
+
+.p-24 {
+    padding: 24px;
+}
+
+.rounded-8 {
+    border-radius: 8px;
+}
+
+.rounded-12 {
+    border-radius: 12px;
+}
+
+.text-muted {
+    color: var(--muted-text-color);
+}
+
+.border-muted {
+    border-color: var(--border-color);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.shadow {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ============================================================
+   FOCUS STATES & ACCESSIBILITY
+============================================================ */
+a:focus, button:focus, input:focus {
+    outline: 2px dashed var(--accent-color);
+    outline-offset: 2px;
+}

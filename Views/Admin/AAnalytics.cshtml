@@ -1,0 +1,375 @@
+﻿@{
+    ViewData["Title"] = "Analytics";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin"; // navbar shows Admin links
+}
+
+<!-- Scoped styles for AAnalytics only -->
+<style>
+    .aanalytics, .aanalytics .card {
+        color: var(--text-color) !important;
+    }
+
+        .aanalytics .caption, .aanalytics .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .aanalytics .form-control, .aanalytics .form-select {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .aanalytics .form-control::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .aanalytics .form-control:focus, .aanalytics .form-select:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* KPI card layout */
+        .aanalytics .kpi {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            height: 100%;
+        }
+
+            .aanalytics .kpi .label {
+                font-size: 14px;
+                color: var(--muted-text-color);
+            }
+
+            .aanalytics .kpi .value {
+                font-weight: 700;
+                font-size: 24px;
+            }
+
+            .aanalytics .kpi .sub {
+                font-size: 12px;
+                color: var(--muted-text-color);
+            }
+
+        /* Simple bar charts (CSS only) */
+        .aanalytics .bars {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .aanalytics .bar-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .aanalytics .bar-label {
+            font-size: 14px;
+        }
+
+        .aanalytics .bar-track {
+            position: relative;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--border-color);
+            overflow: hidden;
+            min-width: 160px;
+        }
+
+        .aanalytics .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary-color);
+            transition: width 600ms ease;
+        }
+
+        .aanalytics .bar-value {
+            font-size: 14px;
+        }
+
+        /* Month chart (horizontal bars) */
+        .aanalytics .month-bars .bar-label {
+            width: 88px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .aanalytics .month-bars .bar-row {
+            grid-template-columns: 120px 1fr auto;
+        }
+
+        /* Table theme (if needed later) */
+        .aanalytics .table, .aanalytics .table th, .aanalytics .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+            vertical-align: middle;
+        }
+
+            .aanalytics .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+        /* Page header */
+        .aanalytics .page-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+</style>
+
+<div class="aanalytics">
+
+    <!-- Header -->
+    <div class="page-head mb-16">
+        <h1 class="mb-0">Analytics</h1>
+        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Filters & Exports -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">From</label>
+                <input type="month" class="form-control" value="2025-06" disabled>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To</label>
+                <input type="month" class="form-control" value="2025-09" disabled>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Subject</label>
+                <select class="form-select" disabled>
+                    <option>All Subjects</option>
+                    <option>Mathematics</option>
+                    <option>English</option>
+                    <option>Science</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-outline-primary w-50" disabled>Export Tactical PDF</button>
+                <button class="btn btn-outline-primary w-50" disabled>Export Strategic PDF</button>
+            </div>
+        </div>
+        <div class="caption mt-8">Filters are UI-only for the demo. Exports are disabled placeholders.</div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="row g-3 mb-16">
+        <div class="col-sm-6 col-lg-3">
+            <div class="kpi shadow">
+                <div class="label">Points in Circulation</div>
+                <div class="value">12,450</div>
+                <div class="sub">Δ 7d: +355</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="kpi shadow">
+                <div class="label">Avg Event Attendance</div>
+                <div class="value">78%</div>
+                <div class="sub">Window: last 90 days</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="kpi shadow">
+                <div class="label">This Month Income</div>
+                <div class="value">R 42,300</div>
+                <div class="sub"><a asp-controller="Admin" asp-action="AAnalytics" class="caption">Drill into Income</a></div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="kpi shadow">
+                <div class="label">Unpaid Sessions (Total)</div>
+                <div class="value">R 8,950</div>
+                <div class="sub"><a asp-controller="Admin" asp-action="ASessions" class="caption">Open Sessions</a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Row: Top Subjects • Tutoring Hours -->
+    <div class="row g-3 mb-16">
+        <!-- Top Subjects by Users / Sessions -->
+        <div class="col-lg-6">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Top Subjects</h3>
+                    <div class="caption">By users & sessions (demo)</div>
+                </div>
+                <div class="bars">
+                    @* ===== DEMO DATA: replace later ===== *@
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>Mathematics</strong> <span class="caption">• Users</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="86"></div></div>
+                        <div class="bar-value">86</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>English</strong> <span class="caption">• Users</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="74"></div></div>
+                        <div class="bar-value">74</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>Science</strong> <span class="caption">• Users</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="63"></div></div>
+                        <div class="bar-value">63</div>
+                    </div>
+
+                    <hr class="my-2" />
+
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>Mathematics</strong> <span class="caption">• Sessions</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="92"></div></div>
+                        <div class="bar-value">92</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>English</strong> <span class="caption">• Sessions</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="68"></div></div>
+                        <div class="bar-value">68</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label"><strong>Science</strong> <span class="caption">• Sessions</span></div>
+                        <div class="bar-track"><div class="bar-fill" data-width="55"></div></div>
+                        <div class="bar-value">55</div>
+                    </div>
+                    @* ===== /DEMO DATA ===================== *@
+                </div>
+
+                <div class="d-flex justify-content-end mt-16">
+                    <a asp-controller="Admin" asp-action="AUsers" class="btn btn-sm btn-outline-primary">Open Users</a>
+                    <span class="mx-1"></span>
+                    <a asp-controller="Admin" asp-action="ASessions" class="btn btn-sm btn-outline-primary">Open Sessions</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tutoring Hours per Month -->
+        <div class="col-lg-6">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Tutoring Hours per Month</h3>
+                    <div class="caption">Last 6 months (demo)</div>
+                </div>
+                <div class="bars month-bars">
+                    @* ===== DEMO DATA: replace later ===== *@
+                    <div class="bar-row">
+                        <div class="bar-label">May 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="45"></div></div>
+                        <div class="bar-value">45h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">Jun 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="58"></div></div>
+                        <div class="bar-value">58h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">Jul 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="62"></div></div>
+                        <div class="bar-value">62h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">Aug 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="76"></div></div>
+                        <div class="bar-value">76h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">Sep 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="81"></div></div>
+                        <div class="bar-value">81h</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">Oct 2025</div>
+                        <div class="bar-track"><div class="bar-fill" data-width="0"></div></div>
+                        <div class="bar-value">0h</div>
+                    </div>
+                    @* ===== /DEMO DATA ===================== *@
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income by Month (full width) -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Income by Month (R)</h3>
+            <div class="caption">Demo values • Use Analytics for details</div>
+        </div>
+        <div class="bars month-bars">
+            @* ===== DEMO DATA: replace later ===== *@
+            <div class="bar-row">
+                <div class="bar-label">May 2025</div>
+                <div class="bar-track"><div class="bar-fill" data-width="55"></div></div>
+                <div class="bar-value">R 28,700</div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label">Jun 2025</div>
+                <div class="bar-track"><div class="bar-fill" data-width="63"></div></div>
+                <div class="bar-value">R 33,100</div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label">Jul 2025</div>
+                <div class="bar-track"><div class="bar-fill" data-width="72"></div></div>
+                <div class="bar-value">R 37,800</div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label">Aug 2025</div>
+                <div class="bar-track"><div class="bar-fill" data-width="88"></div></div>
+                <div class="bar-value">R 46,200</div>
+            </div>
+            <div class="bar-row">
+                <div class="bar-label">Sep 2025</div>
+                <div class="bar-track"><div class="bar-fill" data-width="95"></div></div>
+                <div class="bar-value">R 49,900</div>
+            </div>
+            @* ===== /DEMO DATA ===================== *@
+        </div>
+        <div class="d-flex justify-content-end mt-16">
+            <a asp-controller="Admin" asp-action="AAnalytics" class="btn btn-sm btn-outline-primary">Open Analytics</a>
+        </div>
+    </div>
+
+    <!-- Drilldown Quick Links (only items not already linked above) -->
+    
+</div>
+
+@section Scripts {
+    <script>
+        // Simple animation for demo bars: read data-width attribute and set width%
+        (function () {
+            const fills = document.querySelectorAll('.aanalytics .bar-fill');
+            fills.forEach(el => {
+                const w = parseInt(el.getAttribute('data-width') || '0', 10);
+                // clamp within [0, 100]
+                const pct = Math.max(0, Math.min(100, w));
+                requestAnimationFrame(() => el.style.width = pct + '%');
+            });
+        })();
+    </script>
+}
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up AAnalytics
+   - Replace DEMO DATA with real aggregates:
+     • Points in circulation (windowed)
+     • Avg event attendance (windowed)
+     • Income by month, unpaid total
+     • Top subjects by users & sessions
+     • Tutoring hours per month
+   - Filters → query backend; update all cards/charts
+   - Export buttons → generate Tactical / Strategic PDF reports
+   - Drilldowns:
+     • Users/Subjects → Admin.AUsers with filters
+     • Sessions/Income → Admin.ASessions with date filters
+     • Events/Attendance → Admin.AEvents with date filters
+   - Auth guard: admin-only
+--------------------------------------------------------------------- *@

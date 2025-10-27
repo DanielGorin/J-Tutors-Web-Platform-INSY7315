@@ -1,0 +1,379 @@
+﻿@{
+    ViewData["Title"] = "Leaderboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin";
+}
+
+<!-- Scoped styles for ALeaderboard only -->
+<style>
+    .alead, .alead .card {
+        color: var(--text-color) !important;
+    }
+
+        .alead .caption, .alead .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .alead .form-control, .alead .form-select, .alead input[type="search"] {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .alead .form-control::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .alead .form-control:focus, .alead .form-select:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Table theme */
+        .alead .table, .alead .table th, .alead .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+            vertical-align: middle;
+        }
+
+            .alead .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .alead .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .alead .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+            }
+
+        /* Chips */
+        .alead .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+
+        .alead .chip-up {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .alead .chip-down {
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+
+        .alead .chip-same {
+            color: var(--muted-text-color);
+            border-color: var(--border-color);
+        }
+
+        .alead .chip-hidden {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* View tabs (Current | All-time) — responsive 2-column grid */
+        .alead .tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(90px, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+
+            .alead .tabs .btn {
+                min-width: 0; /* allow shrink */
+                width: 100%; /* fill grid cell */
+            }
+
+        /* Hideable rows */
+        .alead .row-hidden {
+            display: table-row;
+        }
+
+        .alead .hide-hidden .row-hidden {
+            display: none;
+        }
+</style>
+
+<div class="alead">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Leaderboard</h1>
+        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Controls -->
+    <div class="card shadow p-24 mb-16">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="search" class="form-control" placeholder="Search by username…" disabled>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort by</label>
+                <select class="form-select" disabled>
+                    <option>Points (desc)</option>
+                    <option>Points (asc)</option>
+                    <option>Δ Rank (desc)</option>
+                    <option>Days in Spot (desc)</option>
+                    <option>Username (A–Z)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label d-block">Include Hidden</label>
+                <div class="form-check form-switch">
+                    <input id="toggleHidden" class="form-check-input" type="checkbox" checked>
+                </div>
+            </div>
+            <!-- widened to ensure space + responsive grid tabs prevent clipping -->
+            <div class="col-md-2">
+                <label class="form-label d-block">View</label>
+                <div class="tabs">
+                    <button id="btnCurrent" class="btn btn-primary btn-sm" type="button">Current</button>
+                    <button id="btnAllTime" class="btn btn-outline-primary btn-sm" type="button">All-time</button>
+                </div>
+            </div>
+        </div>
+        <div class="caption mt-8">
+            Admins can view all users including those who opted to be hidden from public leaderboards.
+        </div>
+    </div>
+
+    <!-- CURRENT TABLE -->
+    <div id="tabCurrent" class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Current Leaderboard</h3>
+            <div class="caption">Window: last 30 days (UI only)</div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle hide-hidden" id="currentTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Δ Rank</th>
+                        <th>Days in Spot</th>
+                        <th class="text-end">Points</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ===== DEMO DATA (replace later) ===== *@
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>Student 1</td>
+                        <td><span class="chip chip-up">↑2</span></td>
+                        <td>12</td>
+                        <td class="text-end"><strong>1800</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="1" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>2</strong></td>
+                        <td>Student 2</td>
+                        <td><span class="chip chip-down">↓1</span></td>
+                        <td>3</td>
+                        <td class="text-end"><strong>1715</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="2" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr class="row-hidden">
+                        <td><strong>3</strong></td>
+                        <td>Student 3 <span class="chip chip-hidden">Hidden</span></td>
+                        <td><span class="chip chip-same">–</span></td>
+                        <td>1</td>
+                        <td class="text-end"><strong>1690</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="3" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>Student 4</td>
+                        <td><span class="chip chip-up">↑1</span></td>
+                        <td>5</td>
+                        <td class="text-end"><strong>1605</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="4" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>Student 5</td>
+                        <td><span class="chip chip-down">↓1</span></td>
+                        <td>2</td>
+                        <td class="text-end"><strong>1580</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="5" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    @* ===== /DEMO DATA ===================== *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ALL-TIME TABLE -->
+    <div id="tabAllTime" class="card shadow p-24 mb-16" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">All-time Leaderboard</h3>
+            <div class="caption">Cumulative points since signup (UI only)</div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle hide-hidden" id="allTimeTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Δ Rank</th>
+                        <th>Days in Spot</th>
+                        <th class="text-end">All-time Points</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ===== DEMO DATA (replace later) ===== *@
+                    <tr>
+                        <td><strong>1</strong></td>
+                        <td>Student 1</td>
+                        <td><span class="chip chip-up">↑1</span></td>
+                        <td>42</td>
+                        <td class="text-end"><strong>5200</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="1" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr class="row-hidden">
+                        <td><strong>2</strong></td>
+                        <td>Student 3 <span class="chip chip-hidden">Hidden</span></td>
+                        <td><span class="chip chip-same">–</span></td>
+                        <td>9</td>
+                        <td class="text-end"><strong>4975</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="3" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>3</strong></td>
+                        <td>Student 2</td>
+                        <td><span class="chip chip-down">↓1</span></td>
+                        <td>5</td>
+                        <td class="text-end"><strong>4920</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="2" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>4</strong></td>
+                        <td>Student 4</td>
+                        <td><span class="chip chip-up">↑3</span></td>
+                        <td>2</td>
+                        <td class="text-end"><strong>4700</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="4" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>5</strong></td>
+                        <td>Student 5</td>
+                        <td><span class="chip chip-same">–</span></td>
+                        <td>1</td>
+                        <td class="text-end"><strong>4650</strong></td>
+                        <td class="text-end">
+                            <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="5" class="btn btn-sm btn-outline-primary">Open User</a>
+                        </td>
+                    </tr>
+                    @* ===== /DEMO DATA ===================== *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Placeholder -->
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="caption text-muted">Showing 5 of 5 (demo)</div>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
+            <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Tabs
+            const btnCurrent = document.getElementById('btnCurrent');
+            const btnAllTime = document.getElementById('btnAllTime');
+            const tabCurrent = document.getElementById('tabCurrent');
+            const tabAllTime = document.getElementById('tabAllTime');
+
+            function showCurrent() {
+                tabCurrent.style.display = '';
+                tabAllTime.style.display = 'none';
+                btnCurrent.classList.remove('btn-outline-primary');
+                btnCurrent.classList.add('btn-primary');
+                btnAllTime.classList.remove('btn-primary');
+                btnAllTime.classList.add('btn-outline-primary');
+            }
+            function showAllTime() {
+                tabCurrent.style.display = 'none';
+                tabAllTime.style.display = '';
+                btnAllTime.classList.remove('btn-outline-primary');
+                btnAllTime.classList.add('btn-primary');
+                btnCurrent.classList.remove('btn-primary');
+                btnCurrent.classList.add('btn-outline-primary');
+            }
+            btnCurrent.addEventListener('click', showCurrent);
+            btnAllTime.addEventListener('click', showAllTime);
+
+            // Include Hidden toggle
+            const toggleHidden = document.getElementById('toggleHidden');
+            const currentTable = document.getElementById('currentTable');
+            const allTimeTable = document.getElementById('allTimeTable');
+
+            function applyHiddenFilter() {
+                const cls = 'hide-hidden';
+                [currentTable, allTimeTable].forEach(tbl => {
+                    if (!tbl) return;
+                    if (toggleHidden.checked) {
+                        tbl.classList.remove(cls);
+                    } else {
+                        tbl.classList.add(cls);
+                    }
+                });
+            }
+            toggleHidden.addEventListener('change', applyHiddenFilter);
+
+            // Initialize defaults
+            showCurrent();
+            applyHiddenFilter();
+        })();
+    </script>
+}
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up ALeaderboard
+   - Bind Current vs All-time lists from server; compute Δ rank & days in spot
+   - Honor "hidden from leaderboard" user flag (admin can include/exclude)
+   - Implement search, sort, pagination
+   - Row click or "Open User" → Admin.AUserDetails(id)
+   - Consider server-side toggle (querystring/tab) for deep links
+   - Auth guard: admin-only
+--------------------------------------------------------------------- *@

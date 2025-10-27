@@ -1,0 +1,450 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin"; // navbar shows Admin links
+}
+
+<!-- Scoped styles (Dashboard-only) -->
+<style>
+    .adash, .adash .card {
+        color: var(--text-color) !important;
+    }
+
+        .adash .caption, .adash .text-muted {
+            color: var(--muted-text-color) !important;
+        }
+
+        .adash .form-control, .adash select {
+            background-color: var(--surface-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 10px 12px !important;
+            width: 100%;
+        }
+
+            .adash .form-control::placeholder {
+                color: var(--muted-text-color) !important;
+            }
+
+            .adash .form-control:focus, .adash select:focus {
+                outline: none !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+            }
+
+        /* Table */
+        .adash .table, .adash .table th, .adash .table td {
+            color: var(--text-color) !important;
+            background: transparent !important;
+            border-color: var(--border-color) !important;
+        }
+
+            .adash .table thead th {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+
+            .adash .table tbody tr + tr {
+                border-top: 1px solid var(--border-color) !important;
+            }
+
+            .adash .table tbody tr:hover {
+                background: rgba(0,0,0,0.03);
+            }
+
+        /* Chips */
+        .adash .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+
+        .adash .chip-pending {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .adash .chip-accepted {
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .adash .chip-paid {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .adash .chip-slot {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .adash .chip-invoice {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Calendar snapshot split across two rows */
+        .adash .calendar-week-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .adash .calendar-week-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .adash .calendar-day {
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 96px;
+            min-width: 0;
+        }
+
+            .adash .calendar-day h6 {
+                font-family: Verdana, sans-serif;
+                font-size: 14px;
+                margin: 0 0 8px 0;
+                color: var(--muted-text-color);
+                font-weight: bold;
+            }
+
+        /* Header */
+        .adash .page-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Right rail lists in Sessions card */
+        .adash .list-compact .row-item + .row-item {
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .adash .metric {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .adash .amount {
+            font-weight: 700;
+        }
+</style>
+
+<div class="adash">
+
+    <!-- Header (keep clean; navbar handles navigation) -->
+    <div class="page-head mb-16">
+        <h1 class="mb-0">Admin Dashboard</h1>
+        @* No extra header buttons; use navbar + in-card actions *@
+    </div>
+
+    <!-- ROW 1: Sessions & Calendar (combined) -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Sessions &amp; Calendar</h3>
+            <div class="d-flex gap-2">
+                <a asp-controller="Admin" asp-action="ACalendar" class="btn btn-sm btn-outline-primary">Calendar</a>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Left: Calendar snapshot -->
+            <div class="col-lg-7">
+                @* ======= DEMO DATA — Week-at-a-glance (split rows) ======= *@
+                <!-- Row 1: Mon–Thu -->
+                <div class="calendar-week-4">
+                    <div class="calendar-day">
+                        <h6>Mon</h6>
+                        <div class="chip chip-slot">Slot 09:00</div>
+                        <div class="chip chip-paid">Paid 14:00</div>
+                    </div>
+                    <div class="calendar-day">
+                        <h6>Tue</h6>
+                        <div class="chip chip-accepted">Accepted 10:00</div>
+                        <div class="chip chip-slot">Slot 16:00</div>
+                    </div>
+                    <div class="calendar-day">
+                        <h6>Wed</h6>
+                        <div class="chip chip-slot">Slot 09:00</div>
+                        <div class="chip chip-accepted">Accepted 11:30</div>
+                    </div>
+                    <div class="calendar-day">
+                        <h6>Thu</h6>
+                        <div class="chip chip-slot">Slot 13:00</div>
+                        <div class="chip chip-paid">Paid 15:00</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Fri–Sun -->
+                <div class="calendar-week-3 mt-8">
+                    <div class="calendar-day">
+                        <h6>Fri</h6>
+                        <div class="chip chip-pending">Pending 08:00</div>
+                    </div>
+                    <div class="calendar-day">
+                        <h6>Sat</h6>
+                        <div class="chip chip-accepted">Accepted 10:00</div>
+                    </div>
+                    <div class="calendar-day">
+                        <h6>Sun</h6>
+                        <div class="chip chip-slot">Slot 09:00</div>
+                    </div>
+                </div>
+                @* ======= /DEMO DATA ===================================== *@
+            </div>
+
+            <!-- Right: Action queues -->
+            <div class="col-lg-5">
+                <div class="row">
+                    <!-- Next Pending (approve/deny) -->
+                    <div class="col-12 mb-12">
+                        <h5 class="mb-8">Next Pending (3)</h5>
+                        <div class="list-compact">
+                            @* ======= DEMO DATA — Pending list ======= *@
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 1.</strong> · Maths · 2h · 2 students
+                                    <div class="caption">Today 10:00</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Approve</button>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
+                                </div>
+                            </div>
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 2.</strong> · English · 1.5h · 1 student
+                                    <div class="caption">Today 13:30</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Approve</button>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
+                                </div>
+                            </div>
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 3.</strong> · NBTs · 2h · 3 students
+                                    <div class="caption">Tomorrow 09:00</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Approve</button>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
+                                </div>
+                            </div>
+                            @* ======= /DEMO DATA ======================= *@
+                        </div>
+                        <div class="metric">
+                            <span class="caption">Total Pending</span>
+                            <span class="amount">12</span>
+                        </div>
+                    </div>
+
+                    <!-- Next Accepted (mark paid) -->
+                    <div class="col-12">
+                        <h5 class="mb-8">Next Accepted (Unpaid)</h5>
+                        <div class="list-compact">
+                            @* ======= DEMO DATA — Accepted (unpaid) ======= *@
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 4.</strong> · Biology · 2h · 2 students
+                                    <div class="caption">Today 11:00</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Mark Paid</button>
+                                </div>
+                            </div>
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 5</strong> · Maths · 1h · 1 student
+                                    <div class="caption">Today 16:00</div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Mark Paid</button>
+                                </div>
+                            </div>
+                            <div class="row-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>Student 6.</strong> · English · 1.5h · 1 student
+                                    <div class="caption">Tomorrow 09:30</div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Mark Paid</button>
+                                </div>
+                            </div>
+                            @* ======= /DEMO DATA ========================= *@
+                        </div>
+                        <div class="metric">
+                            <span class="caption">Total Accepted (Unpaid)</span>
+                            <span class="amount">7</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: Recent Signups • Financial Overview • Leaderboard Snapshot -->
+    <div class="row g-3 mb-16">
+        <!-- Recent Signups -->
+        <div class="col-lg-4">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Recent Signups</h3>
+                    <a asp-controller="Admin" asp-action="AUsersList" class="btn btn-sm btn-outline-primary">Open Users</a>
+                </div>
+
+                @* ======= DEMO DATA — recent users ======= *@
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-8"><strong>Student 7</strong> · <span class="caption">2025-09-29</span></li>
+                    <li class="mb-8"><strong>Student 8</strong> · <span class="caption">2025-09-28</span></li>
+                    <li class="mb-0"><strong>Student 9</strong> · <span class="caption">2025-09-27</span></li>
+                </ul>
+                @* ======= /DEMO DATA ======================= *@
+            </div>
+        </div>
+
+        <!-- Financial Overview (replaces Points Activity) -->
+        <div class="col-lg-4">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Financial Overview</h3>
+                    <a asp-controller="Admin" asp-action="AAnalytics" class="btn btn-sm btn-outline-primary">Analytics</a>
+                </div>
+
+                @* ======= DEMO DATA — finance snapshot ======= *@
+                <div class="d-flex justify-content-between mb-8">
+                    <div>Last Month Income</div><strong>R 12,000</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-8">
+                    <div>This Month Income</div><strong>R 9,000</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div>Total Unpaid (Sessions)</div><strong class="amount">R 3,000</strong>
+                </div>
+                <div class="caption mt-8">Income values reflect accepted &amp; paid sessions.</div>
+                @* ======= /DEMO DATA ======================== *@
+            </div>
+        </div>
+
+        <!-- Leaderboard Snapshot -->
+        <div class="col-lg-4">
+            <div class="card shadow p-24 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-8">
+                    <h3 class="mb-0">Leaderboard Snapshot</h3>
+                    <a asp-controller="Admin" asp-action="ALeaderboard" class="btn btn-sm btn-outline-primary">Full Board</a>
+                </div>
+
+                @* ======= DEMO DATA — top 3 ======= *@
+                <div class="mb-8 d-flex justify-content-between">
+                    <div><strong>1.</strong> Student 1 <span class="caption">(↑2 · 12 days)</span></div>
+                    <div><strong>1800</strong></div>
+                </div>
+                <div class="mb-8 d-flex justify-content-between">
+                    <div><strong>2.</strong> Student 2 <span class="caption">(↓1 · 3 days)</span></div>
+                    <div><strong>1715</strong></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div><strong>3.</strong> Student 3 <span class="caption">(– · 1 day)</span></div>
+                    <div><strong>1690</strong></div>
+                </div>
+                @* ======= /DEMO DATA ================= *@
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 3: Next Event card -->
+    <div class="card shadow p-24 mb-16">
+        <div class="d-flex justify-content-between align-items-center mb-8">
+            <h3 class="mb-0">Next Event</h3>
+            <div class="d-flex gap-2">
+                <a asp-controller="Admin" asp-action="AEvents" class="btn btn-sm btn-outline-primary">Events List</a>
+                <a asp-controller="Admin" asp-action="AEventDetail" asp-route-id="EVT-00123" class="btn btn-sm btn-outline-secondary">Open Event</a>
+            </div>
+        </div>
+
+        @* ======= DEMO DATA — next event ======= *@
+        <div class="row g-3">
+            <div class="col-md-8">
+                <h4 class="mb-8">Event 1</h4>
+                <div class="caption mb-8">Event Description. The quick brown fox jumped over the lazy dog.</div>
+                <div class="row">
+                    <div class="col-sm-6 mb-8"><strong>Date:</strong> 2025-10-05</div>
+                    <div class="col-sm-6 mb-8"><strong>Start:</strong> 08:30</div>
+                    <div class="col-sm-6 mb-8"><strong>Duration:</strong> 2h 00m</div>
+                    <div class="col-sm-6 mb-8"><strong>Points Reward:</strong> 25 pts</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex flex-column h-100 justify-content-between">
+                    <div class="mb-8">
+                        <div class="d-flex justify-content-between">
+                            <div>Goal Participants</div><strong>30</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div>Current Participants</div><strong>22</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="chip chip-slot">Open</span>
+                        <span class="chip chip-accepted">Enrolling</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @* ======= /DEMO DATA ===================== *@
+    </div>
+
+    <!-- ROW 4: Quick Actions (only views not already linked above) -->
+    <div class="card shadow p-24">
+        <h3 class="mb-16">Quick Actions</h3>
+        <div class="row g-3">
+            <div class="col-sm-6 col-lg-3">
+                <a asp-controller="Admin" asp-action="AFiles" class="btn btn-outline-primary w-100">Manage Files</a>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <a asp-controller="Admin" asp-action="AQuotations" class="btn btn-outline-primary w-100">Quotation Rules</a>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <a asp-controller="Admin" asp-action="AAccount" class="btn btn-outline-primary w-100">Account Settings</a>
+            </div>
+            @* Intentionally omitting: ASessions/ACalendar (in Sessions card),
+            AAnalytics (in Financial Overview), AEvents/AEventDetail (in Events card),
+            AUsersList (in Recent Signups), ALeaderboard (in Leaderboard card). *@
+        </div>
+    </div>
+</div>
+
+@* --------------------------------------------------------------------
+   TODO: Wire Up Admin Dashboard
+   - Sessions & Calendar:
+     • Bind real week data (slots, pending, accepted, paid)
+     • Approve/Deny → update status & refresh queues
+     • Mark Paid → create payment record and clear from "Accepted (Unpaid)"
+     • Buttons route to ACalendar/ASessions
+   - Financial Overview:
+     • Compute last-month & this-month income from paid sessions
+     • Sum unpaid session R total; link to unpaid queue/export
+     • Link "Analytics" to full dashboard with trends
+   - Events:
+     • Fetch next upcoming event; display live counts and status chips
+     • Buttons: AEvents list, AEventDetail(id)
+   - Recent Signups & Leaderboard:
+     • Pull recent N signups; top-N leaderboard with Δ rank & days
+   - Auth guard: restrict to the single admin account
+--------------------------------------------------------------------- *@

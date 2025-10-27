@@ -1,0 +1,46 @@
+﻿@{
+    var pref = Context.Request.Cookies["ThemePreference"]; // "Light" | "Dark" | null
+    var path = (Context.Request.Path.Value ?? string.Empty).ToLowerInvariant();
+    bool isPublic = path.StartsWith("/home/login") || path.StartsWith("/home/register") || path.StartsWith("/home/info");
+
+    // selection state
+    bool isLight = string.Equals(pref, "Light", StringComparison.OrdinalIgnoreCase);
+    bool isDark = string.Equals(pref, "Dark", StringComparison.OrdinalIgnoreCase);
+
+    // if no cookie, mirror server fallback: public -> Light, else -> Dark
+    if (string.IsNullOrWhiteSpace(pref)) { isLight = isPublic; isDark = !isPublic; }
+}
+
+<div class="btn-group btn-group-sm" role="group" aria-label="Theme">
+    <input type="radio" class="btn-check" name="__theme" id="__themeLight" value="Light"
+    @(isLight ? "checked" : null) @(isPublic ? "disabled" : null) />
+    <label class="btn btn-outline-secondary @(isPublic ? "disabled" : null)" for="__themeLight">Light</label>
+
+    <input type="radio" class="btn-check" name="__theme" id="__themeDark" value="Dark"
+    @(isDark ? "checked" : null) @(isPublic ? "disabled" : null) />
+    <label class="btn btn-outline-secondary @(isPublic ? "disabled" : null)" for="__themeDark">Dark</label>
+</div>
+
+@if (!isPublic)
+{
+    <script>
+        (function () {
+            function applyThemeClass(pref) {
+                var body = document.body;
+                body.classList.remove('light-theme', 'dark-theme');
+                body.classList.add(pref === 'Light' ? 'light-theme' : 'dark-theme');
+            }
+
+            document.addEventListener('change', function (e) {
+                if (!e.target.matches('input[name="__theme"]')) return;
+                var pref = e.target.value; // "Light" | "Dark"
+                applyThemeClass(pref); // instant UI
+                fetch('/User/SetTheme', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'theme=' + encodeURIComponent(pref)
+                }).catch(function () { });
+            });
+        })();
+    </script>
+}

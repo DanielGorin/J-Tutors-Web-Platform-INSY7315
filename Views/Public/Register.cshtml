@@ -1,0 +1,145 @@
+﻿@{
+    ViewData["Title"] = "Register";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    ViewData["NavSection"] = "Public";
+}
+
+<!-- Scoped style just for Register page -->
+<style>
+    .register-form input[type="text"],
+    .register-form input[type="email"],
+    .register-form input[type="password"],
+    .register-form input[type="number"] {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
+    }
+
+    .register-form input::placeholder {
+        color: var(--muted-text-color) !important;
+    }
+
+    .register-form input:focus {
+        outline: none !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Logo square placeholder */
+    .logo-placeholder {
+        width: 150px;
+        height: 150px;
+        background-color: var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin: 0 auto 24px auto;
+        font-size: 14px;
+        color: var(--muted-text-color);
+    }
+</style>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow p-24" style="max-width: 600px; width: 100%;">
+        <!-- Logo -->
+        <div class="logo-placeholder" style="background-color: transparent;">
+            <img src="~/images/Logo.png"
+                 alt="J Tutors Logo"
+                 class="img-fluid"
+                 asp-append-version="true" />
+        </div>
+
+
+        <!-- Page Title -->
+        <h2 class="text-center mb-24">Create an Account</h2>
+
+        <!-- Register Form -->
+        <form method="post" asp-controller="Public" asp-action="Register" class="register-form">
+
+            <div class="row">
+                <div class="col-md-6 mb-16">
+                    <label for="FirstName" class="form-label">First Name</label>
+                    <input id="FirstName" name="FirstName" type="text" placeholder="First name" />
+                </div>
+                <div class="col-md-6 mb-16">
+                    <label for="Surname" class="form-label">Surname</label>
+                    <input id="Surname" name="Surname" type="text" placeholder="Surname" />
+                </div>
+            </div>
+
+            <div class="mb-16">
+                <label for="Phone" class="form-label">Phone Number</label>
+                <input id="Phone" name="Phone" type="text" placeholder="+27..." />
+            </div>
+
+            <div class="mb-16">
+                <label for="Email" class="form-label">Email Address</label>
+                <input id="Email" name="Email" type="email" placeholder="you@example.com" />
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-16">
+                    <label for="BirthDate" class="form-label">Date of Birth</label>
+                    <input id="BirthDate" name="BirthDate" type="date" placeholder="YYYY-MM-DD" />
+                </div>
+                <div class="col-md-6 mb-16">
+                    <label for="Subject" class="form-label">Subject (optional)</label>
+                    <input id="SubjectInterest" name="SubjectInterest" type="text" placeholder="Maths, English..." />
+                </div>
+            </div>
+
+            <div class="mb-16">
+                <label for="Username" class="form-label">Username</label>
+                <input id="Username" name="Username" type="text" placeholder="Choose a username" />
+                <div class="caption mt-8">
+                    Your username will appear publicly on the leaderboard.
+                </div>
+            </div>
+
+            <div class="mb-16">
+                <label for="Password" class="form-label">Password</label>
+                <input id="Password" name="Password" type="password" placeholder="Create a password" />
+            </div>
+
+            <div class="mb-24">
+                <label for="ConfirmPassword" class="form-label">Confirm Password</label>
+                <input id="ConfirmPassword" name="ConfirmPassword" type="password" placeholder="Re-enter your password" />
+            </div>
+
+            <div class="text-center mb-16">
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </div>
+
+            <!-- Temp error summary -->
+            <div class="text-danger text-center mb-16">
+                @* Show validation errors here later *@
+            </div>
+
+            <!-- Already have an account? -->
+            <div class="text-center">
+                <p class="caption">
+                    Already have an account?
+                    <a asp-controller="Home" asp-action="Login">Login here</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* -------------------------------------------------------------
+   FUTURE FUNCTIONALITY
+   - Introduce RegisterViewModel { FirstName, Surname, Phone, Email, Age, Subject, Username, Password, ConfirmPassword }
+   - Enable asp-for + validation summaries
+   - Add server-side confirm password check
+   - Replace action="#" with asp-action="Register"
+   - Save user record + log signup event
+   - Redirect to Dashboard after successful registration
+-------------------------------------------------------------- *@

@@ -23,22 +23,38 @@ jobs:
         language: [ 'csharp' ] # change to 'javascript', 'python', etc. if needed
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Initializes the CodeQL tools
+      # 2️⃣ Dependency Vulnerability Review
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+
+      # 3️⃣ Secret Scanning (Gitleaks)
+      - name: Secret Scan (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --no-git -v
+
+      # 4️⃣ Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
-      # Build your code (important for compiled languages like C#)
+      # 5️⃣ Build project (required for compiled languages like C#)
       - name: Build project
         run: |
           dotnet restore
           dotnet build --configuration Release
 
-      # Run CodeQL Analysis
+      # 6️⃣ Verify Dependency Integrity
+      - name: Verify Dependency Integrity
+        run: |
+          dotnet nuget verify --all
+
+      # 7️⃣ Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:

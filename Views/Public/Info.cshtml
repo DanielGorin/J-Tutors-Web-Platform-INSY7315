@@ -7,46 +7,62 @@
 <div class="card shadow">
     <h1 class="mb-24">Welcome to J Tutors</h1>
 
+    <!-- Centered Logo (served from wwwroot/images/Logo.png) -->
+    <div class="text-center mb-24">
+        <img src="~/images/Logo.png"
+             alt="J Tutors Logo"
+             class="img-fluid"
+             style="max-height: 180px;"
+             asp-append-version="true" />
+    </div>
+
     <!-- Tabs Navigation -->
     <ul class="nav nav-tabs mb-16" id="infoTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button" role="tab" aria-controls="about" aria-selected="true">
-                About J Tutors
+            <button class="nav-link active" id="aboutus-tab" data-bs-toggle="tab" data-bs-target="#aboutus" type="button" role="tab" aria-controls="aboutus" aria-selected="true">
+                About Us
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="points-tab" data-bs-toggle="tab" data-bs-target="#points" type="button" role="tab" aria-controls="points" aria-selected="false">
-                Points System
+            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">
+                Contact Us
             </button>
         </li>
     </ul>
 
     <!-- Tabs Content -->
     <div class="tab-content" id="infoTabsContent">
-        <!-- About J Tutors -->
-        <div class="tab-pane fade show active" id="about" role="tabpanel" aria-labelledby="about-tab">
-            <h2 class="mb-16">About J Tutors</h2>
+        <!-- About Us -->
+        <div class="tab-pane fade show active" id="aboutus" role="tabpanel" aria-labelledby="aboutus-tab">
+            <h2 class="mb-16">About Us</h2>
+
+            <h3 class="mb-12">Who Are We?</h3>
             <p>
-                This section will describe the J Tutors organisation as a whole.
-                For now, it is just placeholder text. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
+                J Tutors was founded and is led by Jamie Sulcus, he graduated from UCT with a degree in actuarial science and has had been a private tutor for university and high school students since 2021. J Tutors expands on that work providing academic support and encouraging community service, while providing an easy path to build up community service hours.
             </p>
 
+            <h3 class="mb-12">Our Community Service</h3>
+            <p>
+                We organise community service events and encourage participation by rewarding students with “points”. These “points” are tracked on our system via a competitive leaderboard. Students can trade in their points for savings on tutoring sessions. This motivates students to participate in events and is an easy way to build up community service hours.
+            </p>
         </div>
 
-        <!-- Points System -->
-        <div class="tab-pane fade" id="points" role="tabpanel" aria-labelledby="points-tab">
-            <h2 class="mb-16">Points System</h2>
-            <p>
-                This section will explain how the Points System works for community service.
-                For now, it is just placeholder text. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
-            </p>
+        <!-- Contact Us -->
+        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+            <h2 class="mb-16">Contact Us</h2>
+
+            <p><strong>Phone Number:</strong></p>
+            <p>BLANK FOR NOW</p>
+
+            <p class="mt-12"><strong>Email Address:</strong></p>
+            <p>BLANK FOR NOW</p>
         </div>
     </div>
 </div>
 
 @* ==============================================================
    FUTURE FUNCTIONALITY (COMMENTED OUT)
-   - Replace placeholder text with real copy from client
+   - Replace BLANK placeholders with live contact info
    - Add contextual links (Leaderboard, Events) inside About section
    - Make this view the public-facing home page for non-registered users
    - Add dynamic content if needed from backend

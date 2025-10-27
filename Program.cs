@@ -51,7 +51,7 @@ namespace J_Tutors_Web_Platform
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN
-            pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
+            //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER
             //----------------------------------------------------
 
             //USER:
@@ -69,7 +69,7 @@ namespace J_Tutors_Web_Platform
 
             //ADMIN:
             //----------------------------------------------------
-            //pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD
+            pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD
             //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR
             //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
             //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS

@@ -1,142 +1,98 @@
-﻿@{
-    ViewData["Title"] = "Profile";
+﻿@model J_Tutors_Web_Platform.Models.Users.UserProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
 }
 
-<!-- Scoped styles for Profile only -->
-<style>
-    .profile .form-control, .profile select {
-        background-color: var(--surface-color) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        padding: 10px 12px !important;
-        width: 100%;
-    }
 
-        .profile .form-control::placeholder {
-            color: var(--muted-text-color) !important;
-        }
 
-        .profile .form-control:focus, .profile select:focus {
-            outline: none !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
-        }
+<h1 class="mb-4">My Profile</h1>
 
-    .profile .section-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
 
-    .profile .readonly input, .profile .readonly select {
-        pointer-events: none;
-        opacity: 0.9;
-    }
-</style>
+@if (TempData["ProfileSaved"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
 
-<div class="profile">
+<form asp-controller="User" asp-action="UProfile" method="post">
+    @Html.AntiForgeryToken()
 
-    <!-- Header / Nav -->
-    <div class="d-flex justify-content-between align-items-center mb-16">
-        <h1 class="mb-0">Your Profile</h1>
-        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
-    </div>
 
-    <!-- Profile Overview (registration date only) -->
-    <div class="card shadow p-24 mb-16">
-        <h3 class="mb-8">Profile Overview</h3>
-        <div class="caption text-muted">Registration Date: [ ... ]</div>
-    </div>
-
-    <!-- Editable basic info -->
-    <div class="card shadow p-24 mb-16">
-        <div class="section-title">
-            <h3 class="mb-0">Basic Information</h3>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-primary" disabled>Save Changes</button>
+    <div class="card shadow p-3 mb-4">
+        <h3 class="mb-3">Account Overview</h3>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input class="form-control" value="@Model.FirstName" readonly />
             </div>
-        </div>
-
-        <div class="mt-16 readonly">
-            <div class="row">
-                <div class="col-md-6 mb-16">
-                    <label for="FirstName" class="form-label">First Name</label>
-                    <input id="FirstName" type="text" class="form-control" placeholder="[ First Name ]" />
-                </div>
-                <div class="col-md-6 mb-16">
-                    <label for="Surname" class="form-label">Surname</label>
-                    <input id="Surname" type="text" class="form-control" placeholder="[ Surname ]" />
-                </div>
+            <div class="col-md-6">
+                <label class="form-label">Surname</label>
+                <input class="form-control" value="@Model.Surname" readonly />
             </div>
-
-            <div class="mb-16">
-                <label for="Username" class="form-label">Username</label>
-                <input id="Username" type="text" class="form-control" placeholder="[ Username ]" />
-                <div class="caption mt-8">Displayed publicly on the leaderboard (if visibility enabled).</div>
+            <div class="col-md-6">
+                <label class="form-label">Birth Date</label>
+                <input class="form-control" value="@(Model.BirthDate?.ToString("yyyy-MM-dd") ?? "—")" readonly />
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-16">
-                    <label for="Phone" class="form-label">Phone</label>
-                    <input id="Phone" type="text" class="form-control" placeholder="[ +27 ... ]" />
-                </div>
-                <div class="col-md-6 mb-16">
-                    <label for="Email" class="form-label">Email</label>
-                    <input id="Email" type="email" class="form-control" placeholder="[ you@example.com ]" />
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-16">
-                    <label for="Age" class="form-label">Age</label>
-                    <input id="Age" type="number" class="form-control" placeholder="[ ... ]" />
-                </div>
-                <div class="col-md-6 mb-16">
-                    <label for="Subject" class="form-label">Subject (optional)</label>
-                    <input id="Subject" type="text" class="form-control" placeholder="[ e.g., Maths ]" />
-                </div>
+            <div class="col-md-6">
+                <label class="form-label">Registration Date</label>
+                <input class="form-control" value="@(Model.RegistrationDate?.ToString("yyyy-MM-dd") ?? "—")" readonly />
             </div>
         </div>
     </div>
 
-    <!-- Preferences (trimmed per spec) -->
-    <div class="card shadow p-24 mb-16">
-        <h3 class="mb-0">Preferences</h3>
-        <div class="mt-16">
-            <!-- Leaderboard visibility ONLY -->
-            <div class="mb-16">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="LeaderboardVisibility" disabled>
-                    <label class="form-check-label" for="LeaderboardVisibility">Show me on the leaderboard</label>
-                </div>
-                <div class="caption text-muted mt-8">Controls your public visibility on leaderboards.</div>
+    <div class="card shadow p-3">
+        <h3 class="mb-3">Edit Details</h3>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control" />
+                <span asp-validation-for="Username" class="text-danger"></span>
             </div>
 
-            <!-- Theme preference: Light / Dark (no System) -->
-            <div class="mb-0">
-                <label class="form-label">Theme</label>
-                <div class="d-flex gap-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="themePref" id="themeLight" disabled>
-                        <label class="form-check-label" for="themeLight">Light</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="themePref" id="themeDark" disabled>
-                        <label class="form-check-label" for="themeDark">Dark</label>
-                    </div>
+            <div class="col-md-6">
+                <label asp-for="Phone" class="form-label"></label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="SubjectInterest" class="form-label"></label>
+                <input asp-for="SubjectInterest" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-check mt-4">
+                    <input asp-for="LeaderboardVisible" class="form-check-input" />
+                    <label asp-for="LeaderboardVisible" class="form-check-label"></label>
                 </div>
-                <div class="caption text-muted mt-8">In future, this will set your default theme.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="ThemePreference" class="form-label"></label>
+                <select asp-for="ThemePreference" class="form-select">
+                    <option value="Light">Light</option>
+                    <option value="Dark">Dark</option>
+                </select>
             </div>
         </div>
-    </div>
-</div>
 
-@* --------------------------------------------------------------------
-   TODO: Enable Profile Functionality
-   - Bind profile data; persist edits via POST
-   - Persist preferences: leaderboard visibility, theme (light/dark)
-   - Auth guard: redirect to Login if not signed in
---------------------------------------------------------------------- *@
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a class="btn btn-outline-secondary" asp-controller="Home" asp-action="UDashboard">Back to Dashboard</a>
+        </div>
+    </div>
+
+</form>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

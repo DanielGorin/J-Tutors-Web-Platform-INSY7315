@@ -40,21 +40,6 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/Public/Register.cshtml");
         }
 
-        // GET: /Home/AdminLogin
-        // Renders: Views/Public/AdminLogin.cshtml
-        public IActionResult AdminLogin()
-        {
-            return View("~/Views/Public/AdminLogin.cshtml");
-        }
-
-        // GET: /Home/AdminRegister
-        // Renders: Views/Public/AdminRegister.cshtml (placeholder until you create it)
-        public IActionResult AdminRegister()
-        {
-            // TEMP: if the view doesn't exist yet this will 404; add the file when ready.
-            return View("~/Views/Public/AdminRegister.cshtml");
-        }
-
         // GET: /Home/Privacy
         // Renders: Views/Public/Privacy.cshtml
         public IActionResult Privacy()
@@ -80,10 +65,13 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/User/UFileLibrary.cshtml");
         }
 
+        
         public IActionResult UProfile()
         {
-            return View("~/Views/User/UProfile.cshtml");
+            // send requests to the action that loads the model
+            return RedirectToAction("UProfile", "User");
         }
+
 
         public IActionResult UEvents()
         {

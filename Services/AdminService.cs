@@ -69,7 +69,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             int id = GetUserID(Username);
 
-            const string sql = "select SUM(PointsAmount) from PointsReceipts where UserID = @UserIDand Type = 'Earned'";
+            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Earned'";
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
@@ -88,7 +88,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             int id = GetUserID(Username);
 
-            const string sql = "select SUM(PointsAmount) from PointsReceipts where UserID = @UserID and Type = 'Spent'";
+            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Spent'";
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
@@ -111,9 +111,11 @@ namespace J_Tutors_Web_Platform.Services
 
         public List<TutoringSession> GetTutoringSessions()
         {
+            Console.WriteLine("Inside GetTutoringSessions method");
+
             var Sessionlist = new List<TutoringSession>();
 
-            const string sql = "select * from TutoringSessions";
+            const string sql = "select * from TutoringSession";
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
@@ -121,6 +123,7 @@ namespace J_Tutors_Web_Platform.Services
 
             using SqlDataReader reader = cmd.ExecuteReader();
 
+            Console.WriteLine("before while");
             while (reader.Read()) 
             {
                 Sessionlist.Add(new TutoringSession
@@ -139,11 +142,14 @@ namespace J_Tutors_Web_Platform.Services
                 });
             }
 
+            Console.WriteLine("outside while");
             return Sessionlist;
         }
 
         public List<AvailabilityBlock> GetAvailabilityBlocks()
         {
+            Console.WriteLine("Inside GetAvailabilityBlocks method");
+
             var avList = new List<AvailabilityBlock>();
 
             const string sql = "select * from AvailabilityBlock"; // add where admin id = @AdminId - not adding this as cannot login and nav to sessionandclaender yet
@@ -164,6 +170,11 @@ namespace J_Tutors_Web_Platform.Services
                     StartTime = reader.GetTimeSpan(reader.GetOrdinal("StartTime")),
                     EndTime = reader.GetTimeSpan(reader.GetOrdinal("EndTime"))
                 });
+            }
+
+            foreach (var item in avList) 
+            {
+                Console.WriteLine($"ID: {item.AvailabilityBlockID}, Date: {item.BlockDate}, Start: {item.StartTime}, End: {item.EndTime}");
             }
 
             return avList;
@@ -204,6 +215,7 @@ namespace J_Tutors_Web_Platform.Services
             bool isVisible;
             int unPaidSessions;
             double unPaidAmount;
+            DateTime lastActivity;
 
             const string sql = "select * from Users";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
@@ -224,6 +236,8 @@ namespace J_Tutors_Web_Platform.Services
                 unPaidSessions = 0; //add funcionality later after sessions can be booked
                 unPaidAmount = 0.0; //add funcionality later after sessions can be booked
 
+                lastActivity = DateTime.Now;
+
                 userList.Add(new UserDirectoryRow
                 {
                     Username = reader["Username"].ToString()!,
@@ -231,7 +245,7 @@ namespace J_Tutors_Web_Platform.Services
                     UnpaidAmount = unPaidAmount,
                     CurrentPoints = currentPoints,
                     TotalPoints = totalPoints,
-                    LastActivity = Convert.ToDateTime(reader["LastActivity"]),
+                    LastActivity = lastActivity,
                     LeaderboardVisible = isVisible
                 });
             }

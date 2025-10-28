@@ -161,115 +161,34 @@
                 <tbody>
                     @* ========================= DEMO DATA — remove/replace when wired ========================= *@
 
-                    <tr>
-                        <td>
-                            <div><strong>student1</strong></div>
-                            <div class="subline">Student 1 — Last note: Event 1 completed. The quick brown fox jumped over the lazy dog.</div>
-                        </td>
-                        <td>
-                            <div><strong>1 800</strong> / 2 100</div>
-                        </td>
-                        <td>
-                            <div>0 · R 0</div>
-                        </td>
-                        <td>
-                            <div>2025-09-29</div>
-                        </td>
-                        <td>
-                            Visible <span class="chip chip-visible">On</span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="1" class="btn btn-sm btn-outline-primary">Manage</a>
-                        </td>
-                    </tr>
+                    @foreach (var user in Model.UDR)
+                    {
+                        <tr>
+                            <td>
+                                <div><strong>@user.Username</strong></div>
+                            </td>
 
-                    <tr>
-                        <td>
-                            <div><strong>student2</strong></div>
-                            <div class="subline">Student 2 — Last note: Unpaid tutoring sessions pending. The quick brown fox jumped over the lazy dog.</div>
-                        </td>
-                        <td>
-                            <div><strong>1 715</strong> / 1 940</div>
-                        </td>
-                        <td>
-                            <div>2 · R 960 <span class="chip chip-unpaid">Unpaid</span></div>
-                        </td>
-                        <td>
-                            <div>2025-09-28</div>
-                        </td>
-                        <td>
-                            Visible <span class="chip chip-visible">On</span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="2" class="btn btn-sm btn-outline-primary">Manage</a>
-                        </td>
-                    </tr>
+                            <td>
+                                <div><strong>@user.CurrentPoints</strong> / @user.TotalPoints</div>
+                            </td>
 
-                    <tr>
-                        <td>
-                            <div><strong>student3</strong></div>
-                            <div class="subline">Student 3 — Last note: Event 2 no-show recorded. The quick brown fox jumped over the lazy dog.</div>
-                        </td>
-                        <td>
-                            <div><strong>250</strong> / 400</div>
-                        </td>
-                        <td>
-                            <div>0 · R 0</div>
-                        </td>
-                        <td>
-                            <div>2025-09-27</div>
-                        </td>
-                        <td>
-                            Hidden <span class="chip chip-hidden">Off</span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="3" class="btn btn-sm btn-outline-primary">Manage</a>
-                        </td>
-                    </tr>
+                            <td>
+                                <div>@user.UnpaidSessions · R @user.UnpaidAmount</div>
+                            </td>
 
-                    <tr>
-                        <td>
-                            <div><strong>student4</strong></div>
-                            <div class="subline">Student 4 — Last note: Event 3 in review. The quick brown fox jumped over the lazy dog.</div>
-                        </td>
-                        <td>
-                            <div><strong>0</strong> / 120</div>
-                        </td>
-                        <td>
-                            <div>1 · R 320 <span class="chip chip-unpaid">Unpaid</span></div>
-                        </td>
-                        <td>
-                            <div>2025-09-26</div>
-                        </td>
-                        <td>
-                            Visible <span class="chip chip-visible">On</span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="4" class="btn btn-sm btn-outline-primary">Manage</a>
-                        </td>
-                    </tr>
+                            <td>
+                                <div>@user.LastActivity</div>
+                            </td>
 
-                    <tr>
-                        <td>
-                            <div><strong>student5</strong></div>
-                            <div class="subline">Student 5 — Last note: Event 4 scheduled. The quick brown fox jumped over the lazy dog.</div>
-                        </td>
-                        <td>
-                            <div><strong>900</strong> / 1 050</div>
-                        </td>
-                        <td>
-                            <div>0 · R 0</div>
-                        </td>
-                        <td>
-                            <div>2025-09-25</div>
-                        </td>
-                        <td>
-                            Visible <span class="chip chip-visible">On</span>
-                        </td>
-                        <td class="text-end">
-                            <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="5" class="btn btn-sm btn-outline-primary">Manage</a>
-                        </td>
-                    </tr>
+                            <td>
+                                Visible <span class="chip chip-visible">@user.LeaderboardVisible</span>
+                            </td>
+
+                            <td class="text-end">
+                                <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="1" class="btn btn-sm btn-outline-primary">Manage</a>
+                            </td>
+                        </tr>
+                    }
 
                     @* ========================= /DEMO DATA =================================================== *@
                 </tbody>

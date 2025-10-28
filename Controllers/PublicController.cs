@@ -107,8 +107,8 @@ namespace J_Tutors_Web_Platform.Controllers
                 Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
                 Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
 
-
-                return View("~/Views/Admin/ASessionsCalendar.cshtml");
+                return RedirectToAction("ASessionCalender", "Admin");
+                //return View("~/Views/Admin/ASessionsCalendar.cshtml");
             }
             else
             {

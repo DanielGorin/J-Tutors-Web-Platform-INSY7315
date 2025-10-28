@@ -78,11 +78,17 @@ namespace J_Tutors_Web_Platform.Services
 
             constring.Open();
 
-            var totalPoints = (int?)cmd.ExecuteScalar();
+            var totalPoints = cmd.ExecuteScalar();
+
+            if (totalPoints == null)
+                totalPoints = 0;
+
+            if (totalPoints == DBNull.Value)
+                totalPoints = 0;
 
             constring.Close();
 
-            return totalPoints ?? 0;
+            return (int)totalPoints;
         }
 
         public int GetPointsSpent(string Username)
@@ -97,11 +103,17 @@ namespace J_Tutors_Web_Platform.Services
 
             constring.Open();
 
-            var totalPoints = (int?)cmd.ExecuteScalar();
+            var totalPoints = cmd.ExecuteScalar();
+
+            if (totalPoints == null)
+                totalPoints = 0;
+
+            if (totalPoints == DBNull.Value)
+                totalPoints = 0;
 
             constring.Close();
 
-            return totalPoints ?? 0;
+            return (int)totalPoints;
         }
 
         //============================== DashBoard ========================================

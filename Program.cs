@@ -11,6 +11,7 @@ namespace J_Tutors_Web_Platform
 
             builder.Services.AddScoped<J_Tutors_Web_Platform.Services.UserProfileService>();
             builder.Services.AddScoped<UserLeaderboardService>();
+            builder.Services.AddScoped<UserLedgerService>();
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
             builder.Services.AddSingleton<AuthService>(sp =>
@@ -52,7 +53,7 @@ namespace J_Tutors_Web_Platform
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
-            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 

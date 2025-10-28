@@ -9,6 +9,8 @@ namespace J_Tutors_Web_Platform
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.UserProfileService>();
+            builder.Services.AddScoped<UserLeaderboardService>();
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
             builder.Services.AddSingleton<AuthService>(sp =>
@@ -50,7 +52,7 @@ namespace J_Tutors_Web_Platform
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
-            pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 
@@ -62,7 +64,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=UEvents}/{id?}"); // USER EVENTS
             //pattern: "{controller=Home}/{action=UEventHistory}/{id?}"); // USER EVENT HISTORY
             //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER
-            //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD
+            //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING
             //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS
             //----------------------------------------------------

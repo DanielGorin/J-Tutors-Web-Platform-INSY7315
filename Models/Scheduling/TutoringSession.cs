@@ -28,6 +28,9 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         // Date of the session
         public DateTime SessionDate { get; set; }
 
+        // Start time of the session
+        public DateTime StartTime { get; set; }
+
         // Duration in hours
         [Column(TypeName = "decimal(4,2)")]
         public decimal DurationHours { get; set; }

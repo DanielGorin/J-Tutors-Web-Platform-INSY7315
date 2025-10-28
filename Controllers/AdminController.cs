@@ -15,11 +15,42 @@ namespace J_Tutors_Web_Platform.Controllers
             _adminService = adminService;
         }
 
-        public IActionResult ASessionCalender()
+        public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
         {
-            var list = _adminService.GetTutoringSessions();
+            var Username = User.Identity.Name;
 
-            return View(list);
+            List<TutoringSession> tutoringSessions = _adminService.GetTutoringSessions();
+            List<AvailabilityBlock> availabilitySlots = _adminService.GetAvailabilityBlocks();
+
+            var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
+            {
+                TutoringSessions = tutoringSessions,
+                AvailabilityBlock = availabilitySlots
+            };
+
+
+
+            //=====================remove this after testing=============================
+            var aavailabilitySlots = _adminService.GetAvailabilityBlocks();
+            foreach (var slot in aavailabilitySlots)
+            {
+                Console.WriteLine($"ID: {slot.AvailabilityBlockID}, Date: {slot.BlockDate}, Start: {slot.StartTime}, End: {slot.EndTime}");
+            }
+            //============================================================================
+
+
+
+            return View("ASessionsCalendar", calenderViewModel);
+        }
+
+        [HttpPost]
+        public IActionResult CreateAvailabilitySlot(DateTime BlockDate, TimeOnly StartTime, int Duration)
+        {
+            var Username = User.Identity.Name;
+            
+            _adminService.CreateAvailabilitySlot(Username, BlockDate, StartTime, Duration);
+
+            return View("~/Views/Admin/ASessionsCalendar.cshtml");
         }
     }
 }

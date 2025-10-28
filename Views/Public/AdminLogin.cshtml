@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Admin Login";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @{
@@ -64,7 +64,7 @@
         <h2 class="text-center mb-24">Sign In to J Tutors</h2>
 
         <!-- Login Form -->
-        <form method="post" asp-controller="public" asp-action="Login" class="login-form">
+        <form method="post" asp-controller="public" asp-action="AdminLogin" class="login-form">
             <div class="mb-16">
                 <label for="Username" class="form-label">Username</label>
                 <input id="Username" name="Username" type="text" placeholder="Enter your username" />

@@ -13,7 +13,7 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
 
         // FK: Admin who owns this block
         public int AdminID { get; set; }
-        public Admins.Admin Admin { get; set; } = default!;
+        //public Admins.Admin Admin { get; set; } = default!;
 
         // Date and time range of availability
         public DateTime BlockDate { get; set; }

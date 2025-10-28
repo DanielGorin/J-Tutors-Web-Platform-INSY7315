@@ -39,6 +39,33 @@ namespace J_Tutors_Web_Platform.Services
 
         }
 
+        public string AdminLogin(string Username, string Password) //can be changed to username and email later on for now just uses usernmae.
+        {
+            const string sql = "select * from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            //reading through returned data
+            while (reader.Read())
+            {
+                string storedHash = reader["PasswordHash"].ToString();
+                string storedSalt = reader["PasswordSalt"].ToString();
+
+                if (VerifyPassword(Password, storedHash, storedSalt))
+                {
+                    return "Login Successful";
+                }
+            }
+
+            return "Incorrect username or password";
+
+        }
+
         public string Register(string Email, string Username, string Password, string ConfirmPassword, string Phone, DateOnly BirthDate, string ThemePreference, string SubjectInterest, string FirstName, string Surname) 
         {
             //checking if username already exists in database
@@ -93,6 +120,47 @@ namespace J_Tutors_Web_Platform.Services
             cmd.ExecuteNonQuery();
 
             Console.WriteLine("User registered successfully");
+            return "Successfully created account";
+
+        }
+
+        public string AdminRegister(string Username, string Password, string ConfirmPassword, string ThemePreference)
+        {
+            //checking if username already exists in database
+            if (IsAdminUsernameTaken(Username))
+            {
+                Console.WriteLine("User registered successfully");
+                return "Username already taken";
+            }
+
+            //checking if both entered passwords match, can likely be done on frontend, this is incase it is not done that way
+            if (Password != ConfirmPassword)
+            {
+                Console.WriteLine("Passwords do not match");
+                return "Passwords do not match";
+            }
+
+            string salt = GenerateSalt();
+
+            string hashedPassword = HashPassword(Password, salt);
+
+            //inserting new user into database using sql
+            const string sql = "insert into Admins (Username, PasswordHash, PasswordSalt, ThemePreference) " +
+                               "values (@Username, @PasswordHash, @PasswordSalt, @ThemePreference)";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            //adding parameters to prevent sql injection
+            cmd.Parameters.AddWithValue("@Username", Username);
+            cmd.Parameters.AddWithValue("@PasswordHash", hashedPassword);
+            cmd.Parameters.AddWithValue("@PasswordSalt", salt);
+            cmd.Parameters.AddWithValue("@ThemePreference", "light-theme");
+
+            //executing the command
+            constring.Open();
+            cmd.ExecuteNonQuery();
+
+            Console.WriteLine("Admin registered successfully");
             return "Successfully created account";
 
         }
@@ -156,6 +224,30 @@ namespace J_Tutors_Web_Platform.Services
                 return false;
             }
         }
+
+        //Admin Register Logic
+        public bool IsAdminUsernameTaken(string Username) //does not exist yet
+        {
+            //logic to check if username exists in db
+            const string sql = "select count(*) from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            //if username count returns more than 0 then IsTaken is true, else false
+            if ((int)cmd.ExecuteScalar() > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
 
         //Register Logic
         public string GenerateSalt(int size = 32) 

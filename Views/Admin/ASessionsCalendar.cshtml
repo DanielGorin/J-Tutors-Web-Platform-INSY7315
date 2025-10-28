@@ -1,4 +1,4 @@
-﻿@model List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>
+﻿@model J_Tutors_Web_Platform.ViewModels.ASessionsCalenderViewModel
 
 @{
     ViewData["Title"] = "Sessions & Calendar";
@@ -256,20 +256,36 @@
                                 <div class="caption">@((new string[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })[(d - 1) % 7])</div>
                             </div>
                             <div class="day-items">
-                                @if (Model != null)
+                                @if (Model?.TutoringSessions != null)
                                 {
-                                    @foreach (var session in Model)
+                                    @foreach (var session in Model.TutoringSessions)
                                     {
                                         <!-- this is fixed to sep and 2025, fix after there if func -->
                                         if (session.SessionDate.Day == d && session.SessionDate.Month == 9 && session.SessionDate.Year == 2025)
                                         {
                                             <div class="day-item">
-                                                <div class="time">@session.SessionDate.ToString("HH:mm")</div>
+                                                <div class="time">@session.SessionDate.ToString(@"hh\:mm")</div>
                                                 <div class="subject">@session.Subject</div>
                                             </div>
                                         }
                                     }
-                                }              
+                                }
+                             
+                                @if (Model?.AvailabilityBlock != null)
+                                {
+                                    @foreach (var session in Model.AvailabilityBlock)
+                                    {
+                                        <!-- this is fixed to sep and 2025, fix after there if func -->
+                                        if (session.BlockDate.Day == d) // && session.BlockDate.Month == 9 && session.BlockDate.Year == 2025
+                                        {
+                                            <div class="day-item">
+                                                <div class="time">@session.StartTime.ToString(@"hh\:mm")</div>
+                                                <div class="time">till @session.EndTime.ToString(@"hh\:mm")</div>
+                                            </div>
+                                        }
+                                    }
+                                }
+           
                             </div>
                         </div>
                     }
@@ -312,28 +328,30 @@
             </div>
 
             <!-- Manage Slots -->
+            
             <div class="card shadow p-24">
                 <h3 class="mb-8">Manage Slots</h3>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label">Date</label>
-                        <input type="date" class="form-control" />
+                <form asp-controller="Admin" asp-action="CreateAvailabilitySlot" method="post">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Date</label>
+                            <input id="BlockDate" name="BlockDate" type="date" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Time</label>
+                            <input id="StartTime" name="StartTime" type="time" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Duration (mins)</label>
+                            <input id="Duration" name="Duration" type="number" class="form-control" placeholder="e.g., 60" />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-outline-primary w-100">Add Slot</button>
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <label class="form-label">Time</label>
-                        <input type="time" class="form-control" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Duration (mins)</label>
-                        <input type="number" class="form-control" placeholder="e.g., 60" />
-                    </div>
-                    <div class="col-12">
-                        <button class="btn btn-outline-primary w-100" disabled>Add Slot</button>
-                    </div>
-                </div>
-
+                </form>
                 <div class="d-flex justify-content-end mt-16">
-                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove Selected Slots</button>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Remove Selected Slots</button>
                 </div>
                 <div class="caption mt-8">Select slots on the calendar to remove (future wiring).</div>
             </div>

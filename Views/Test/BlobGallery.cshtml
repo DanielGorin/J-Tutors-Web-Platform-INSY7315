@@ -1,0 +1,63 @@
+﻿@model IReadOnlyList<string>
+@{
+    ViewData["Title"] = "Blob Image Gallery (Demo)";
+    Layout = "_Layout"; // remove if you don't use a layout
+}
+
+<div class="container mt-4">
+    <h1 class="mb-3">Blob Image Gallery (Demo)</h1>
+    <p class="text-muted">Uploads go to the <strong>images</strong> blob container. Images are streamed via this app (no public access needed).</p>
+
+    <!-- Upload -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><strong>Upload an image</strong></div>
+        <div class="card-body">
+            <form asp-controller="TestBlob" asp-action="Upload" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="row g-2 align-items-center">
+                    <div class="col-sm-8 col-md-9">
+                        <input type="file" name="file" class="form-control" accept="image/*" />
+                    </div>
+                    <div class="col-sm-4 col-md-3 text-end">
+                        <button class="btn btn-primary w-100" type="submit">Upload</button>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">Accepted: any image type. Same-name upload will overwrite.</small>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="card shadow-sm">
+        <div class="card-header"><strong>Uploaded images</strong></div>
+        <div class="card-body">
+            @if (Model != null && Model.Count > 0)
+            {
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                    @foreach (var name in Model)
+                    {
+                        <div class="col">
+                            <div class="card h-100">
+                                <img class="card-img-top" src="@Url.Action("Image", "TestBlob", new { name })" alt="@name" style="object-fit:cover; max-height:220px;" />
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <code class="small text-break">@name</code>
+                                        <form asp-controller="TestBlob" asp-action="Delete" method="post" class="ms-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="name" value="@name" />
+                                            <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">No images uploaded yet.</div>
+            }
+        </div>
+    </div>
+</div>

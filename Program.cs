@@ -1,5 +1,7 @@
 using J_Tutors_Web_Platform.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using J_Tutors_Web_Platform.Services.Storage;
+
 
 namespace J_Tutors_Web_Platform
 {
@@ -9,7 +11,12 @@ namespace J_Tutors_Web_Platform
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.UserProfileService>();
+            builder.Services.AddSingleton<FileShareService>();
+            builder.Services.AddSingleton<BlobStorageService>();
+
+            builder.Services.AddSingleton<FileShareService>();
+
+            builder.Services.AddScoped<UserProfileService>();
             builder.Services.AddScoped<UserLeaderboardService>();
             builder.Services.AddScoped<UserLedgerService>();
 
@@ -57,11 +64,17 @@ namespace J_Tutors_Web_Platform
 
             app.MapControllerRoute(
                 name: "default",
+            //Testing
+            //----------------------------------------------------
+            //pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO
+            pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO
+            //----------------------------------------------------
+
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
-            pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
+            //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 

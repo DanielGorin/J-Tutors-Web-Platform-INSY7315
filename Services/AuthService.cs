@@ -40,6 +40,36 @@ namespace J_Tutors_Web_Platform.Services
 
         }
 
+        public string AdminLogin(string Username, string Password) //can be changed to username and email later on for now just uses usernmae.
+        {
+            const string sql = "select * from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            //reading through returned data
+            while (reader.Read())
+            {
+                string storedHash = reader["PasswordHash"].ToString();
+                string storedSalt = reader["PasswordSalt"].ToString();
+
+                if (VerifyPassword(Password, storedHash, storedSalt))
+                {
+                    Console.WriteLine("Admin login successful");
+                    return "Login Successful";
+                }
+            }
+
+            Console.WriteLine("Admin login failed");
+
+            return "Incorrect username or password";
+
+        }
+
         public string Register(string Email, string Username, string Password, string ConfirmPassword, string Phone, DateOnly BirthDate, string ThemePreference, string SubjectInterest, string FirstName, string Surname) 
         {
             //checking if username already exists in database

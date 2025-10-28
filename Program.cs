@@ -27,6 +27,13 @@ namespace J_Tutors_Web_Platform
                 options.LogoutPath = "/Home/Login"; // Redirect to logout page
             });
 
+            builder.Services.AddSingleton<AdminService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new AdminService(connectionString);
+            });
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
@@ -53,7 +60,8 @@ namespace J_Tutors_Web_Platform
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
-            pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 

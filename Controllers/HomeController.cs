@@ -32,6 +32,13 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/Public/Login.cshtml");
         }
 
+        // GET: /Home/AdminLogin
+        // Renders: Views/Public/AdminLogin.cshtml
+        public IActionResult AdminLogin()
+        {
+            return View("~/Views/Public/AdminLogin.cshtml");
+        }
+
         // GET: /Home/Register
         // Renders: Views/Public/Register.cshtml (placeholder until you create it)
         public IActionResult Register()

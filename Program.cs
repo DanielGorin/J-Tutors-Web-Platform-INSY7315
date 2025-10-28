@@ -21,6 +21,13 @@ namespace J_Tutors_Web_Platform
                 return new AuthService(connectionString);
             });
 
+            builder.Services.AddSingleton<AdminService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new AdminService(connectionString);
+            });
+
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => 
             {
                 options.LoginPath = "/Home/Login"; // Redirect to login page if not authenticated

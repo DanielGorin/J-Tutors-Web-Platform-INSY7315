@@ -2,6 +2,7 @@
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Users;
+using J_Tutors_Web_Platform.Models.Subjects;
 using Microsoft.Data.SqlClient;
 using J_Tutors_Web_Platform.ViewModels;
 using System.Security.Claims;
@@ -266,33 +267,12 @@ namespace J_Tutors_Web_Platform.Services
 
 
 
-        //============================== Quotations ==============================
-        // ============================== Quotations (Subjects + Pricing) ==============================
+        // ============================== Quotations ==============================
 
-        public sealed class SubjectRow
+        public List<Subject> GetAllSubjects()
         {
-            public int SubjectID { get; set; }
-            public string SubjectName { get; set; } = "";
-            public bool IsActive { get; set; }
-        }
-
-        public sealed class PricingRuleRow
-        {
-            public int? PricingRuleID { get; set; } // null if not set yet
-            public int SubjectID { get; set; }
-            public int AdminID { get; set; }
-            public decimal HourlyRate { get; set; }
-            public decimal MinHours { get; set; }
-            public decimal MaxHours { get; set; }
-            public decimal MaxPointDiscount { get; set; }
-        }
-
-        // ---- Subjects ----
-
-        public List<SubjectRow> GetAllSubjects()
-        {
-            var list = new List<SubjectRow>();
-            const string sql = "SELECT SubjectID, SubjectName, IsActive FROM Subjects ORDER BY SubjectName";
+            var list = new List<Subject>();
+            const string sql = "SELECT * FROM Subjects ORDER BY SubjectName";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -301,7 +281,7 @@ namespace J_Tutors_Web_Platform.Services
             using var r = cmd.ExecuteReader();
             while (r.Read())
             {
-                list.Add(new SubjectRow
+                list.Add(new Subject
                 {
                     SubjectID = Convert.ToInt32(r["SubjectID"]),
                     SubjectName = Convert.ToString(r["SubjectName"]) ?? "",
@@ -315,33 +295,37 @@ namespace J_Tutors_Web_Platform.Services
         {
             if (string.IsNullOrWhiteSpace(subjectName)) throw new ArgumentException("Subject name required.");
 
-            const string sql = @"INSERT INTO Subjects (SubjectName, IsActive)VALUES (@name, 1);SELECT SCOPE_IDENTITY();";
+            const string sql = @"
+        INSERT INTO Subjects (SubjectName, IsActive)
+        VALUES (@name, 1);
+        SELECT SCOPE_IDENTITY();";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
             cmd.Parameters.AddWithValue("@name", subjectName.Trim());
             con.Open();
 
-            var idObj = cmd.ExecuteScalar();
-            return Convert.ToInt32(idObj);
+            return Convert.ToInt32(cmd.ExecuteScalar());
         }
 
         public int DeleteSubject(int subjectId)
         {
-            // If you have FK PricingRule(SubjectID) WITHOUT cascade, delete pricing first
-            const string sql = @"DELETE FROM PricingRule WHERE SubjectID = @id;DELETE FROM Subjects WHERE SubjectID = @id;";
+            // If FK to PricingRule has no CASCADE, this preserves referential integrity.
+            const string sql = @"
+        DELETE FROM PricingRule WHERE SubjectID = @id;
+        DELETE FROM Subjects     WHERE SubjectID = @id;";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
             cmd.Parameters.AddWithValue("@id", subjectId);
             con.Open();
 
-            return cmd.ExecuteNonQuery(); // total rows affected
+            return cmd.ExecuteNonQuery();
         }
 
         public int SetSubjectActive(int subjectId, bool isActive)
         {
-            const string sql = @"UPDATE Subjects SET IsActive = @active WHERE SubjectID = @id";
+            const string sql = "UPDATE Subjects SET IsActive = @active WHERE SubjectID = @id";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -352,12 +336,10 @@ namespace J_Tutors_Web_Platform.Services
             return cmd.ExecuteNonQuery();
         }
 
-        // ---- Pricing ----
-
-        public PricingRuleRow? GetPricingForSubject(int subjectId)
+        public PricingRule? GetPricingForSubject(int subjectId)
         {
             const string sql = @"
-        SELECT TOP 1 PricingRuleID, SubjectID, AdminID, HourlyRate, MinHours, MaxHours, MaxPointDiscountFROM PricingRuleWHERE SubjectID = @sid";
+        SELECT TOP 1 * FROM PricingRule WHERE SubjectID = @sid";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -367,7 +349,7 @@ namespace J_Tutors_Web_Platform.Services
             using var r = cmd.ExecuteReader();
             if (!r.Read()) return null;
 
-            return new PricingRuleRow
+            return new PricingRule
             {
                 PricingRuleID = Convert.ToInt32(r["PricingRuleID"]),
                 SubjectID = Convert.ToInt32(r["SubjectID"]),
@@ -381,23 +363,26 @@ namespace J_Tutors_Web_Platform.Services
 
         public void UpsertPricing(int subjectId, int adminId, decimal hourlyRate, decimal minHours, decimal maxHours, decimal maxPointDiscount)
         {
-            // Basic business sanity
             if (minHours <= 0 || maxHours <= 0 || maxHours < minHours) throw new ArgumentException("Invalid hour range.");
             if (hourlyRate < 0) throw new ArgumentException("Hourly rate must be >= 0.");
             if (maxPointDiscount < 0) throw new ArgumentException("Max points discount must be >= 0.");
 
-            // Upsert pattern: update if exists, else insert
             const string sql = @"
-            IF EXISTS (SELECT 1 FROM PricingRule WHERE SubjectID = @sid)
-            BEGIN
-                UPDATE PricingRule
-                SET AdminID = @aid,HourlyRate = @hr,MinHours = @minh,MaxHours = @maxh,MaxPointDiscount = @mpdWHERE SubjectID = @sid;
-            END
-            ELSE
-            BEGIN
-                INSERT INTO PricingRule (SubjectID, AdminID, HourlyRate, MinHours, MaxHours, MaxPointDiscount)
-                VALUES (@sid, @aid, @hr, @minh, @maxh, @mpd);
-            END";
+        IF EXISTS (SELECT 1 FROM PricingRule WHERE SubjectID = @sid)
+        BEGIN
+            UPDATE PricingRule
+            SET AdminID = @aid,
+                HourlyRate = @hr,
+                MinHours = @minh,
+                MaxHours = @maxh,
+                MaxPointDiscount = @mpd
+            WHERE SubjectID = @sid;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO PricingRule (SubjectID, AdminID, HourlyRate, MinHours, MaxHours, MaxPointDiscount)
+            VALUES (@sid, @aid, @hr, @minh, @maxh, @mpd);
+        END";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -411,6 +396,7 @@ namespace J_Tutors_Web_Platform.Services
 
             cmd.ExecuteNonQuery();
         }
+
 
 
 

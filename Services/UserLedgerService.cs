@@ -23,11 +23,7 @@ namespace J_Tutors_Web_Platform.Services
         public async Task<List<PointsReceipt>> GetReceiptsForUserAsync(int userId)
         {
             var list = new List<PointsReceipt>();
-            var sql = @"
-SELECT PointsReceiptID, ReceiptDate, Type, Amount, Reason, Reference
-FROM dbo.PointsReceipt
-WHERE UserID = @id
-ORDER BY ReceiptDate DESC";
+            var sql = @"SELECT * FROM dbo.PointsReceipt WHERE UserID = @id ORDER BY ReceiptDate DESC";
 
             await using var conn = new SqlConnection(_connStr);
             await using var cmd = new SqlCommand(sql, conn);
@@ -56,13 +52,7 @@ ORDER BY ReceiptDate DESC";
         // ─────────────────────────────────────────────────────────────
         public async Task<(int earned, int deducted, int balance)> GetTotalsForUserAsync(int userId)
         {
-            var sql = @"
-SELECT 
-    SUM(CASE WHEN Amount > 0 THEN Amount ELSE 0 END) AS Earned,
-    SUM(CASE WHEN Amount < 0 THEN -Amount ELSE 0 END) AS Deducted,
-    SUM(Amount) AS Balance
-FROM dbo.PointsReceipt
-WHERE UserID = @id";
+            var sql = @"SELECT SUM(CASE WHEN Amount > 0 THEN Amount ELSE 0 END) AS Earned, SUM(CASE WHEN Amount < 0 THEN -Amount ELSE 0 END) AS Deducted, SUM(Amount) AS Balance FROM dbo.PointsReceipt WHERE UserID = @id";
 
             await using var conn = new SqlConnection(_connStr);
             await using var cmd = new SqlCommand(sql, conn);

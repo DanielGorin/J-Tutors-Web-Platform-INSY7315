@@ -30,14 +30,7 @@ namespace J_Tutors_Web_Platform.Services
         // ─────────────────────────────────────────────────────────────────────────────
         public async Task<UserProfileViewModel?> GetProfileAsync(string username)
         {
-            var sql = @"
-SELECT TOP 1 
-    UserID, Username, FirstName, Surname,
-    BirthDate, RegistrationDate,
-    Email, Phone, SubjectInterest,
-    LeaderboardVisible, ThemePreference
-FROM Users
-WHERE Username = @u";
+            var sql = @"SELECT TOP 1 * FROM Users WHERE Username = @u";
             // the above SQL Query pulls the relevent data for the current user
             await using var conn = new SqlConnection(_connStr);
             await using var cmd = new SqlCommand(sql, conn);
@@ -104,15 +97,7 @@ WHERE Username = @u";
             int userId,
             UserProfileViewModel form)
         {
-            var updateSql = @"
-UPDATE Users
-SET Username = @nu,
-    Email = @e,
-    Phone = @p,
-    SubjectInterest = @si,
-    LeaderboardVisible = @lb,
-    ThemePreference = @th
-WHERE UserID = @id";
+            var updateSql = @"UPDATE Users SET Username = @nu, Email = @e, Phone = @p, SubjectInterest = @si, LeaderboardVisible = @lb, ThemePreference = @th WHERE UserID = @id";
             //the above SQL query changes the users data based on their inputs
             await using var conn = new SqlConnection(_connStr);
             await using var cmd = new SqlCommand(updateSql, conn);

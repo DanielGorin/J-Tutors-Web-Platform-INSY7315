@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using J_Tutors_Web_Platform.Services.Storage;
 
-namespace J_Tutors_Web_Platform.Controllers
+namespace J_Tutors_Web_Platform.Controllers.Testing
 {
     public class TestController : Controller
     {
@@ -35,7 +35,7 @@ namespace J_Tutors_Web_Platform.Controllers
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest("Missing name.");
             var stream = await _fs.DownloadAsync(name);
-            var downloadName = System.IO.Path.GetFileName(name);
+            var downloadName = Path.GetFileName(name);
             return File(stream, "application/octet-stream", downloadName);
         }
     }

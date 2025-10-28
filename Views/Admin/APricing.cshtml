@@ -1,10 +1,10 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.APricingViewModel
+@{
     ViewData["Title"] = "Booking Rules & Pricing";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "Admin";
 }
 
-<!-- Scoped styles for AQuotations -->
 <style>
     .aquotes, .aquotes .card {
         color: var(--text-color) !important;
@@ -33,7 +33,6 @@
                 box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
             }
 
-        /* Table theme */
         .aquotes .table, .aquotes .table th, .aquotes .table td {
             color: var(--text-color) !important;
             background: transparent !important;
@@ -53,7 +52,6 @@
                 background: rgba(0,0,0,0.03);
             }
 
-        /* Subject chips */
         .aquotes .chip {
             display: inline-block;
             padding: 4px 10px;
@@ -65,7 +63,6 @@
             white-space: nowrap;
         }
 
-        /* Small helper layout */
         .aquotes .section-title {
             display: flex;
             align-items: center;
@@ -74,265 +71,133 @@
 </style>
 
 <div class="aquotes">
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Booking Rules &amp; Pricing</h1>
         <div class="d-flex gap-2">
             <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
-            <!-- Preview the student-facing booking page -->
-            <a asp-controller="User" asp-action="Booking" class="btn btn-outline-primary">Preview Booking</a>
+            <a asp-controller="Home" asp-action="UBooking" class="btn btn-outline-primary">Preview Booking</a>
         </div>
     </div>
 
+    @if (TempData["APricingError"] is string err && !string.IsNullOrWhiteSpace(err))
+    {
+        <div class="alert alert-danger">@err</div>
+    }
+    @if (TempData["APricingOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+
     <div class="row g-3">
-        <!-- LEFT COLUMN -->
+        <!-- LEFT: Subjects -->
         <div class="col-lg-5">
-            <!-- Points Usage Range -->
-            <div class="card shadow p-24 mb-16">
-                <div class="section-title">
-                    <h3 class="mb-0">Points Usage Limits</h3>
-                    <button class="btn btn-sm btn-primary" disabled>Save</button>
-                </div>
-                <div class="caption mt-8">Set the global max percentage of session cost that students may pay with points.</div>
-
-                <div class="row g-3 mt-16">                   
-                    <div class="col-6">
-                        <label class="form-label" for="maxPct">Max %</label>
-                        <input id="maxPct" type="number" min="0" max="100" step="1" class="form-control" value="30" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Range Preview</label>                      
-                        <div class="d-flex align-items-center gap-3 mt-8">
-                            <input id="rangeMax" type="range" min="0" max="100" value="30" />
-                            <span class="caption" id="rangeMaxLabel">30%</span>
-                        </div>
-                    </div>
-                </div>
-
-                @* ===== DEMO DEFAULTS: 0–30% (UI only) ===== *@
-            </div>
-
-            <!-- Subjects -->
             <div class="card shadow p-24">
                 <div class="section-title">
                     <h3 class="mb-0">Subjects</h3>
-                    <button class="btn btn-sm btn-primary" disabled>Save</button>
                 </div>
-                <div class="caption mt-8">Add/remove available subjects for booking.</div>
+                <div class="caption mt-8">Add/remove subjects and toggle active status.</div>
 
-                <div class="mt-16">
-                    <label class="form-label" for="newSubject">Add Subject</label>
-                    <div class="d-flex gap-2">
-                        <input id="newSubject" class="form-control" placeholder="e.g., Maths" />
-                        <button class="btn btn-outline-primary" disabled>Add</button>
-                    </div>
-                </div>
+                <!-- Add Subject -->
+                <form asp-action="CreateSubject" asp-controller="Admin" method="post" class="mt-16 d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input name="subjectName" class="form-control" placeholder="e.g., Maths" />
+                    <button class="btn btn-outline-primary" type="submit">Add</button>
+                </form>
 
-                <div class="mt-16">
-                    <div class="caption mb-8">Current:</div>
-
-                    @* ===== DEMO DATA — subjects list ===== *@
-                    <div>
-                        <span class="chip">Maths</span>
-                        <span class="chip">English</span>
-                        <span class="chip">Science</span>
-                    </div>
-
-                    <div class="table-responsive mt-16">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Subject</th>
-                                    <th>Active</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Maths</td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked disabled>
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>English</td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked disabled>
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Science</td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked disabled>
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    @* ===== /DEMO DATA ====================== *@
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT COLUMN -->
-        <div class="col-lg-7">
-            <!-- Pricing Matrix -->
-            <div class="card shadow p-24 h-100">
-                <div class="section-title">
-                    <h3 class="mb-0">Pricing Matrix</h3>
-                    <button class="btn btn-sm btn-primary" disabled>Save</button>
-                </div>
-                <div class="caption mt-8">
-                    Configure base rand pricing per subject, hour increment, and number of students.
-                </div>
-
-                <!-- Subject selector (UI only) -->
-                <div class="row g-3 mt-16">
-                    <div class="col-md-4">
-                        <label class="form-label">Subject</label>
-                        <select class="form-select">
-                            <option>Maths</option>
-                            <option>English</option>
-                            <option>Science</option>
-                        </select>
-                    </div>
-                    <div class="col-md-8">
-                        <label class="form-label">Hour Increments (UI only)</label>
-                        <div class="d-flex gap-2">
-                            <input class="form-control" placeholder="e.g., 1.0, 1.5, 2.0" value="1.0, 1.5, 2.0" />
-                            <button class="btn btn-outline-secondary" disabled>Apply</button>
-                        </div>
-                        <div class="caption mt-8">Student counts (columns) are shown below; add/remove in the table.</div>
-                    </div>
-                </div>
-
-                <!-- Matrix table -->
+                <!-- List -->
                 <div class="table-responsive mt-16">
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>Hours ↓ / Students →</th>
-                                <th>1</th>
-                                <th>2</th>
-                                <th>3</th>
-                                <th class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>+ Add Students Col</button>
-                                </th>
+                                <th>Subject</th>
+                                <th>Active</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @* ===== DEMO DATA — example prices (Maths) ===== *@
-                            <tr>
-                                <td><strong>1.0 h</strong></td>
-                                <td><input type="number" class="form-control" value="250" /></td>
-                                <td><input type="number" class="form-control" value="320" /></td>
-                                <td><input type="number" class="form-control" value="380" /></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove Row</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>1.5 h</strong></td>
-                                <td><input type="number" class="form-control" value="360" /></td>
-                                <td><input type="number" class="form-control" value="430" /></td>
-                                <td><input type="number" class="form-control" value="490" /></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove Row</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>2.0 h</strong></td>
-                                <td><input type="number" class="form-control" value="460" /></td>
-                                <td><input type="number" class="form-control" value="540" /></td>
-                                <td><input type="number" class="form-control" value="610" /></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove Row</button>
-                                </td>
-                            </tr>
-                            @* ===== /DEMO DATA =============================== *@
+                            @foreach (var s in Model.Subjects)
+                            {
+                                var selected = Model.SelectedSubjectID == s.SubjectID;
+                                <tr class="@(selected ? "table-active" : "")">
+                                    <td>
+                                        <a asp-action="APricing" asp-controller="Admin" asp-route-subjectId="@s.SubjectID">@s.SubjectName</a>
+                                    </td>
+                                    <td>
+                                        <form asp-action="ToggleSubject" asp-controller="Admin" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="subjectId" value="@s.SubjectID" />
+                                            <input type="hidden" name="isActive" value="@(!s.IsActive)" />
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" @(s.IsActive ? "checked" : "") onchange="this.form.submit()" />
+                                            </div>
+                                        </form>
+                                    </td>
+                                    <td class="text-end">
+                                        <form asp-action="DeleteSubject" asp-controller="Admin" method="post" onsubmit="return confirm('Delete subject & pricing?');" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="subjectId" value="@s.SubjectID" />
+                                            <button class="btn btn-sm btn-outline-secondary" type="submit">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
                         </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="5">
-                                    <div class="d-flex justify-content-between">
-                                        <button class="btn btn-outline-secondary btn-sm" disabled>+ Add Hour Row</button>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-outline-secondary btn-sm" disabled>Reset Matrix</button>
-                                            <button class="btn btn-primary btn-sm" disabled>Save Matrix</button>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Pricing -->
+        <div class="col-lg-7">
+            <div class="card shadow p-24 h-100">
+                <div class="section-title">
+                    <h3 class="mb-0">Pricing</h3>
+                </div>
+                <div class="caption mt-8">Set hourly rate and constraints for the selected subject.</div>
+
+                @if (Model.SelectedSubjectID is null)
+                {
+                    <div class="alert alert-info mt-16">Select a subject on the left to edit pricing.</div>
+                }
+                else
+                {
+                    <form asp-action="SavePricing" asp-controller="Admin" method="post" class="mt-16">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="subjectId" value="@Model.SelectedSubjectID" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly Rate (R)</label>
+                                <input class="form-control" type="number" name="hourlyRate" step="0.01" min="0"
+                                       value="@(Model.HourlyRate?.ToString() ?? "0.00")" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Max Point Discount</label>
+                                <input class="form-control" type="number" name="maxPointDiscount" step="0.01" min="0"
+                                       value="@(Model.MaxPointDiscount?.ToString() ?? "0.00")" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Min Hours</label>
+                                <input class="form-control" type="number" name="minHours" step="0.25" min="0.25"
+                                       value="@(Model.MinHours?.ToString() ?? "1.00")" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Max Hours</label>
+                                <input class="form-control" type="number" name="maxHours" step="0.25" min="0.25"
+                                       value="@(Model.MaxHours?.ToString() ?? "2.00")" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-16">
+                            <button class="btn btn-primary" type="submit">Save Pricing</button>
+                        </div>
+                    </form>
+                }
 
                 <div class="caption mt-8">
-                    Notes: Pricing is used by the student booking calculator. Points discount (within min/max) applies to the final rand price.
+                    Note: constraints apply during booking; discount is capped per subject by “Max Point Discount”.
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Tiny UI-only script to keep min/max % coherent -->
-@section Scripts {
-    <script>
-        (function () {
-            const minPct = document.getElementById('minPct');
-            const maxPct = document.getElementById('maxPct');
-            const rMin = document.getElementById('rangeMin');
-            const rMax = document.getElementById('rangeMax');
-            const lblMin = document.getElementById('rangeMinLabel');
-            const lblMax = document.getElementById('rangeMaxLabel');
-
-            function sync() {
-                // Clamp and enforce min <= max
-                let mi = Math.max(0, Math.min(100, parseInt(minPct.value || '0', 10)));
-                let ma = Math.max(0, Math.min(100, parseInt(maxPct.value || '0', 10)));
-                if (mi > ma) mi = ma;
-                minPct.value = mi; maxPct.value = ma;
-                rMin.value = mi; rMax.value = ma;
-                lblMin.textContent = mi + '%';
-                lblMax.textContent = ma + '%';
-            }
-
-            ['input', 'change'].forEach(evt => {
-                minPct.addEventListener(evt, sync);
-                maxPct.addEventListener(evt, sync);
-                rMin.addEventListener(evt, e => { minPct.value = e.target.value; sync(); });
-                rMax.addEventListener(evt, e => { maxPct.value = e.target.value; sync(); });
-            });
-
-            sync();
-        })();
-    </script>
-}
-
-@* --------------------------------------------------------------------
-   TODO: Wire Up AQuotations
-   - Persist min/max points usage % (GET current values, POST updates)
-   - Subjects:
-       • List subjects; add/remove; toggle active
-   - Pricing Matrix:
-       • Load per-subject matrix (hours × students)
-       • Add/remove rows/cols; validate numbers; save per subject
-   - Versioning (optional): keep history of pricing changes
-   - Auth guard: admin-only
-   - Link “Preview Booking” to student/public booking page with live rules
---------------------------------------------------------------------- *@

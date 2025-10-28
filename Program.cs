@@ -67,14 +67,14 @@ namespace J_Tutors_Web_Platform
             //Testing
             //----------------------------------------------------
             //pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO
-            pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO
+            //pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO
             //----------------------------------------------------
 
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
-            //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
+            pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 
@@ -85,7 +85,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=UProfile}/{id?}"); // USER PROFILE - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UEvents}/{id?}"); // USER EVENTS
             //pattern: "{controller=Home}/{action=UEventHistory}/{id?}"); // USER EVENT HISTORY
-            //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER
+            //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING
             //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS

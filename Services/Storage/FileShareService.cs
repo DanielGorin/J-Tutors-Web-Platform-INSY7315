@@ -42,6 +42,30 @@ namespace J_Tutors_Web_Platform.Services.Storage
             return file.Name; // just the name in root
         }
 
+        // Add inside FileShareService class
+        private static string ExtractName(string storagePath)
+        {
+            var p = (storagePath ?? string.Empty).Trim().Replace('\\', '/');
+            if (string.IsNullOrEmpty(p)) return string.Empty;
+            var i = p.LastIndexOf('/');
+            return i < 0 ? p : p[(i + 1)..];
+        }
+
+        public async Task<bool> DeleteAsync(string storagePath, CancellationToken ct = default)
+        {
+            // Works with "file.ext" or "folder/file.ext" by stripping any folder part
+            var name = ExtractName(storagePath);
+            if (string.IsNullOrWhiteSpace(name)) return false;
+
+            var root = _share.GetRootDirectoryClient();
+            await root.CreateIfNotExistsAsync(cancellationToken: ct);
+
+            var file = root.GetFileClient(name);
+            var resp = await file.DeleteIfExistsAsync(cancellationToken: ct);
+            return resp.Value;
+        }
+
+
         public async Task<IReadOnlyList<string>> ListAsync(CancellationToken ct = default)
         {
             var root = _share.GetRootDirectoryClient();

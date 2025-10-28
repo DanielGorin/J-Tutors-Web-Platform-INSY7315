@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using J_Tutors_Web_Platform.Services.Storage;
 
-namespace J_Tutors_Web_Platform.Controllers
+namespace J_Tutors_Web_Platform.Controllers.Testing
 {
     public class TestBlobController : Controller
     {

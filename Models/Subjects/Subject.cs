@@ -18,7 +18,7 @@ namespace J_Tutors_Web_Platform.Models.Subjects
         public string SubjectName { get; set; } = default!;
 
         // Indicates if the subject is currently active
-        public bool IsActive { get; set; } = true;
+        public bool IsAvtive { get; set; } = true;
 
         // Navigation
         public ICollection<PricingRule> PricingRules { get; set; } = new List<PricingRule>();

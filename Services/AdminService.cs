@@ -3,6 +3,7 @@ using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Users;
 using Microsoft.Data.SqlClient;
+using J_Tutors_Web_Platform.ViewModels;
 using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Services
@@ -14,8 +15,95 @@ namespace J_Tutors_Web_Platform.Services
         {
             _connectionString = connectionString;
         }
+        //============================== Universal ========================================
 
-        //============================== DashBoard ==============================
+        public int GetAdminID(string Username)
+        {
+            const string sql = "select AdminId from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            var id = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return id;
+        }
+
+        public int GetUserID(string Username)
+        {
+            const string sql = "select UserId from Users where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            var id = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return id;
+        }
+
+        public bool IsLeaderboardVisible(string Username) 
+        {
+            const string sql = "select LeaderboardVisible from Users where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            var ans = (bool)cmd.ExecuteScalar();
+
+            constring.Close();
+            return ans;
+        }
+
+        public int GetTotalPoints(string Username)
+        {
+            int id = GetUserID(Username);
+
+            const string sql = "select SUM(PointsAmount) from PointsReceipts where UserID = @UserIDand Type = 'Earned'";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", id);
+
+            constring.Open();
+
+            var totalPoints = (int?)cmd.ExecuteScalar();
+
+            constring.Close();
+
+            return totalPoints ?? 0;
+        }
+
+        public int GetPointsSpent(string Username)
+        {
+            int id = GetUserID(Username);
+
+            const string sql = "select SUM(PointsAmount) from PointsReceipts where UserID = @UserID and Type = 'Spent'";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", id);
+
+            constring.Open();
+
+            var totalPoints = (int?)cmd.ExecuteScalar();
+
+            constring.Close();
+
+            return totalPoints ?? 0;
+        }
+
+        //============================== DashBoard ========================================
 
 
 
@@ -105,68 +193,56 @@ namespace J_Tutors_Web_Platform.Services
             return "Successfully created availability block";
         }
 
-        public int GetAdminID(string Username) 
+        //============================== Users ==============================
+
+        public List<UserDirectoryRow> GetAllUsers(string Username)
         {
-            const string sql = "select AdminId from Admins where Username = @Username";
+            var userList = new List<UserDirectoryRow>();
+            int totalPoints;
+            int pointsSpent;
+            int currentPoints;
+            bool isVisible;
+            int unPaidSessions;
+            double unPaidAmount;
+
+            const string sql = "select * from Users";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@Username", Username);
-
             constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
 
-            var id = (int)cmd.ExecuteScalar();
+            //reading through returned data
+            while (reader.Read())
+            {
+                totalPoints = GetTotalPoints(reader["Username"].ToString());
+                pointsSpent = GetPointsSpent(reader["Username"].ToString());
+                currentPoints = totalPoints - pointsSpent;
+
+                isVisible = IsLeaderboardVisible(reader["Username"].ToString());
+
+                unPaidSessions = 0; //add funcionality later after sessions can be booked
+                unPaidAmount = 0.0; //add funcionality later after sessions can be booked
+
+                userList.Add(new UserDirectoryRow
+                {
+                    Username = reader["Username"].ToString()!,
+                    UnpaidSessions = unPaidSessions,
+                    UnpaidAmount = unPaidAmount,
+                    CurrentPoints = currentPoints,
+                    TotalPoints = totalPoints,
+                    LastActivity = Convert.ToDateTime(reader["LastActivity"]),
+                    LeaderboardVisible = isVisible
+                });
+            }
 
             constring.Close();
-            return id;
+            return userList;
         }
 
-        //public string FilterCalender() 
-        //{
-        //    return "";
-        //}
+        //public List<UserDirectoryRow> FilterSearch() {}
 
-        //public string FilterBookings() 
-        //{
-        //    return "";
-        //}
-
-        //public string AcceptTutorSession()
-        //{
-        //    return "";
-        //}
-
-        //============================== Users ==============================
-
-        //public string GetAllUsers()
-        //{
-        //    return "";
-        //}
-
-        //public string SortByActivity()
-        //{
-        //    return "";
-        //}
-
-        //public string SortByCurrentPoints()
-        //{
-        //    return "";
-        //}
-
-        //public string SortByAllPoints()
-        //{
-        //    return "";
-        //}
-
-        //public string UnpaidAmount()
-        //{
-        //    return "";
-        //}
-
-        //public string Name()
-        //{
-        //    return "";
-        //}
+        //public List<UserDirectoryRow> SortSearch() {}
 
         //============================== Events ==============================
 
@@ -188,8 +264,7 @@ namespace J_Tutors_Web_Platform.Services
 
 
 
-        //============================== Account ==============================
-
+        //============================== Admin Account ==============================
 
 
     }

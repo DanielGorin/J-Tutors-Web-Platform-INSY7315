@@ -16,7 +16,7 @@ namespace J_Tutors_Web_Platform.Controllers
         Models.Users.User user = new User();
         Models.Admins.Admin admin = new Admin();
 
-        public PublicController(AuthService authService, AdminService adminService) 
+        public PublicController(AuthService authService, AdminService adminService)
         {
             _authService = authService;
             _adminService = adminService;
@@ -130,5 +130,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return View("~/Views/Public/Register.cshtml", result);
             }
         }
+
+        
     }
 }

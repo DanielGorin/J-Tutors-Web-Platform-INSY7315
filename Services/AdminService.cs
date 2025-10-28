@@ -295,10 +295,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             if (string.IsNullOrWhiteSpace(subjectName)) throw new ArgumentException("Subject name required.");
 
-            const string sql = @"
-        INSERT INTO Subjects (SubjectName, IsActive)
-        VALUES (@name, 1);
-        SELECT SCOPE_IDENTITY();";
+            const string sql = @"INSERT INTO Subjects (SubjectName, IsActive) VALUES (@name, 1); SELECT SCOPE_IDENTITY();";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -311,9 +308,7 @@ namespace J_Tutors_Web_Platform.Services
         public int DeleteSubject(int subjectId)
         {
             // If FK to PricingRule has no CASCADE, this preserves referential integrity.
-            const string sql = @"
-        DELETE FROM PricingRule WHERE SubjectID = @id;
-        DELETE FROM Subjects     WHERE SubjectID = @id;";
+            const string sql = @"DELETE FROM PricingRule WHERE SubjectID = @id; DELETE FROM Subjects WHERE SubjectID = @id;";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -338,8 +333,7 @@ namespace J_Tutors_Web_Platform.Services
 
         public PricingRule? GetPricingForSubject(int subjectId)
         {
-            const string sql = @"
-        SELECT TOP 1 * FROM PricingRule WHERE SubjectID = @sid";
+            const string sql = @"SELECT TOP 1 * FROM PricingRule WHERE SubjectID = @sid";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -367,22 +361,7 @@ namespace J_Tutors_Web_Platform.Services
             if (hourlyRate < 0) throw new ArgumentException("Hourly rate must be >= 0.");
             if (maxPointDiscount < 0) throw new ArgumentException("Max points discount must be >= 0.");
 
-            const string sql = @"
-        IF EXISTS (SELECT 1 FROM PricingRule WHERE SubjectID = @sid)
-        BEGIN
-            UPDATE PricingRule
-            SET AdminID = @aid,
-                HourlyRate = @hr,
-                MinHours = @minh,
-                MaxHours = @maxh,
-                MaxPointDiscount = @mpd
-            WHERE SubjectID = @sid;
-        END
-        ELSE
-        BEGIN
-            INSERT INTO PricingRule (SubjectID, AdminID, HourlyRate, MinHours, MaxHours, MaxPointDiscount)
-            VALUES (@sid, @aid, @hr, @minh, @maxh, @mpd);
-        END";
+            const string sql = @"IF EXISTS (SELECT 1 FROM PricingRule WHERE SubjectID = @sid) BEGIN UPDATE PricingRule SET AdminID = @aid, HourlyRate = @hr, MinHours = @minh, MaxHours = @maxh, MaxPointDiscount = @mpd WHERE SubjectID = @sid; END ELSE BEGIN INSERT INTO PricingRule (SubjectID, AdminID, HourlyRate, MinHours, MaxHours, MaxPointDiscount) VALUES (@sid, @aid, @hr, @minh, @maxh, @mpd); END";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);

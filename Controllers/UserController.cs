@@ -1,173 +1,116 @@
-﻿using System.Data;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+
+using J_Tutors_Web_Platform.Models.Points;
 using J_Tutors_Web_Platform.Models.Users;
-using Azure;
+using J_Tutors_Web_Platform.Services;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
+    // CONTROLLER: UserController
+    // PURPOSE: Thin HTTP layer for user features. All DB work is in services.
+    // AREAS: Profile (view/update/theme) + Leaderboard (list/view)
 
     public class UserController : Controller
     {
-        //SEGMENT config and logging
-        //-------------------------------------------------------------------------------------------
-        private readonly string _connStr;
+        // ─────────────────────────────────────────────────────────────────────────────
+        // CONFIG & LOGGING
+        // ─────────────────────────────────────────────────────────────────────────────
+        private readonly UserProfileService _profiles;
+        private readonly UserLeaderboardService _leaderboard;
         private readonly ILogger<UserController> _log;
 
-        public UserController(IConfiguration cfg, ILogger<UserController> log)
+        public UserController(
+            UserProfileService profiles,
+            UserLeaderboardService leaderboard,
+            ILogger<UserController> log)
         {
-            _connStr = cfg.GetConnectionString("AzureSql")!;
+            _profiles = profiles;
+            _leaderboard = leaderboard;
             _log = log;
         }
-        //-------------------------------------------------------------------------------------------
 
-        //SEGMENT GET /User/UProfile
-        // loads profile: read-only + editable fields
-        //-------------------------------------------------------------------------------------------
+        // ─────────────────────────────────────────────────────────────────────────────
+        // VIEW: /User/UProfile (GET)
+        // PURPOSE: Render "My Profile" page
+        // HTTP: GET
+        // FLOW: Auth check → service read → 404/redirect if missing → view
+        // ─────────────────────────────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> UProfile()
         {
-            //SUB-SEGMENT ensure signed in
-            //---------------------------------------------------------------
+            // SUB-SEGMENT auth
+            // ------------------------------------------------------------------
             var username = User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
                 return RedirectToAction("Login", "Home");
-            //---------------------------------------------------------------
 
-            //SUB-SEGMENT query user row
-            //---------------------------------------------------------------
-            var sql = @"
-SELECT TOP 1
-    UserID, Username, FirstName, Surname,
-    BirthDate, RegistrationDate,
-    Email, Phone, SubjectInterest,
-    LeaderboardVisible, ThemePreference
-FROM Users
-WHERE Username = @u";
-
-            UserProfileViewModel vm;
-
-            await using (var conn = new SqlConnection(_connStr))
-            await using (var cmd = new SqlCommand(sql, conn))
-            {
-                cmd.Parameters.AddWithValue("@u", username);
-                await conn.OpenAsync();
-
-                await using var r = await cmd.ExecuteReaderAsync();
-                if (!await r.ReadAsync()) return NotFound();
-
-                // map to view model
-                vm = new UserProfileViewModel
-                {
-                    Username = r["Username"]?.ToString() ?? "",
-                    FirstName = r["FirstName"] as string,
-                    Surname = r["Surname"] as string,
-                    BirthDate = !r.IsDBNull(r.GetOrdinal("BirthDate"))
-                        ? DateOnly.FromDateTime(r.GetDateTime(r.GetOrdinal("BirthDate")))
-                        : (DateOnly?)null,
-                    RegistrationDate = HasCol(r, "RegistrationDate") && !r.IsDBNull(r.GetOrdinal("RegistrationDate"))
-                        ? DateOnly.FromDateTime(r.GetDateTime(r.GetOrdinal("RegistrationDate")))
-                        : (DateOnly?)null,
-                    Email = r["Email"] as string,
-                    Phone = r["Phone"] as string,
-                    SubjectInterest = r["SubjectInterest"] as string,
-                    LeaderboardVisible = !r.IsDBNull(r.GetOrdinal("LeaderboardVisible")) && Convert.ToBoolean(r["LeaderboardVisible"]),
-                    ThemePreference = r["ThemePreference"] as string
-                };
-            }
-            //---------------------------------------------------------------
+            // SUB-SEGMENT load model
+            // ------------------------------------------------------------------
+            var vm = await _profiles.GetProfileAsync(username);
+            if (vm is null)
+                return NotFound(); // user row missing
 
             ViewData["NavSection"] = "User";
             return View("~/Views/User/UProfile.cshtml", vm);
         }
-        //-------------------------------------------------------------------------------------------
 
-        //SEGMENT POST /User/UProfile
-        // saves editable fields; refresh cookie if username changed
-        //-------------------------------------------------------------------------------------------
+        // ─────────────────────────────────────────────────────────────────────────────
+        // VIEW: /User/UProfile (POST)
+        // PURPOSE: Persist edits from "My Profile" form
+        // HTTP: POST
+        // FLOW: Auth check → enforce username uniqueness → service update → refresh cookie (if needed) → theme cookie → redirect
+        // SECURITY: [ValidateAntiForgeryToken]
+        // ─────────────────────────────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UProfile(
             [Bind("Username,Phone,Email,SubjectInterest,LeaderboardVisible,ThemePreference")]
             UserProfileViewModel form)
         {
-            //SUB-SEGMENT ensure signed in
-            //---------------------------------------------------------------
+            // SUB-SEGMENT auth
+            // ------------------------------------------------------------------
             var currentUsername = User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(currentUsername))
                 return RedirectToAction("Login", "Home");
-            //---------------------------------------------------------------
 
-            //SUB-SEGMENT resolve user id + current username
-            //---------------------------------------------------------------
-            int userId;
-            string existingUsername;
-            await using (var conn = new SqlConnection(_connStr))
-            await using (var find = new SqlCommand("SELECT TOP 1 UserID, Username FROM Users WHERE Username=@u", conn))
-            {
-                find.Parameters.AddWithValue("@u", currentUsername);
-                await conn.OpenAsync();
-                await using var r = await find.ExecuteReaderAsync();
-                if (!await r.ReadAsync()) return NotFound();
-                userId = r.GetInt32(0);
-                existingUsername = r.GetString(1);
-            }
-            //---------------------------------------------------------------
+            // SUB-SEGMENT resolve current user id + existing username
+            // ------------------------------------------------------------------
+            var who = await _profiles.GetUserIdAndUsernameAsync(currentUsername);
+            if (who is null) return NotFound();
+            int userId = who.Value.userId;
+            string existingUsername = who.Value.existingUsername;
 
-            //SUB-SEGMENT if username changed, ensure unique
-            //---------------------------------------------------------------
+            // SUB-SEGMENT uniqueness check (only if changing)
+            // ------------------------------------------------------------------
             if (!existingUsername.Equals(form.Username, StringComparison.OrdinalIgnoreCase))
             {
-                if (await IsUsernameTakenAsync(form.Username))
+                if (await _profiles.IsUsernameTakenAsync(form.Username))
                 {
                     ModelState.AddModelError(nameof(form.Username), "That username is already taken.");
                     ViewData["NavSection"] = "User";
-                    var reload = await ReloadProfileAsync(currentUsername);
-                    // preserve user edits except the conflicting username
+
+                    // Re-hydrate from DB so non-edited fields are accurate, then overlay attempted edits
+                    var reload = await _profiles.GetProfileAsync(currentUsername) ?? new UserProfileViewModel();
                     reload.Username = form.Username;
                     reload.Email = form.Email;
                     reload.Phone = form.Phone;
                     reload.SubjectInterest = form.SubjectInterest;
                     reload.LeaderboardVisible = form.LeaderboardVisible;
                     reload.ThemePreference = form.ThemePreference;
+
                     return View("~/Views/User/UProfile.cshtml", reload);
                 }
             }
-            //---------------------------------------------------------------
 
-            //SUB-SEGMENT update allowed cols
-            //---------------------------------------------------------------
-            var updateSql = @"
-UPDATE Users
-SET Username = @nu,
-    Email = @e,
-    Phone = @p,
-    SubjectInterest = @si,
-    LeaderboardVisible = @lb,
-    ThemePreference = @th
-WHERE UserID = @id";
+            // SUB-SEGMENT update via service
+            // ------------------------------------------------------------------
+            await _profiles.UpdateProfileAsync(userId, form);
 
-            await using (var conn = new SqlConnection(_connStr))
-            await using (var cmd = new SqlCommand(updateSql, conn))
-            {
-                cmd.Parameters.AddWithValue("@nu", form.Username);
-                cmd.Parameters.AddWithValue("@e", (object?)NullIfEmpty(form.Email) ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@p", (object?)NullIfEmpty(form.Phone) ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@si", (object?)NullIfEmpty(form.SubjectInterest) ?? DBNull.Value);
-                cmd.Parameters.Add("@lb", SqlDbType.Bit).Value = form.LeaderboardVisible;
-                cmd.Parameters.AddWithValue("@th", (object?)NullIfEmpty(form.ThemePreference) ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@id", userId);
-
-                await conn.OpenAsync();
-                await cmd.ExecuteNonQueryAsync();
-            }
-            //---------------------------------------------------------------
-
-            //SUB-SEGMENT refresh cookie if username changed
-            //---------------------------------------------------------------
+            // SUB-SEGMENT refresh auth cookie if username changed
+            // ------------------------------------------------------------------
             if (!existingUsername.Equals(form.Username, StringComparison.OrdinalIgnoreCase))
             {
                 var role = User?.FindFirst(ClaimTypes.Role)?.Value ?? "Student";
@@ -181,9 +124,9 @@ WHERE UserID = @id";
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(identity));
             }
-            //---------------------------------------------------------------
-            //SEGMENT persist theme cookie so _ViewStart can read it next request
-            //-------------------------------------------------------------------------------------------
+
+            // SUB-SEGMENT persist theme cookie (used by layout)
+            // ------------------------------------------------------------------
             var themeCookieVal = string.IsNullOrWhiteSpace(form.ThemePreference) ? "" : form.ThemePreference;
             Response.Cookies.Append("ThemePreference", themeCookieVal, new CookieOptions
             {
@@ -193,86 +136,60 @@ WHERE UserID = @id";
                 HttpOnly = false
             });
 
-
             TempData["ProfileSaved"] = "Profile updated.";
             return RedirectToAction(nameof(UProfile));
         }
-        //-------------------------------------------------------------------------------------------
 
-        //SEGMENT helpers
-        //-------------------------------------------------------------------------------------------
-        private static object? NullIfEmpty(string? s) =>
-            string.IsNullOrWhiteSpace(s) ? null : s;
-
-        private async Task<bool> IsUsernameTakenAsync(string username)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // VIEW: /User/UPointsLeaderboard (GET)
+        // PURPOSE: Searchable, filterable leaderboard
+        // HTTP: GET
+        // FLOW: Gather filters → service builds page VM → view
+        // NOTE: Service handles visibility rules, ranking, paging, and all SQL.
+        // ─────────────────────────────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> UPointsLeaderboard(
+            LeaderboardViewMode mode = LeaderboardViewMode.Current,
+            LeaderboardTimeFilter time = LeaderboardTimeFilter.ThisMonth,
+            string? search = null,
+            int page = 1,
+            int pageSize = 20)
         {
-            await using var conn = new SqlConnection(_connStr);
-            await using var cmd = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Username=@u", conn);
-            cmd.Parameters.AddWithValue("@u", username);
-            await conn.OpenAsync();
-            var count = (int)await cmd.ExecuteScalarAsync();
-            return count > 0;
+            // SUB-SEGMENT who-am-I (optional, for pinning/visibility exception)
+            // ------------------------------------------------------------------
+            var currentUsername = User?.Identity?.Name;
+
+            // SUB-SEGMENT data from service
+            // ------------------------------------------------------------------
+            var vm = await _leaderboard.GetPageAsync(
+                currentUsername,
+                mode,
+                time,
+                page,
+                pageSize);
+
+            ViewData["NavSection"] = "User";
+            return View("~/Views/User/UPointsLeaderboard.cshtml", vm);
         }
 
-        private async Task<UserProfileViewModel> ReloadProfileAsync(string username)
-        {
-            // small reuse of the SELECT for GET
-            var sql = @"
-SELECT TOP 1
-    UserID, Username, FirstName, Surname,
-    BirthDate, RegistrationDate,
-    Email, Phone, SubjectInterest,
-    LeaderboardVisible, ThemePreference
-FROM Users
-WHERE Username = @u";
-
-            await using var conn = new SqlConnection(_connStr);
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@u", username);
-            await conn.OpenAsync();
-            await using var r = await cmd.ExecuteReaderAsync();
-            if (!await r.ReadAsync()) throw new InvalidOperationException("User not found.");
-
-            return new UserProfileViewModel
-            {
-                Username = r["Username"]?.ToString() ?? "",
-                FirstName = r["FirstName"] as string,
-                Surname = r["Surname"] as string,
-                BirthDate = !r.IsDBNull(r.GetOrdinal("BirthDate"))
-                    ? DateOnly.FromDateTime(r.GetDateTime(r.GetOrdinal("BirthDate")))
-                    : (DateOnly?)null,
-                RegistrationDate = HasCol(r, "RegistrationDate") && !r.IsDBNull(r.GetOrdinal("RegistrationDate"))
-                    ? DateOnly.FromDateTime(r.GetDateTime(r.GetOrdinal("RegistrationDate")))
-                    : (DateOnly?)null,
-                Email = r["Email"] as string,
-                Phone = r["Phone"] as string,
-                SubjectInterest = r["SubjectInterest"] as string,
-                LeaderboardVisible = !r.IsDBNull(r.GetOrdinal("LeaderboardVisible")) && Convert.ToBoolean(r["LeaderboardVisible"]),
-                ThemePreference = r["ThemePreference"] as string
-            };
-        }
-
-        private static bool HasCol(SqlDataReader r, string name)
-        {
-            for (int i = 0; i < r.FieldCount; i++)
-                if (r.GetName(i).Equals(name, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            return false;
-        }
-        //-------------------------------------------------------------------------------------------
-
-        //SEGMENT lightweight API - set theme from anywhere (navbar toggle)
-        //-------------------------------------------------------------------------------------------
+        // ─────────────────────────────────────────────────────────────────────────────
+        // API: /User/SetTheme (POST)
+        // PURPOSE: Update theme preference cookie (+ DB if signed-in)
+        // HTTP: POST
+        // FLOW: Normalize value → set cookie → service persists (if logged in) → 200 JSON
+        // ─────────────────────────────────────────────────────────────────────────────
         [HttpPost]
-        [IgnoreAntiforgeryToken] // keep simple; you can add validation later
+        [IgnoreAntiforgeryToken] // keep simple; consider CSRF later
         public async Task<IActionResult> SetTheme(string theme)
         {
-            // normalize input -> "", "Light", "Dark"
+            // SUB-SEGMENT normalize input
+            // ------------------------------------------------------------------
             var pref = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Light"
                     : string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark"
                     : "";
 
-            // write cookie for immediate effect on next request
+            // SUB-SEGMENT write cookie (read by layout)
+            // ------------------------------------------------------------------
             Response.Cookies.Append("ThemePreference", pref, new CookieOptions
             {
                 Expires = DateTimeOffset.UtcNow.AddYears(1),
@@ -281,24 +198,15 @@ WHERE Username = @u";
                 HttpOnly = false
             });
 
-            // if logged in, persist to DB too
+            // SUB-SEGMENT persist to DB if logged in
+            // ------------------------------------------------------------------
             var username = User?.Identity?.Name;
             if (!string.IsNullOrWhiteSpace(username))
             {
-                await using var conn = new SqlConnection(_connStr);
-                await using var cmd = new SqlCommand(
-                    "UPDATE Users SET ThemePreference=@p WHERE Username=@u", conn);
-                cmd.Parameters.AddWithValue("@p", (object)pref ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@u", username);
-                await conn.OpenAsync();
-                await cmd.ExecuteNonQueryAsync();
+                await _profiles.UpdateThemePreferenceAsync(username, pref);
             }
 
             return Ok(new { ok = true, pref });
         }
-
-
     }
-
-
 }

@@ -9,6 +9,8 @@ namespace J_Tutors_Web_Platform
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.UserProfileService>();
+            builder.Services.AddScoped<UserLeaderboardService>();
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
             builder.Services.AddSingleton<AuthService>(sp =>
@@ -18,18 +20,10 @@ namespace J_Tutors_Web_Platform
                 return new AuthService(connectionString);
             });
 
-
-            builder.Services.AddSingleton<AdminService>(sp =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                var connectionString = configuration.GetConnectionString("AzureSql");
-                return new AdminService(connectionString);
-            });
-
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => 
             {
-                options.LoginPath = "/Public/Login"; // Redirect to login page if not authenticated
-                options.LogoutPath = "/Public/Login"; // Redirect to logout page
+                options.LoginPath = "/Home/Login"; // Redirect to login page if not authenticated
+                options.LogoutPath = "/Home/Login"; // Redirect to logout page
             });
 
             // Add services to the container.
@@ -57,22 +51,20 @@ namespace J_Tutors_Web_Platform
                 name: "default",
             //PUBLIC
             //----------------------------------------------------
-            //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO
-            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN // Functional
-            //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER // Functional
-            pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMIN LOGIN // Functional
-            //pattern: "{controller=Home}/{action=AdminRegister}/{id?}"); // ADMIN REGSITER // Functional
+            //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
+            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 
             //USER:
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=UDashboard}/{id?}"); // USER DASHBOARD
             //pattern: "{controller=Home}/{action=UFileLibrary}/{id?}"); // USER FILE LIBRARY
-            //pattern: "{controller=Home}/{action=UProfile}/{id?}"); // USER PROFILE
+            //pattern: "{controller=Home}/{action=UProfile}/{id?}"); // USER PROFILE - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UEvents}/{id?}"); // USER EVENTS
             //pattern: "{controller=Home}/{action=UEventHistory}/{id?}"); // USER EVENT HISTORY
             //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER
-            //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD
+            //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING
             //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS
             //----------------------------------------------------
@@ -80,7 +72,7 @@ namespace J_Tutors_Web_Platform
             //ADMIN:
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD
-            //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR // IN DEVELOPMENT
+            //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR
             //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
             //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS
             //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
@@ -90,6 +82,13 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD
             //pattern: "{controller=Home}/{action=AAnalytics}/{id?}"); // ADMIN ANALYTICS
             //pattern: "{controller=Home}/{action=AAccount}/{id?}"); // ADMIN ACCOUNT
+
+
+
+
+
+
+
             //----------------------------------------------------
 
             app.Run();

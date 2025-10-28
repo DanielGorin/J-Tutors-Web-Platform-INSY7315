@@ -1,167 +1,127 @@
-﻿@{
+﻿@using J_Tutors_Web_Platform.Models.Points
+@model J_Tutors_Web_Platform.Models.Points.LeaderboardPageVM
+@{
     ViewData["Title"] = "Leaderboard";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
+
+    // convenience
+    var mode = Model.Filters.Mode;            // Current | Total
+    var time = Model.Filters.Time;            // ThisMonth | Last30Days | LastMonth | AllTime
+
+    bool isThisMonth = time == LeaderboardTimeFilter.ThisMonth;
+    bool isLast30 = time == LeaderboardTimeFilter.Last30Days;
+    bool isLastMonth = time == LeaderboardTimeFilter.LastMonth;
+    bool isAllTime = time == LeaderboardTimeFilter.AllTime;
+
+    // description line
+    var desc = mode == LeaderboardViewMode.Current
+        ? "Current points = points that affect your balance (earns minus spends) within the selected time frame."
+        : "Total points = all points earned (only positive amounts) within the selected time frame.";
 }
 
-<!-- Scoped styles for Leaderboard only -->
 <style>
-    .lb .form-control, .lb select {
-        background-color: var(--surface-color) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        padding: 10px 12px !important;
-        width: 100%;
+    /* Minimal tweaks; uses your CSS variables from site.css */
+    .lb .table thead th {
+        color: var(--text-color);
+        border-color: var(--border-color);
     }
 
-        .lb .form-control::placeholder {
-            color: var(--muted-text-color) !important;
-        }
-
-        .lb .form-control:focus, .lb select:focus {
-            outline: none !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
-        }
-
-    /* Tabs */
-    .lb .tab-btn {
-        min-width: 140px;
+    .lb .table tbody td {
+        color: var(--text-color);
+        border-color: var(--border-color);
     }
 
-        .lb .tab-btn.active {
-            background-color: var(--primary-color);
-            color: #fff;
-            border-color: var(--primary-color);
-        }
-
-    /* Your spot card */
-    .lb .pinned-card {
-        border-left: 4px solid var(--primary-color);
-        background-color: var(--surface-color);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 16px;
+    .lb .table .username {
+        font-weight: 700;
     }
 
-    /* Table */
-    .lb table thead th {
-        white-space: nowrap;
+    .lb .controls .tab-btn.active {
+        background: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
     }
 
-    .lb .delta-chip {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 12px;
-        border: 1px solid var(--border-color);
-    }
-
-    .lb .delta-up {
-        color: var(--success-color);
-        border-color: var(--success-color);
-    }
-
-    .lb .delta-down {
-        color: var(--error-color);
-        border-color: var(--error-color);
-    }
-
-    .lb .delta-flat {
+    .lb .hint {
         color: var(--muted-text-color);
     }
-
-    /* Pinned (your row) highlight in table, if shown there later */
-    .lb .row-pinned {
-        background: rgba(0,0,0,0.03);
-    }
-
-    /* Small helpers */
-    .lb .caption {
-        color: var(--muted-text-color);
-    }
-    /* === Dark-mode legibility fix for Leaderboard === */
-    .lb, .lb .card, .lb .pinned-card {
-        color: var(--text-color) !important;
-    }
-
-        .lb .table,
-        .lb .table th,
-        .lb .table td,
-        .lb table,
-        .lb table th,
-        .lb table td {
-            color: var(--text-color) !important;
-            background-color: transparent !important;
-        }
-
-        /* Subtext & borders use your theme tokens */
-        .lb .caption {
-            color: var(--muted-text-color) !important;
-        }
-
-        .lb .table thead th {
-            border-bottom: 1px solid var(--border-color) !important;
-        }
-
-        .lb .table tbody tr + tr {
-            border-top: 1px solid var(--border-color) !important;
-        }
-
-        /* Optional: subtle row hover that works in both themes */
-        .lb .table tbody tr:hover {
-            background-color: rgba(0,0,0,0.03);
-        }
-
-
 </style>
 
 <div class="lb">
-
-    <!-- Header / Nav -->
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Leaderboard</h1>
-        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+        <a asp-controller="Home" asp-action="UDashboard" class="btn btn-secondary">← Back to Dashboard</a>
     </div>
 
-    <!-- Top controls: Tabs + Search -->
-    <div class="card shadow p-24 mb-16">
-        <div class="row g-3 align-items-end">
+    <!-- Controls -->
+    <div class="card shadow p-24 mb-16 controls">
+        <form method="get" class="row g-3 align-items-end">
+            <!-- Mode -->
             <div class="col-md-6">
                 <label class="form-label d-block">View</label>
                 <div class="d-inline-flex gap-2">
-                    <!-- UI only; wire up later -->
-                    <button class="btn btn-outline-primary tab-btn active" type="button">Current</button>
-                    <button class="btn btn-outline-primary tab-btn" type="button">All-Time</button>
+                    <input type="hidden" name="time" value="@time" />
+                    <input type="hidden" name="pageSize" value="@Model.Filters.PageSize" />
+                    <button type="submit" name="mode" value="Current"
+                            class="btn btn-outline-primary tab-btn @(mode == LeaderboardViewMode.Current ? "active" : "")">
+                        Current
+                    </button>
+                    <button type="submit" name="mode" value="Total"
+                            class="btn btn-outline-primary tab-btn @(mode == LeaderboardViewMode.Total ? "active" : "")">
+                        Total
+                    </button>
                 </div>
             </div>
+
+            <!-- Time (no C# inside attribute areas) -->
             <div class="col-md-6">
-                <label for="lbSearch" class="form-label">Search users</label>
-                <input id="lbSearch" type="text" class="form-control" placeholder="Search by username" />
+                <label for="time" class="form-label">Time</label>
+                <select id="time" name="time" class="form-select" onchange="this.form.submit()">
+                    @if (isThisMonth)
+                    {
+                        <option value="ThisMonth" selected>This month</option>
+                    }
+                    else
+                    {
+                        <option value="ThisMonth">This month</option>
+                    }
+
+                    @if (isLast30)
+                    {
+                        <option value="Last30Days" selected>Last 30 days</option>
+                    }
+                    else
+                    {
+                        <option value="Last30Days">Last 30 days</option>
+                    }
+
+                    @if (isLastMonth)
+                    {
+                        <option value="LastMonth" selected>Last month</option>
+                    }
+                    else
+                    {
+                        <option value="LastMonth">Last month</option>
+                    }
+
+                    @if (isAllTime)
+                    {
+                        <option value="AllTime" selected>All-time</option>
+                    }
+                    else
+                    {
+                        <option value="AllTime">All-time</option>
+                    }
+                </select>
             </div>
-        </div>
+        </form>
+
+        <!-- Description line under the filter card -->
+        <div class="mt-8 hint">@desc</div>
     </div>
 
-    <!-- Your spot (pinned) -->
-    <div class="pinned-card shadow mb-16 d-flex justify-content-between align-items-center">
-        <div>
-            <div class="caption">Your Position</div>
-            <div class="d-flex align-items-baseline gap-2">
-                <h3 class="mb-0">[# … ] [ YourUsername ]</h3>
-                <span class="delta-chip delta-flat">Δ 0 (30d)</span>
-            </div>
-            <div class="caption mt-8">Days in Spot: [ … ]</div>
-        </div>
-        <div class="text-end">
-            <div class="caption">Points</div>
-            <div style="font-weight:700;">[ … ]</div>
-        </div>
-    </div>
-
-    <!-- Leaderboard table -->
+    <!-- Table -->
     <div class="card shadow p-24">
         <div class="table-responsive">
             <table class="table align-middle">
@@ -169,69 +129,60 @@
                     <tr>
                         <th style="width:80px;">Position</th>
                         <th>Username</th>
-                        <th>Δ Rank (30d)</th>
-                        <th>Days in Spot</th>
-                        <th class="text-end">Points</th>
+                        <th class="text-end">Total Points</th>
+                        <th class="text-end">Current Points</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @* Empty state 
-                    <tr>
-                        <td colspan="5">
-                            <div class="text-center p-24 text-muted">No leaderboard data to display yet.</div>
-                        </td>
-                    </tr>
-
-                     --------------------------------------------------------------
-                    Example rows (REFERENCE ONLY — do not render now)*@
-
-                    <tr>
-                    <td>1</td>
-                    <td><strong>student 1</strong></td>
-                    <td><span class="delta-chip delta-up">+2</span></td>
-                    <td>12</td>
-                    <td class="text-end">1800</td>
-                    </tr>
-
-                    <tr>
-                    <td>2</td>
-                    <td><strong>Student 2</strong></td>
-                    <td><span class="delta-chip delta-flat">0</span></td>
-                    <td>5</td>
-                    <td class="text-end">1750</td>
-                    </tr>
-
-                    <tr>
-                    <td>3</td>
-                    <td><strong>Student 3x</strong></td>
-                    <td><span class="delta-chip delta-down">-1</span></td>
-                    <td>2</td>
-                    <td class="text-end">1710</td>
-                    </tr>
-                    @*-------------------------------------------------------------- *@
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr>
+                            <td colspan="4">
+                                <div class="text-center p-24 text-muted">No leaderboard data to display.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var r in Model.Rows)
+                        {
+                            <tr>
+                                <td>@r.Rank</td>
+                                <td class="username">@r.Username</td>
+                                <td class="text-end">@r.TotalEarned</td>
+                                <td class="text-end">@r.EarnedInPeriod</td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
         </div>
 
-        <!-- Pagination Placeholder -->
+        <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mt-16">
-            <div class="caption">Showing 0 of 0</div>
+            <div class="caption">
+                Showing @Model.ShowingFrom–@Model.ShowingTo of @Model.TotalRows
+            </div>
             <div>
-                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
-                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+                @{
+                    int prev = Math.Max(1, Model.Filters.Page - 1);
+                    int next = Model.Filters.Page + 1;
+                    bool hasPrev = Model.Filters.Page > 1;
+                    bool hasNext = Model.ShowingTo < Model.TotalRows;
+                }
+                <a class="btn btn-outline-secondary btn-sm @(hasPrev ? "" : "disabled")"
+                   href="@(hasPrev ? Url.Action("UPointsLeaderboard","User", new { mode = mode, time = time, page = prev, pageSize = Model.Filters.PageSize }) : "#")">
+                    Previous
+                </a>
+                <a class="btn btn-outline-secondary btn-sm @(hasNext ? "" : "disabled")"
+                   href="@(hasNext ? Url.Action("UPointsLeaderboard","User", new { mode = mode, time = time, page = next, pageSize = Model.Filters.PageSize }) : "#")">
+                    Next
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-@* --------------------------------------------------------------------
-   TODO: Enable Leaderboard Functionality
-   - Tabs:
-       • Current (rolling or monthly points)
-       • All-Time (cumulative points)
-   - Bind rows: { position, username, deltaRank30d, daysInSpot, points }
-   - Compute & pin "Your Spot" (even if not currently visible on page 1)
-   - Implement search + pagination; sort by points desc
-   - Δ Rank coloring: up (success), down (error), flat (muted)
-   - Accessibility: ensure row focus states & tab roles when wired
---------------------------------------------------------------------- *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

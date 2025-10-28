@@ -67,7 +67,14 @@
         <div class="card shadow p-3">
             <h3>Leaderboard Snapshot</h3>
             <p>[ Top 3 current rankings (Username, Points, Δ Rank) ]</p>
-            <a asp-controller="Home" asp-action="Leaderboard" class="btn btn-sm btn-outline-primary">See Full Leaderboard</a>
+            <a asp-controller="User"
+               asp-action="UPointsLeaderboard"
+               asp-route-mode="Current"
+               asp-route-time="ThisMonth"
+               class="btn btn-sm btn-outline-primary">
+                See Full Leaderboard
+            </a>
+
         </div>
     </div>
 </div>

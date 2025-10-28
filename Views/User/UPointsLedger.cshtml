@@ -1,12 +1,22 @@
-﻿@{
+﻿@using J_Tutors_Web_Platform.Models.Points
+@model IEnumerable<J_Tutors_Web_Platform.Models.Points.PointsReceipt>
+
+@{
     ViewData["Title"] = "Points & Receipts";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
+
+    int totalEarned = ViewBag.TotalEarned ?? 0;
+    int totalDeducted = ViewBag.TotalDeducted ?? 0;
+    int balance = ViewBag.CurrentBalance ?? 0;
+
+    // helper to choose earn/deduct styling by amount sign
+    string CardClass(PointsReceipt r) => (r.Amount >= 0) ? "receipt-earn" : "receipt-deduct";
+    string AmountClass(PointsReceipt r) => (r.Amount >= 0) ? "amount-positive" : "amount-negative";
+    string ChipClass(PointsReceipt r) => (r.Amount >= 0) ? "chip chip-earn" : "chip chip-deduct";
+    string ChipText(PointsReceipt r) => (r.Amount >= 0) ? "Earn" : "Deduct";
 }
 
-<!-- Scoped styles for Points only -->
 <style>
     .points .form-control, .points select {
         background-color: var(--surface-color) !important;
@@ -85,117 +95,88 @@
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Points &amp; Receipts</h1>
         <div class="d-flex gap-2">
-            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+            <a asp-controller="Home" asp-action="UDashboard" class="btn btn-secondary">← Back to Dashboard</a>
         </div>
     </div>
 
-    <!-- Controls (optional; UI only for now) -->
-    <div class="card shadow p-24 mb-16">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label for="searchReceipts" class="form-label">Search</label>
-                <input id="searchReceipts" type="text" class="form-control" placeholder="Search by justification or reference" />
-            </div>
-            <div class="col-6 col-md-2">
-                <label for="fromDate" class="form-label">From</label>
-                <input id="fromDate" type="date" class="form-control" />
-            </div>
-            <div class="col-6 col-md-2">
-                <label for="toDate" class="form-label">To</label>
-                <input id="toDate" type="date" class="form-control" />
-            </div>
-            <div class="col-6 col-md-2">
-                <label for="typeFilter" class="form-label">Type</label>
-                <select id="typeFilter" class="form-select">
-                    <option value="all">All</option>
-                    <option value="earn">Earn</option>
-                    <option value="deduct">Deduct</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-2 d-flex align-items-end">
-                <button class="btn btn-outline-primary w-100" disabled>Apply Filters</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ledger summary (optional placeholder) -->
+    <!-- Ledger summary -->
     <div class="card shadow p-24 mb-16">
         <div class="row">
             <div class="col-md-4 mb-8">
                 <div class="d-flex justify-content-between">
-                    <div>Total Earned</div><strong>[ ... ]</strong>
+                    <div>Total Earned</div><strong>@totalEarned</strong>
                 </div>
             </div>
             <div class="col-md-4 mb-8">
                 <div class="d-flex justify-content-between">
-                    <div>Total Deducted</div><strong>[ ... ]</strong>
+                    <div>Total Deducted</div><strong>@totalDeducted</strong>
                 </div>
             </div>
             <div class="col-md-4 mb-8">
                 <div class="d-flex justify-content-between">
-                    <div>Current Balance</div><strong>[ ... ]</strong>
+                    <div>Current Balance</div><strong>@balance</strong>
                 </div>
             </div>
+        </div>
+        <div class="caption mt-8">
+            Newest transactions appear first. Positive amounts are points earned; negative amounts are deductions.
         </div>
     </div>
 
     <!-- Receipts list (cards) -->
     <div>
-        @* Empty state (no data yet) 
-        <div class="receipt-card shadow d-flex justify-content-between align-items-start">
-            <div>
-                <div class="caption">Date: [ — ]</div>
-                <div class="mt-8">No point transactions to display yet.</div>
+        @if (Model == null || !Model.Any())
+        {
+            <div class="receipt-card shadow d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="caption">Date: —</div>
+                    <div class="mt-8">No point transactions to display yet.</div>
+                </div>
             </div>
-        </div>*@
+        }
+        else
+        {
+            foreach (var r in Model)
+            {
+                <div class="receipt-card @CardClass(r) shadow">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="caption">
+                                Date: @r.ReceiptDate.ToString("yyyy-MM-dd HH:mm")
+                            </div>
 
-        @* ----------------------------------------------------------------
-        Example transaction card structure (REFERENCE ONLY — not rendered)*@
-        <div class="receipt-card receipt-earn shadow">
-        <div class="d-flex justify-content-between align-items-start">
-        <div>
-        <div class="caption">Date: 2025-09-10</div>
-        <div class="mt-8"><strong>Justification:</strong> Event participation - Park Clean-up</div>
-        <div class="caption mt-8">Reference: EVT-2025-00034</div>
-        </div>
-        <div class="text-end">
-        <div class="amount-positive">+25</div>
-        <span class="chip chip-earn">Earn</span>
-        </div>
-        </div>
-        </div>
+                            @if (!string.IsNullOrWhiteSpace(r.Reason))
+                            {
+                                <div class="mt-8"><strong>Justification:</strong> @r.Reason</div>
+                            }
+                            else
+                            {
+                                <div class="mt-8"><strong>Justification:</strong> —</div>
+                            }
 
-        <div class="receipt-card receipt-deduct shadow">
-        <div class="d-flex justify-content-between align-items-start">
-        <div>
-        <div class="caption">Date: 2025-09-12</div>
-        <div class="mt-8"><strong>Justification:</strong> No-show penalty</div>
-        <div class="caption mt-8">Reference: PEN-2025-00412</div>
-        </div>
-        <div class="text-end">
-        <div class="amount-negative">-10</div>
-        <span class="chip chip-deduct">Deduct</span>
-        </div>
-        </div>
-        </div>
-        @* ---------------------------------------------------------------- *@
+                            <div class="caption mt-8">
+                                Reference: @(string.IsNullOrWhiteSpace(r.Reference) ? "—" : r.Reference)
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <div class="@AmountClass(r)">@((r.Amount >= 0 ? "+" : "") + r.Amount)</div>
+                            <span class="@ChipClass(r)">@ChipText(r)</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
     </div>
 
-    <!-- Pagination Placeholder -->
+    <!-- (Optional) Pagination placeholder if you later add paging -->
     <div class="d-flex justify-content-between align-items-center mt-16">
-        <div class="caption text-muted">Showing 0 of 0</div>
+        <div class="caption text-muted">
+            @((Model?.Count() ?? 0) == 0 ? "Showing 0 of 0" : $"Showing {(Model?.Count() ?? 0)} item(s)")
+        </div>
         <div>
             <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
             <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
         </div>
     </div>
 </div>
-
-@* --------------------------------------------------------------------
-   TODO: Enable Points & Receipts Functionality
-   - Bind transactions: { date, type (earn/deduct), amount, justification, reference }
-   - Sort newest → oldest; implement filters & pagination
-   - Compute totals (earned, deducted, current balance)
-   - (Optional) "View Receipt" detail or PDF download per transaction
-   - Auth guard: require sign-in
---------------------------------------------------------------------- *@

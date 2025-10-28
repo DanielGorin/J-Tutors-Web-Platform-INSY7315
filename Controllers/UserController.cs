@@ -20,17 +20,41 @@ namespace J_Tutors_Web_Platform.Controllers
         // ─────────────────────────────────────────────────────────────────────────────
         private readonly UserProfileService _profiles;
         private readonly UserLeaderboardService _leaderboard;
+        private readonly UserLedgerService _ledger;
         private readonly ILogger<UserController> _log;
 
         public UserController(
             UserProfileService profiles,
             UserLeaderboardService leaderboard,
+            UserLedgerService ledger,
             ILogger<UserController> log)
         {
             _profiles = profiles;
             _leaderboard = leaderboard;
+            _ledger = ledger;
             _log = log;
         }
+
+        [HttpGet]
+        public async Task<IActionResult> UPointsLedger()
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Account");
+
+            // Resolve user ID (reuse existing method from profile service)
+            var user = await _profiles.GetUserIdAndUsernameAsync(username);
+            if (user == null) return NotFound();
+
+            var receipts = await _ledger.GetReceiptsForUserAsync(user.Value.userId);
+            var totals = await _ledger.GetTotalsForUserAsync(user.Value.userId);
+
+            ViewBag.TotalEarned = totals.earned;
+            ViewBag.TotalDeducted = totals.deducted;
+            ViewBag.CurrentBalance = totals.balance;
+
+            return View(receipts);
+        }
+
 
         // ─────────────────────────────────────────────────────────────────────────────
         // VIEW: /User/UProfile (GET)
@@ -208,5 +232,6 @@ namespace J_Tutors_Web_Platform.Controllers
 
             return Ok(new { ok = true, pref });
         }
+
     }
 }

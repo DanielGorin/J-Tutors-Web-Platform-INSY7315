@@ -26,7 +26,7 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         public Subjects.Subject Subject { get; set; } = default!;
 
         // Date of the session
-        public DateTime SessionDate { get; set; }
+        public DateOnly SessionDate { get; set; }
 
         // Duration in hours
         [Column(TypeName = "decimal(4,2)")]
@@ -45,6 +45,7 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         // Optional timestamps
         public DateTime? CancellationDate { get; set; }
         public DateTime? PaidDate { get; set; }
+        public TimeOnly StartTime { get; set; }
 
         // Navigation
     }

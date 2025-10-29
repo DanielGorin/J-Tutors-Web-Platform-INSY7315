@@ -228,6 +228,35 @@
         </div>
     </div>
 
+    @* <div class="card shadow p-24 mb-16">
+        <form asp-controller="Admin" asp-action="CreateAvailabilitySlot" method="post">
+            <div class="row g-3">
+                <div class="col-4">
+                    <label class="form-label">Date</label>
+                    <input id="BlockDate" name="BlockDate" type="date" class="form-control" />
+                </div>
+                <div class="col-4">
+                    <label class="form-label">Time</label>
+                    <input id="StartTime" name="StartTime" type="time" class="form-control" />
+                </div>
+                <div class="col-4">
+                    <label class="form-label">Duration (mins)</label>
+                    <input id="Duration" name="Duration" type="number" class="form-control" placeholder="e.g., 60" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6 mt-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">Add Slot</button>
+                </div>
+                <div class="col-6 mt-2">
+                    <form asp-controller="Admin" asp-action="RemoveAvailabilitySlot" method="post">
+                        <button type="submit" class="btn btn-outline-secondary w-100">Remove Selected Slots</button>
+                    </form>
+                </div>
+            </div>
+        </form>
+    </div> *@
+
     <!-- MAIN GRID: Calendar (left) • Selected Session + Manage Slots (right) -->
     <div class="row g-3 mb-16">
         <!-- Calendar -->
@@ -263,9 +292,20 @@
                                         <!-- this is fixed to sep and 2025, fix after there if func -->
                                         if (session.SessionDate.Day == d && session.SessionDate.Month == 9 && session.SessionDate.Year == 2025)
                                         {
-                                            <div class="day-item">
-                                                <div class="time">@session.SessionDate.ToString(@"hh\:mm")</div>
-                                                <div class="subject">@session.Subject</div>
+                                            <div class="day-item"
+                                                selId="@session.TutoringSessionID"
+                                                selStatus="@session.Status"
+                                                selStudent="javier"
+                                                selSubject="@session.Subject"
+                                                selDate="@session.SessionDate"
+                                                selTime="@session.StartTime"
+                                                selDuration="@session.DurationHours"
+                                                selPrice="@session.BaseCost"
+                                                selPoints="@session.PointsSpent"
+                                            >
+                                                <div>@session.Status</div>
+                                                <div>@session.StartTime.ToString(@"hh\:mm")</div>
+                                                <div>@session.DurationHours hrs</div>
                                             </div>
                                         }
                                     }
@@ -278,9 +318,8 @@
                                         <!-- this is fixed to sep and 2025, fix after there if func -->
                                         if (session.BlockDate.Day == d) // && session.BlockDate.Month == 9 && session.BlockDate.Year == 2025
                                         {
-                                            <div class="day-item">
-                                                <div class="time">@session.StartTime.ToString(@"hh\:mm")</div>
-                                                <div class="time">till @session.EndTime.ToString(@"hh\:mm")</div>
+                                            <div class="chip chip-slot d-flex flex-column justify-content-center align-items-center" data-id="@session.AvailabilityBlockID">
+                                                Slot<br />@session.StartTime.ToString(@"hh\:mm")<br />@session.EndTime.ToString(@"hh\:mm")
                                             </div>
                                         }
                                     }
@@ -314,7 +353,6 @@
                         <div class="k">Date</div>      <div id="selDate">—</div>
                         <div class="k">Time</div>      <div id="selTime">—</div>
                         <div class="k">Duration</div>  <div id="selDuration">—</div>
-                        <div class="k">Students</div>  <div id="selStudents">—</div>
                         <div class="k">Price</div>     <div id="selPrice">—</div>
                         <div class="k">Points Used</div><div id="selPoints">—</div>
                     </div>

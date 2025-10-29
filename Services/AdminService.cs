@@ -145,13 +145,14 @@ namespace J_Tutors_Web_Platform.Services
                     UserID = Convert.ToInt32(reader["UserID"]),
                     AdminID = Convert.ToInt32(reader["AdminID"]),
                     SubjectID = Convert.ToInt32(reader["SubjectID"]),
-                    SessionDate = Convert.ToDateTime(reader["SessionDate"]),
+                    SessionDate = DateOnly.FromDateTime((DateTime)reader["SessionDate"]),
                     DurationHours = Convert.ToDecimal(reader["DurationHours"]),
                     BaseCost = Convert.ToDecimal(reader["BaseCost"]),
                     PointsSpent = Convert.ToInt32(reader["PointsSpent"]),
                     Status = Enum.Parse<TutoringSessionStatus>(reader["Status"].ToString()!),
                     CancellationDate = reader["CancellationDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["CancellationDate"]),
-                    PaidDate = reader["PaidDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["PaidDate"])
+                    PaidDate = reader["PaidDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["PaidDate"]),
+                    StartTime = TimeOnly.FromTimeSpan((TimeSpan)reader["StartTime"])
                 });
             }
 

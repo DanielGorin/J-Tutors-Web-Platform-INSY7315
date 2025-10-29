@@ -2,6 +2,7 @@
 using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 
 using Microsoft.AspNetCore.Mvc;
@@ -142,7 +143,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // POST: /Admin/SavePricing
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SavePricing(int subjectId, decimal hourlyRate, decimal minHours, decimal maxHours, decimal maxPointDiscount)
+        public IActionResult SavePricing(int subjectId, string hourlyRate, string minHours, string maxHours, string maxPointDiscount)
         {
             if (subjectId <= 0)
             {
@@ -150,12 +151,39 @@ namespace J_Tutors_Web_Platform.Controllers
                 return RedirectToAction(nameof(APricing));
             }
 
+            var inv = CultureInfo.InvariantCulture;
+            if (!decimal.TryParse(hourlyRate, NumberStyles.Number, inv, out var hr) ||
+                !decimal.TryParse(minHours, NumberStyles.Number, inv, out var minh) ||
+                !decimal.TryParse(maxHours, NumberStyles.Number, inv, out var maxh) ||
+                !decimal.TryParse(maxPointDiscount, NumberStyles.Number, inv, out var mpd))
+            {
+                TempData["APricingError"] = "One or more inputs are invalid numbers.";
+                return RedirectToAction(nameof(APricing), new { subjectId });
+            }
+
+            // Business checks (keep the same rules as service)
+            if (minh <= 0 || maxh <= 0 || maxh < minh)
+            {
+                TempData["APricingError"] = "Min/Max hours are invalid.";
+                return RedirectToAction(nameof(APricing), new { subjectId });
+            }
+            if (hr < 0)
+            {
+                TempData["APricingError"] = "Hourly rate must be ≥ 0.";
+                return RedirectToAction(nameof(APricing), new { subjectId });
+            }
+            if (mpd < 0)
+            {
+                TempData["APricingError"] = "Max points discount must be ≥ 0.";
+                return RedirectToAction(nameof(APricing), new { subjectId });
+            }
+
             var adminUsername = User.Identity?.Name ?? "";
             var adminId = _adminService.GetAdminID(adminUsername);
 
             try
             {
-                _adminService.UpsertPricing(subjectId, adminId, hourlyRate, minHours, maxHours, maxPointDiscount);
+                _adminService.UpsertPricing(subjectId, adminId, hr, minh, maxh, mpd);
                 TempData["APricingOk"] = "Pricing saved.";
             }
             catch (Exception ex)

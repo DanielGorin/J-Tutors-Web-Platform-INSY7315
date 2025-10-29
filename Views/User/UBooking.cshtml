@@ -1,381 +1,236 @@
-﻿@{
+﻿@using System.Globalization
+@model J_Tutors_Web_Platform.Controllers.UserBookingViewModel
+@{
     ViewData["Title"] = "Book Tutoring";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
+
+    bool hasSubject = Model.SelectedSubjectID.HasValue;
 }
 
-<!-- Scoped styles for Booking only -->
 <style>
-    .booking .form-control, .booking select, .booking input[type="range"] {
-        background-color: var(--surface-color) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        padding: 10px 12px !important;
-        width: 100%;
+    .booking .form-control, .booking .form-select, .booking input[type="range"]{
+        background-color: var(--surface-color)!important;
+        color: var(--text-color)!important;
+        border:1px solid var(--border-color)!important;
+        border-radius:8px!important;
+        padding:10px 12px!important;
+        width:100%;
     }
-
-        .booking .form-control::placeholder {
-            color: var(--muted-text-color) !important;
-        }
-
-        .booking .form-control:focus, .booking select:focus {
-            outline: none !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
-        }
-
-    /* Calendar */
-    .calendar-wrap {
-        overflow: hidden;
+    .booking .form-control:focus, .booking .form-select:focus, .booking input[type="range"]:focus{
+        border-color:var(--primary-color)!important;
+        box-shadow:0 0 0 .15rem var(--accent-color)!important;
+        outline:none!important;
     }
-
-    .calendar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .calendar-title {
-        font-weight: 700;
-    }
-
-    .calendar-dow, .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 6px;
-    }
-
-        .calendar-dow .dow {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: var(--muted-text-color);
-            text-align: center;
-            padding: 4px 0;
-        }
-
-    .day {
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 10px 0;
-        text-align: center;
-        user-select: none;
-        background-color: var(--surface-color);
-        cursor: pointer;
-    }
-
-        .day.empty {
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .day.unavailable {
-            opacity: 0.45;
-            cursor: default;
-        }
-
-        .day.today {
-            outline: 2px dashed var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        .day.selected {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.15rem var(--accent-color);
-            font-weight: 700;
-        }
-
-    .legend .chip {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--border-color);
-        font-size: 12px;
-        margin-right: 8px;
-    }
-
-    .chip-available {
-        color: var(--success-color);
-        border-color: var(--success-color);
-    }
-
-    .chip-selected {
-        color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .chip-unavailable {
-        color: var(--error-color);
-        border-color: var(--error-color);
-    }
-
-    /* Totals */
-    .totals .stat {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-    }
-
-        .totals .stat strong {
-            font-weight: 700;
-        }
+    .totals .stat{display:flex;justify-content:space-between;align-items:baseline}
+    .muted{opacity:.75}
 </style>
 
 <div class="booking">
-    <!-- Header / Nav -->
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Book Tutoring</h1>
         <div class="d-flex gap-2">
-            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">← Back</a>
             <a asp-controller="Home" asp-action="MyTutoring" class="btn btn-outline-secondary">My Sessions</a>
         </div>
     </div>
 
-    <!-- Booking Details -->
+    @if (TempData["BookingError"] is string be && !string.IsNullOrWhiteSpace(be))
+    { <div class="alert alert-danger">@be</div> }
+    @if (TempData["BookingWarn"] is string bw && !string.IsNullOrWhiteSpace(bw))
+    { <div class="alert alert-warning">@bw</div> }
+    @if (TempData["BookingOk"] is string bo && !string.IsNullOrWhiteSpace(bo))
+    { <div class="alert alert-success">@bo</div> }
+
+    <!--  Subject selection -->
     <div class="card shadow p-24 mb-16">
-        <h3 class="mb-16">Booking Details</h3>
-        <form method="post" action="#" id="bookingForm" novalidate>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="Students" class="form-label">Number of Students</label>
-                    <input id="Students" name="Students" type="number" min="1" step="1" class="form-control" placeholder="1" />
-                </div>
-                <div class="col-md-4">
-                    <label for="Subject" class="form-label">Subject</label>
-                    <input id="Subject" name="Subject" type="text" class="form-control" placeholder="e.g., Maths" />
-                </div>
-                <div class="col-md-4">
-                    <label for="Hours" class="form-label">Session Hours (per day)</label>
-                    <input id="Hours" name="Hours" type="number" min="1" step="1" class="form-control" placeholder="2" />
-                </div>
-            </div>
-
-            <!-- Selected Dates holder (populated by calendar UI) -->
-            <input type="hidden" id="SelectedDates" name="SelectedDates" />
-        </form>
-    </div>
-
-    <!-- Calendar: FULL MONTH only -->
-    <div class="card shadow p-24 mb-16">
-        <div class="d-flex justify-content-between align-items-center mb-12">
-            <h3 class="mb-0">Choose Available Day(s)</h3>
-            <div class="legend">
-                <span class="chip chip-available">Available</span>
-                <span class="chip chip-selected">Selected</span>
-                <span class="chip chip-unavailable">Unavailable</span>
-            </div>
-        </div>
-
-        <div class="calendar-wrap">
-            <div class="calendar-header">
-                <div>
-                    <div class="caption">Month</div>
-                    <div id="calTitle" class="calendar-title">[ … ]</div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button id="prevMonth" class="btn btn-sm btn-outline-secondary" type="button">Prev</button>
-                    <button id="nextMonth" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
-                </div>
-            </div>
-
-            <!-- Days of week row -->
-            <div class="calendar-dow mt-2">
-                <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div>
-                <div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
-            </div>
-
-            <!-- Day cells (single full-month grid) -->
-            <div id="calDays" class="calendar-grid mt-2"></div>
-        </div>
-        <div class="caption text-muted mt-8">Demo calendar: weekdays selectable; weekends disabled. Final availability will be enforced server-side.</div>
-    </div>
-
-    <!-- Cost & Points -->
-    <div class="card shadow p-24 mb-16 totals">
-        <h3 class="mb-16">Estimate</h3>
+        <h3 class="mb-12">Choose a Subject</h3>
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="stat"><span>Selected Days</span><strong id="statDays">0</strong></div>
-                <div class="stat mt-8"><span>Students</span><strong id="statStudents">0</strong></div>
-                <div class="stat mt-8"><span>Hours / Day</span><strong id="statHours">0</strong></div>
-            </div>
-            <div class="col-md-4">
-                <div class="stat"><span>Demo Rate</span><strong id="statRate">R 0</strong></div>
-                <div class="stat mt-8"><span>Base Total (ZAR)</span><strong id="statBase">R 0</strong></div>
-                <div class="stat mt-8"><span>Points % Applied</span><strong><span id="statPct">0</span>%</strong></div>
-            </div>
-            <div class="col-md-4">
-                <div class="stat"><span>Points Used</span><strong id="statPts">0 pts</strong></div>
-                <div class="stat mt-8"><span>Payable After Points</span><strong id="statPay">R 0</strong></div>
-                <div class="caption mt-8">Demo conversion: <strong>1 pt = R 1</strong>. Final rules set by admins later.</div>
-            </div>
-        </div>
+            <div class="col-md-6">
+                <label class="form-label">Subject</label>
+                <select class="form-select"
+                        asp-for="SelectedSubjectID"
+                        asp-items="@(new SelectList(Model.Subjects.OrderBy(x => x.SubjectName),
+                                    nameof(J_Tutors_Web_Platform.Services.ActiveSubjectDto.SubjectID),
+                                    nameof(J_Tutors_Web_Platform.Services.ActiveSubjectDto.SubjectName),
+                                    Model.SelectedSubjectID))"
+                        onchange="onSubjectChange(this)"
+                        aria-label="Choose Subject">
+                    <option value="">Choose…</option>
+                </select>
+                <div class="caption muted mt-1">Selecting a subject reveals booking options.</div>
 
-        <div class="mt-16">
-            <label for="PointsPercent" class="form-label">Use Points (0%–30%)</label>
-            <input type="range" id="PointsPercent" min="0" max="30" step="5" value="0" />
+            </div>
         </div>
     </div>
 
-    <!-- Actions -->
-    <div class="card shadow p-24">
-        <div class="d-flex justify-content-end gap-2">
-            <a asp-controller="Home" asp-action="Dashboard" class="btn btn-outline-secondary">Cancel</a>
-            <button form="bookingForm" type="submit" class="btn btn-primary">Save as Pending</button>
-        </div>
-    </div>
-</div>
+    <!-- Booking inputs (revealed after subject chosen) -->
+    @if (hasSubject)
+    {
+        <div class="card shadow p-24 mb-16">
+            <h3 class="mb-16">Booking Details</h3>
 
-@section Scripts {
-    <script>
-        /*
-         UI ONLY — Demo math & calendar.
-         - DEMO_RATE_ZAR_PER_STUDENT_HOUR: placeholder rate.
-         - DEMO_POINTS_PER_ZAR: 1 pt = R 1 placeholder.
-         Final pricing & point conversion will be configured by Admins later.
-        */
-        (function () {
-            const DEMO_RATE_ZAR_PER_STUDENT_HOUR = 200; // TODO: replace with server value
-            const DEMO_POINTS_PER_ZAR = 1;              // TODO: replace with server rule (1:1 demo)
+            <form asp-action="QuoteBooking" asp-controller="User" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
 
-            // DOM refs
-            const calTitle = document.getElementById('calTitle');
-            const calDays = document.getElementById('calDays');
-            const prevBtn = document.getElementById('prevMonth');
-            const nextBtn = document.getElementById('nextMonth');
-            const selectedDatesInput = document.getElementById('SelectedDates');
+                <input type="hidden" name="SelectedSubjectID" value="@Model.SelectedSubjectID" />
 
-            const studentsEl = document.getElementById('Students');
-            const hoursEl = document.getElementById('Hours');
-            const pctEl = document.getElementById('PointsPercent');
-
-            const statDays = document.getElementById('statDays');
-            const statStudents = document.getElementById('statStudents');
-            const statHours = document.getElementById('statHours');
-            const statRate = document.getElementById('statRate');
-            const statBase = document.getElementById('statBase');
-            const statPct = document.getElementById('statPct');
-            const statPts = document.getElementById('statPts');
-            const statPay = document.getElementById('statPay');
-
-            // State
-            let viewDate = new Date(); viewDate.setDate(1);
-            const selected = new Set();
-
-            // Helpers
-            const fmtIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            const money = (v) => `R ${Math.round(v).toLocaleString()}`;
-
-            function renderCalendar() {
-                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                calTitle.textContent = `${monthNames[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
-                calDays.innerHTML = '';
-
-                const firstDayIdx = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
-                const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-                const todayIso = fmtIso(new Date());
-
-                // Leading blanks
-                for (let i = 0; i < firstDayIdx; i++) {
-                    const blank = document.createElement('div');
-                    blank.className = 'day empty';
-                    calDays.appendChild(blank);
-                }
-
-                // Month days
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'day';
-                    cell.textContent = day;
-
-                    const thisDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-                    const thisIso = fmtIso(thisDate);
-
-                    if (thisIso === todayIso) cell.classList.add('today');
-
-                    // Demo availability: weekends unavailable; weekdays available
-                    const dow = thisDate.getDay();
-                    const available = !(dow === 0 || dow === 6);
-
-                    if (!available) {
-                        cell.classList.add('unavailable');
-                        cell.setAttribute('aria-disabled', 'true');
-                    } else {
-                        cell.addEventListener('click', () => {
-                            if (selected.has(thisIso)) {
-                                selected.delete(thisIso);
-                                cell.classList.remove('selected');
-                            } else {
-                                selected.add(thisIso);
-                                cell.classList.add('selected');
-                            }
-                            selectedDatesInput.value = Array.from(selected).sort().join(',');
-                            recalc();
-                        });
+                <div class="col-md-4">
+                    <label class="form-label">Hours per Session</label>
+                    <input class="form-control" type="number" name="HoursPerSession" step="0.5" min="0.5"
+                           value="@(Model.HoursPerSession.ToString(CultureInfo.InvariantCulture))" />
+                    @if (Model.MinHours is not null && Model.MaxHours is not null && Model.MinHours > 0)
+                    {
+                        <div class="caption muted">Allowed: @Model.MinHours–@Model.MaxHours hours</div>
                     }
+                </div>
 
-                    if (selected.has(thisIso)) cell.classList.add('selected');
+                <div class="col-md-4">
+                    <label class="form-label">Number of Sessions</label>
+                    <input class="form-control" type="number" name="SessionCount" min="1" step="1"
+                           value="@Model.SessionCount" />
+                </div>
 
-                    calDays.appendChild(cell);
+                <div class="col-md-4">
+                    <label class="form-label">Hourly Rate</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R</span>
+                        <input class="form-control" type="text" readonly
+                               value="@(Model.HourlyRate?.ToString("0.00", CultureInfo.InvariantCulture) ?? "0.00")" />
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Points Discount (%)</label>
+                    <input class="form-range"
+                           id="PointsPercent"
+                           name="PointsPercent"
+                           type="range"
+                           min="0"
+                           max="@(Model.MaxPointDiscount ?? 0)"
+                           step="10"
+                           value="@(Model.PointsPercent.ToString(CultureInfo.InvariantCulture))"
+                           oninput="document.getElementById('pctLbl').textContent=this.value + '%';" />
+                    <div class="d-flex justify-content-between">
+                        <span>0%</span>
+                        <strong id="pctLbl">@Model.PointsPercent%</strong>
+                        <span>@(Model.MaxPointDiscount ?? 0)%</span>
+                    </div>
+                    <div class="caption muted mt-1">
+                        Spending X% of the **base total** in points reduces the cash cost by the same X%.
+                    </div>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end gap-2 mt-8">
+                    <!-- Optional dual-button behavior; both work with current controller -->
+                    <button class="btn btn-primary" type="submit" name="showSlots" value="1">Book (Show Slots)</button>
+                </div>
+            </form>
+        </div>
+    }
+
+    <!-- Quote summary -->
+    @if (Model.Quote is not null)
+    {
+        <div class="card shadow p-24 totals mb-16">
+            <h3 class="mb-16">Estimate</h3>
+            <div class="row g-3">
+                <div class="col-md-3"><div class="stat"><span>Hours/Session</span><strong>@Model.Quote.HoursPerSession</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Sessions</span><strong>@Model.Quote.SessionCount</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Rate</span><strong>R @Model.Quote.HourlyRate</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Base</span><strong>R @Model.Quote.BaseTotal</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Points %</span><strong>@Model.Quote.PointsPercentApplied%</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Points Value</span><strong>R @Model.Quote.PointsValueZar</strong></div></div>
+                <div class="col-md-3"><div class="stat"><span>Payable</span><strong>R @Model.Quote.PayableAfterPoints</strong></div></div>
+            </div>
+        </div>
+    }
+
+    <!-- STEP 3b: Availability & Reserve -->
+    @if (Model.Quote is not null)
+    {
+        <form asp-action="ReserveBooking" asp-controller="User" method="post" class="card shadow p-24">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="subjectId" value="@Model.SelectedSubjectID" />
+            <input type="hidden" name="hoursPerSession" value="@Model.Quote.HoursPerSession.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="pointsPercent" value="@Model.Quote.PointsPercentApplied.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" id="selectedStartsCsv" name="selectedStartsCsv" />
+
+            <h3 class="mb-16">Choose up to @Model.Quote.SessionCount slot(s)</h3>
+
+            @if (Model.AvailableSlots.Count == 0)
+            {
+                <div class="alert alert-warning">No available slots found that fit @Model.Quote.HoursPerSession h in the next 60 days.</div>
+            }
+            else
+            {
+                <table class="table align-middle">
+                    <thead><tr><th>Date</th><th>Start</th><th class="text-end">Select</th></tr></thead>
+                    <tbody>
+                    @foreach (var g in Model.AvailableSlots.GroupBy(s => s.Date).OrderBy(g => g.Key))
+                    {
+                        foreach (var s in g)
+                        {
+                            var isoDate = s.Date.ToString("yyyy-MM-dd");
+                            var hm      = new DateTime(s.Date.Year, s.Date.Month, s.Date.Day).Add(s.StartTime).ToString("HH:mm");
+                            <tr>
+                                <td>@s.Date:dddd, dd MMM yyyy</td>
+                                <td>@hm</td>
+                                <td class="text-end">
+                                    <input type="checkbox" class="slot-check" value="@(isoDate)|@(hm)" />
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="UBooking" asp-route-subjectId="@Model.SelectedSubjectID" class="btn btn-outline-secondary">Back</a>
+                    <button class="btn btn-primary" type="submit">Confirm</button>
+                </div>
+            }
+        </form>
+
+        <script>
+            // subject change navigates to GET /User/UBooking?subjectId=...
+            function onSubjectChange(sel){
+                const v = sel.value || "";
+                const url = "@Url.Action("UBooking","User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
+                window.location.href = url;
+            }
+
+            // Enforce max selections == SessionCount, maintain CSV for POST
+            (function(){
+                const boxes = Array.from(document.querySelectorAll('.slot-check'));
+                const hidden = document.getElementById('selectedStartsCsv');
+                const max = @Model.Quote.SessionCount;
+
+                function sync(){
+                    const chosen = boxes.filter(b => b.checked);
+                    if (chosen.length > max){
+                        // uncheck the most recently checked
+                        const last = boxes.reverse().find(b => b.checked);
+                        if (last) last.checked = false;
+                        boxes.reverse();
+                        return sync();
+                    }
+                    hidden.value = chosen.map(b => b.value).join(',');
                 }
 
-                // trailing blanks not necessary for UI
+                boxes.forEach(b => b && b.addEventListener('change', sync));
+                sync();
+            })();
+        </script>
+    }
+    else
+    {
+        <script>
+            function onSubjectChange(sel){
+                const v = sel.value || "";
+                const url = "@Url.Action("UBooking","User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
+                window.location.href = url;
             }
-
-            function getInt(el, def = 0) {
-                const v = parseInt(el.value, 10);
-                return isNaN(v) ? def : Math.max(v, 0);
-            }
-
-            function recalc() {
-                const days = selected.size;
-                const students = getInt(studentsEl, 0);
-                const hours = getInt(hoursEl, 0);
-                const pct = getInt(pctEl, 0);
-
-                const rate = DEMO_RATE_ZAR_PER_STUDENT_HOUR;
-                const base = days * students * hours * rate;
-
-                const pointsValueZar = base * (pct / 100);
-                const pointsUsed = pointsValueZar * DEMO_POINTS_PER_ZAR;
-                const payable = Math.max(base - pointsValueZar, 0);
-
-                statDays.textContent = days;
-                statStudents.textContent = students;
-                statHours.textContent = hours;
-                statRate.textContent = money(rate) + " / student·hour";
-                statBase.textContent = money(base);
-                statPct.textContent = pct;
-                statPts.textContent = Math.round(pointsUsed).toLocaleString() + " pts";
-                statPay.textContent = money(payable);
-            }
-
-            prevBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); });
-            nextBtn.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); });
-
-            [studentsEl, hoursEl, pctEl].forEach(el => el.addEventListener('input', recalc));
-
-            document.getElementById('bookingForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                // FUTURE: post Students, Subject, Hours, SelectedDates, PointsPercent → create pending booking
-                alert('Saved as Pending (UI only).');
-            });
-
-            renderCalendar();
-            recalc();
-        })();
-    </script>
-}
-@* --------------------------------------------------------------------
-   FUTURE FUNCTIONALITY (to make this page live)
-   - Validate inputs (students ≥1, hours ≥1, subject required)
-   - Load real availability (disable days per tutor capacity/conflicts)
-   - Persist points application % with conversion rule from Admin settings
-   - Create Booking (status = PENDING) for each selected day
-   - Show toast/alerts on success; navigate to "My Sessions"
---------------------------------------------------------------------- *@
+        </script>
+    }
+</div>

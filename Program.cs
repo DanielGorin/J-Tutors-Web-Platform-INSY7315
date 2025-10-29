@@ -14,11 +14,11 @@ namespace J_Tutors_Web_Platform
             builder.Services.AddSingleton<FileShareService>();
             builder.Services.AddSingleton<BlobStorageService>();
 
-            builder.Services.AddSingleton<FileShareService>();
 
             builder.Services.AddScoped<UserProfileService>();
             builder.Services.AddScoped<UserLeaderboardService>();
             builder.Services.AddScoped<UserLedgerService>();
+            builder.Services.AddScoped<UserBookingService>();
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
             builder.Services.AddSingleton<AuthService>(sp =>
@@ -66,14 +66,14 @@ namespace J_Tutors_Web_Platform
                 name: "default",
             //Testing
             //----------------------------------------------------
-            pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO
-            //pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO
+            //pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO - WORKS
+            //pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO - WORKS
             //----------------------------------------------------
 
             //PUBLIC
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
-            //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
+            pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
             //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
@@ -100,7 +100,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
             //pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
             //pattern: "{controller=Home}/{action=AFiles}/{id?}"); // ADMIN FILES MANAGEMENT
-            //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT
+            //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT - FUNCTINOAL
             //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD
             //pattern: "{controller=Home}/{action=AAnalytics}/{id?}"); // ADMIN ANALYTICS
             //pattern: "{controller=Home}/{action=AAccount}/{id?}"); // ADMIN ACCOUNT

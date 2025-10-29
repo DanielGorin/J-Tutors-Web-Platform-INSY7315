@@ -24,9 +24,14 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         // FK: Subject for this session
         public int SubjectID { get; set; }
         public Subjects.Subject Subject { get; set; } = default!;
+        //Date teh session takes place
 
-        // Date of the session
+        [Column(TypeName = "date")]
         public DateTime SessionDate { get; set; }
+
+        // START TIME
+        [Column(TypeName = "time")]
+        public TimeSpan StartTime { get; set; }
 
         // Duration in hours
         [Column(TypeName = "decimal(4,2)")]
@@ -46,6 +51,5 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         public DateTime? CancellationDate { get; set; }
         public DateTime? PaidDate { get; set; }
 
-        // Navigation
     }
 }

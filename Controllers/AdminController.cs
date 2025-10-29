@@ -128,15 +128,16 @@ namespace J_Tutors_Web_Platform.Controllers
             return RedirectToAction(nameof(APricing));
         }
 
-        // POST: /Admin/ToggleSubject
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleSubject(int subjectId, bool isActive)
+        public IActionResult ToggleSubject(int subjectId)
         {
-            try { _adminService.SetSubjectActive(subjectId, isActive); }
+            try { _adminService.ToggleSubjectActive(subjectId); }
             catch (Exception ex) { TempData["APricingError"] = ex.Message; }
-            return RedirectToAction(nameof(APricing), new { subjectId });
+            // Redirect WITHOUT subjectId so the right pane doesn’t open automatically
+            return RedirectToAction(nameof(APricing));
         }
+
 
         // POST: /Admin/SavePricing
         [HttpPost]

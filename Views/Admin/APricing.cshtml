@@ -1,4 +1,5 @@
-﻿@model J_Tutors_Web_Platform.ViewModels.APricingViewModel
+﻿@using System.Globalization
+@model J_Tutors_Web_Platform.ViewModels.APricingViewModel
 @{
     ViewData["Title"] = "Booking Rules & Pricing";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -126,12 +127,12 @@
                                         <form asp-action="ToggleSubject" asp-controller="Admin" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="subjectId" value="@s.SubjectID" />
-                                            <input type="hidden" name="isActive" value="@(!s.IsActive)" />
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" @(s.IsActive ? "checked" : "") onchange="this.form.submit()" />
                                             </div>
                                         </form>
                                     </td>
+
                                     <td class="text-end">
                                         <form asp-action="DeleteSubject" asp-controller="Admin" method="post" onsubmit="return confirm('Delete subject & pricing?');" class="d-inline">
                                             @Html.AntiForgeryToken()
@@ -166,25 +167,59 @@
                         <input type="hidden" name="subjectId" value="@Model.SelectedSubjectID" />
 
                         <div class="row g-3">
+                            <!-- Hourly Rate with Rand prefix -->
                             <div class="col-md-6">
                                 <label class="form-label">Hourly Rate (R)</label>
-                                <input class="form-control" type="number" name="hourlyRate" step="0.01" min="0"
-                                       value="@(Model.HourlyRate?.ToString() ?? "0.00")" />
+                                <div class="input-group">
+
+                                    <input class="form-control"
+                                           type="number"
+                                           name="hourlyRate"
+                                           step="0.01" min="0"
+                                           value="@(Model.HourlyRate?.ToString(CultureInfo.InvariantCulture) ?? "0.00")" />
+                                </div>
+                                <div class="caption mt-4">Price per hour in Rands.</div>
                             </div>
+
+                            <!-- Max Point Discount as 0..100 slider, step 10% -->
                             <div class="col-md-6">
-                                <label class="form-label">Max Point Discount</label>
-                                <input class="form-control" type="number" name="maxPointDiscount" step="0.01" min="0"
-                                       value="@(Model.MaxPointDiscount?.ToString() ?? "0.00")" />
+                                <label class="form-label">Max Points Discount (%)</label>
+                                <input class="form-range"
+                                       id="mpdRange"
+                                       type="range"
+                                       min="0" max="100" step="10"
+                                       value="@(Model.MaxPointDiscount?.ToString(CultureInfo.InvariantCulture) ?? "0")"
+                                       oninput="document.getElementById('mpdLabel').textContent = this.value + '%';
+                            document.getElementById('mpdField').value = this.value;" />
+                                <div class="d-flex justify-content-between">
+                                    <span class="caption">0%</span>
+                                    <strong id="mpdLabel">
+                                        @((Model.MaxPointDiscount ?? 0m).ToString("0", CultureInfo.InvariantCulture))%
+                                    </strong>
+                                    <span class="caption">100%</span>
+                                </div>
+                                <!-- actual posted value -->
+                                <input type="hidden" id="mpdField"
+                                       name="maxPointDiscount"
+                                       value="@(Model.MaxPointDiscount?.ToString(CultureInfo.InvariantCulture) ?? "0")" />
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Min Hours</label>
-                                <input class="form-control" type="number" name="minHours" step="0.25" min="0.25"
-                                       value="@(Model.MinHours?.ToString() ?? "1.00")" />
+                                <input class="form-control"
+                                       type="number"
+                                       name="minHours"
+                                       step="0.25" min="0.25"
+                                       value="@(Model.MinHours?.ToString(CultureInfo.InvariantCulture) ?? "1.00")" />
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label">Max Hours</label>
-                                <input class="form-control" type="number" name="maxHours" step="0.25" min="0.25"
-                                       value="@(Model.MaxHours?.ToString() ?? "2.00")" />
+                                <input class="form-control"
+                                       type="number"
+                                       name="maxHours"
+                                       step="0.25" min="0.25"
+                                       value="@(Model.MaxHours?.ToString(CultureInfo.InvariantCulture) ?? "2.00")" />
                             </div>
                         </div>
 
@@ -192,6 +227,7 @@
                             <button class="btn btn-primary" type="submit">Save Pricing</button>
                         </div>
                     </form>
+
                 }
 
                 <div class="caption mt-8">

@@ -57,13 +57,8 @@ namespace J_Tutors_Web_Platform.Services
             var totalInPeriod = new Dictionary<int, int>(); // UserID -> sum
             await using (var conn = new SqlConnection(_connStr))
             {
-                var sql = @"
-SELECT UserID, SUM(Amount) AS TotalEarned
-FROM dbo.PointsReceipt
-WHERE Amount > 0
-" + (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") +
-    (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") +
-@"GROUP BY UserID";
+                var sql = @"SELECT UserID, SUM(Amount) AS TotalEarned FROM dbo.PointsReceipt WHERE Amount > 0" + 
+                    (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") + (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") + @"GROUP BY UserID";
 
                 await using var cmd = new SqlCommand(sql, conn);
                 if (startUtc.HasValue) cmd.Parameters.AddWithValue("@start", startUtc.Value);
@@ -84,13 +79,9 @@ WHERE Amount > 0
             var currentInPeriod = new Dictionary<int, int>(); // UserID -> net
             await using (var conn = new SqlConnection(_connStr))
             {
-                var sql = @"
-SELECT UserID, SUM(Amount) AS Net
-FROM dbo.PointsReceipt
-WHERE AffectsAllTime = 1
-" + (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") +
-    (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") +
-@"GROUP BY UserID";
+                var sql = @"SELECT UserID, SUM(Amount) AS Net FROM dbo.PointsReceipt WHERE AffectsAllTime = 1 
+                    " + (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") +
+                    (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") + @"GROUP BY UserID";
 
                 await using var cmd = new SqlCommand(sql, conn);
                 if (startUtc.HasValue) cmd.Parameters.AddWithValue("@start", startUtc.Value);

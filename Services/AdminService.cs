@@ -330,18 +330,17 @@ namespace J_Tutors_Web_Platform.Services
             return cmd.ExecuteNonQuery();
         }
 
-        public int SetSubjectActive(int subjectId, bool isActive)
+        public int ToggleSubjectActive(int subjectId)
         {
-            const string sql = "UPDATE Subjects SET IsActive = @active WHERE SubjectID = @id";
+            const string sql = @"UPDATE Subjects SET IsActive = CASE WHEN IsActive = 1 THEN 0 ELSE 1 END WHERE SubjectID = @id;";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
-            cmd.Parameters.AddWithValue("@active", isActive ? 1 : 0);
             cmd.Parameters.AddWithValue("@id", subjectId);
             con.Open();
-
             return cmd.ExecuteNonQuery();
         }
+
 
         public PricingRule? GetPricingForSubject(int subjectId)
         {

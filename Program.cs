@@ -66,7 +66,7 @@ namespace J_Tutors_Web_Platform
                 name: "default",
             //Testing
             //----------------------------------------------------
-            //pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO
+            pattern: "{controller=Test}/{action=FileShare}/{id?}"); // TEST FILE SHARE DEMO
             //pattern: "{controller=TestBlob}/{action=Gallery}/{id?}"); // BLOB DEMO
             //----------------------------------------------------
 
@@ -74,7 +74,7 @@ namespace J_Tutors_Web_Platform
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
-            pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
+            //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 

@@ -264,7 +264,7 @@
                                         if (session.SessionDate.Day == d && session.SessionDate.Month == 9 && session.SessionDate.Year == 2025)
                                         {
                                             <div class="day-item">
-                                                <div class="time">@session.SessionDate.ToString(@"hh\:mm")</div>
+                                                <div class="date">@session.SessionDate.ToString("yyyy/MM/dd")</div>
                                                 <div class="subject">@session.Subject</div>
                                             </div>
                                         }

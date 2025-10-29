@@ -29,6 +29,15 @@ namespace J_Tutors_Web_Platform.Services
         decimal PointsValueZar,
         decimal PayableAfterPoints);
 
+    public sealed record AvailabilityCapacity(
+        int AdminID,
+        DateTime Date,
+        TimeSpan Start,
+        TimeSpan End,
+        int BlockMinutes,
+        int MinutesPerSession,
+        int SlotCount);
+
     public sealed record SlotOption(DateTime Date, TimeSpan StartTime, int Minutes);
 
     /// <summary>
@@ -330,10 +339,11 @@ VALUES (@a, @d, @rightStart, @rightEnd);";
                 await cmd.ExecuteNonQueryAsync();
             }
         }
+
         public async Task<int?> FindAdminWithAvailabilityAsync(
-    DateTime fromInclusive,
-    DateTime toExclusive,
-    int? preferredAdminId = null)
+            DateTime fromInclusive,
+            DateTime toExclusive,
+            int? preferredAdminId = null)
         {
             await using var conn = new SqlConnection(_connStr);
             await conn.OpenAsync();
@@ -434,6 +444,100 @@ ORDER BY AdminID;";
             return null;
         }
 
+        /// <summary>
+        /// Capacity rows (internal; reused by debug slot counting).
+        /// </summary>
+        public async Task<IReadOnlyList<AvailabilityCapacity>> GetCapacityReportAsync(
+            DateTime fromInclusive,
+            DateTime toExclusive,
+            int minutesPerSession,
+            int? adminId = null)
+        {
+            if (minutesPerSession <= 0) return Array.Empty<AvailabilityCapacity>();
 
+            const string SQL = @"
+SELECT AdminID, BlockDate, StartTime, EndTime
+FROM dbo.AvailabilityBlock
+WHERE CAST(BlockDate AS date) >= @from
+  AND CAST(BlockDate AS date) <  @to
+  /**adminFilter**/
+ORDER BY BlockDate, StartTime;";
+
+            var rows = new List<AvailabilityCapacity>();
+
+            await using var conn = new SqlConnection(_connStr);
+            await conn.OpenAsync();
+
+            var sql = SQL.Replace("/**adminFilter**/", adminId.HasValue ? "AND AdminID = @a" : string.Empty);
+
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Date;
+            cmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Date;
+            if (adminId.HasValue) cmd.Parameters.Add("@a", SqlDbType.Int).Value = adminId.Value;
+
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                var a = r.GetInt32(r.GetOrdinal("AdminID"));
+                var d = ((DateTime)r["BlockDate"]).Date;
+                var st = (TimeSpan)r["StartTime"];
+                var et = (TimeSpan)r["EndTime"];
+
+                var blockMinutes = (int)(et - st).TotalMinutes;
+
+                int slotCount = 0;
+                if (blockMinutes >= minutesPerSession)
+                {
+                    // number of (minutesPerSession)-long windows if we slide in 15-minute steps
+                    slotCount = ((blockMinutes - minutesPerSession) / 15) + 1;
+                    if (slotCount < 0) slotCount = 0;
+                }
+
+                rows.Add(new AvailabilityCapacity(
+                    AdminID: a,
+                    Date: d,
+                    Start: st,
+                    End: et,
+                    BlockMinutes: blockMinutes,
+                    MinutesPerSession: minutesPerSession,
+                    SlotCount: slotCount));
+            }
+
+            return rows
+                .OrderByDescending(x => x.SlotCount)
+                .ThenBy(x => x.Date)
+                .ThenBy(x => x.AdminID)
+                .ToList();
+        }
+
+        // ========================== DEBUG: slot counts by length ==========================
+        // TEMP/DEBUG: For a list of session lengths (in minutes), compute the total number
+        // of sliding-window slots available in the next N days across all admins (or one).
+        // Uses the same 15-minute step rule as GetCapacityReportAsync.
+        public async Task<IDictionary<int, int>> GetGlobalSlotCountsAsync(
+            DateTime fromInclusive,
+            DateTime toExclusive,
+            IEnumerable<int> minutesPerSessionList,
+            int? adminId = null)
+        {
+            var result = new Dictionary<int, int>();
+
+            // Deduplicate + sort ascending for predictable output
+            var lengths = minutesPerSessionList
+                .Where(m => m > 0)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToArray();
+
+            foreach (var m in lengths)
+            {
+                var rows = await GetCapacityReportAsync(fromInclusive, toExclusive, m, adminId);
+                var total = rows.Sum(r => r.SlotCount);
+                result[m] = total;
+            }
+
+            return result;
+        }
+        // ======================== END DEBUG: slot counts by length ========================
     }
 }

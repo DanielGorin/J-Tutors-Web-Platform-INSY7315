@@ -14,11 +14,12 @@ namespace J_Tutors_Web_Platform
             builder.Services.AddSingleton<FileShareService>();
             builder.Services.AddSingleton<BlobStorageService>();
 
-
             builder.Services.AddScoped<UserProfileService>();
             builder.Services.AddScoped<UserLeaderboardService>();
             builder.Services.AddScoped<UserLedgerService>();
             builder.Services.AddScoped<UserBookingService>();
+            builder.Services.AddScoped<AdminAgendaService>();
+
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
             builder.Services.AddSingleton<AuthService>(sp =>

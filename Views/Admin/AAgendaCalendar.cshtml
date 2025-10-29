@@ -1,0 +1,43 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
+@{
+    var first = new DateTime(Model.Year, Model.Month, 1);
+    var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
+    var byDay = Model.Sessions.GroupBy(s => s.SessionDate.Day)
+                              .ToDictionary(g => g.Key, g => g.ToList());
+}
+
+<div class="d-flex justify-content-between align-items-center mb-12">
+    <h3 class="mb-0">Calendar — @first.ToString("MMMM yyyy")</h3>
+
+    <form hx-get="@Url.Action("_AgendaCalendar","Admin")"
+          hx-target="#tabBody" hx-swap="innerHTML"
+          class="d-flex gap-2 align-items-center">
+        <input type="number" name="year" min="2000" value="@Model.Year" class="form-control form-control-sm" style="width:90px" />
+        <input type="number" name="month" min="1" max="12" value="@Model.Month" class="form-control form-control-sm" style="width:70px" />
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="includeScheduled" id="incSched" @(Model.IncludeScheduled ? "checked" : "") />
+            <label class="form-check-label" for="incSched">Include Scheduled</label>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" type="submit">Go</button>
+    </form>
+</div>
+
+<div class="row row-cols-7 g-2">
+    @for (var d = 1; d <= daysInMonth; d++)
+    {
+        <div class="col">
+            <div class="border rounded p-2" style="min-height: 90px;">
+                <div class="fw-bold mb-1">@d</div>
+                @if (byDay.TryGetValue(d, out var list))
+                {
+                    foreach (var s in list.OrderBy(x => x.StartTime))
+                    {
+                        <div class="small">
+                            @s.StartTime.ToString() — #@s.TutoringSessionID (@s.Status)
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>

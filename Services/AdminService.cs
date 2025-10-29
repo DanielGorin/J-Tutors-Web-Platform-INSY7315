@@ -145,7 +145,7 @@ namespace J_Tutors_Web_Platform.Services
                     UserID = Convert.ToInt32(reader["UserID"]),
                     AdminID = Convert.ToInt32(reader["AdminID"]),
                     SubjectID = Convert.ToInt32(reader["SubjectID"]),
-                    SessionDate = Convert.ToDateTime(reader["SessionDate"]),
+                    SessionDate = DateOnly.FromDateTime((DateTime)reader["SessionDate"]),
                     DurationHours = Convert.ToDecimal(reader["DurationHours"]),
                     BaseCost = Convert.ToDecimal(reader["BaseCost"]),
                     PointsSpent = Convert.ToInt32(reader["PointsSpent"]),

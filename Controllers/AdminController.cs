@@ -2,21 +2,23 @@
 using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
-using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
-
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
+using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
     public class AdminController : Controller
     {
         private readonly AdminService _adminService;
+        private readonly AuthService _authService;
         Models.Users.User user = new User();
 
-        public AdminController(AdminService adminService)
+        public AdminController(AdminService adminService, AuthService authService)
         {
             _adminService = adminService;
+            _authService = authService;
         }
 
         //[HttpGet]
@@ -192,6 +194,30 @@ namespace J_Tutors_Web_Platform.Controllers
             }
 
             return RedirectToAction(nameof(APricing), new { subjectId });
+        }
+
+        [HttpPost]
+        public IActionResult ChangePassword(string currentPassword, string NewPassword, string ConfirmPassword)
+        {
+            var adminUsername = User.FindFirst(ClaimTypes.Name)?.Value;
+            var result = _authService.AdminLogin(adminUsername, currentPassword);
+
+            if (NewPassword != ConfirmPassword)
+            {
+                Console.WriteLine("password dont match");
+                return View("AAccount");
+            }
+            
+            if (result != "Login Successful")
+            {
+                Console.WriteLine("current password incorrect");
+                return View("AAccount");
+            }
+
+            _authService.ChangeAdminPassword(adminUsername, NewPassword);
+
+            Console.WriteLine("password changed to " + NewPassword);
+            return View("AAccount");
         }
 
     }

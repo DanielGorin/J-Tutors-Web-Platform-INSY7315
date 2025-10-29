@@ -126,9 +126,9 @@
                                         <form asp-action="ToggleSubject" asp-controller="Admin" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="subjectId" value="@s.SubjectID" />
-                                            <input type="hidden" name="isActive" value="@(!s.IsAvtive)" />
+                                            <input type="hidden" name="isActive" value="@(!s.IsActive)" />
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" @(s.IsAvtive ? "checked" : "") onchange="this.form.submit()" />
+                                                <input class="form-check-input" type="checkbox" @(s.IsActive ? "checked" : "") onchange="this.form.submit()" />
                                             </div>
                                         </form>
                                     </td>

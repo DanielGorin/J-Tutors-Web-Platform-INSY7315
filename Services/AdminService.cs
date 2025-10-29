@@ -297,7 +297,7 @@ namespace J_Tutors_Web_Platform.Services
                 {
                     SubjectID = Convert.ToInt32(r["SubjectID"]),
                     SubjectName = Convert.ToString(r["SubjectName"]) ?? "",
-                    IsAvtive = Convert.ToBoolean(r["IsAvtive"])
+                    IsActive = Convert.ToBoolean(r["IsActive"])
                 });
             }
             return list;
@@ -307,7 +307,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             if (string.IsNullOrWhiteSpace(subjectName)) throw new ArgumentException("Subject name required.");
 
-            const string sql = @"INSERT INTO Subjects (SubjectName, IsAvtive) VALUES (@name, 1); SELECT SCOPE_IDENTITY();";
+            const string sql = @"INSERT INTO Subjects (SubjectName, IsActive) VALUES (@name, 1); SELECT SCOPE_IDENTITY();";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);
@@ -332,7 +332,7 @@ namespace J_Tutors_Web_Platform.Services
 
         public int SetSubjectActive(int subjectId, bool isActive)
         {
-            const string sql = "UPDATE Subjects SET IsAvtive = @active WHERE SubjectID = @id";
+            const string sql = "UPDATE Subjects SET IsActive = @active WHERE SubjectID = @id";
 
             using var con = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, con);

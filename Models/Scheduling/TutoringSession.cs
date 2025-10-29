@@ -26,8 +26,8 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         public Subjects.Subject Subject { get; set; } = default!;
         //Date teh session takes place
 
-        [Column(TypeName = "date")]
-        public DateTime SessionDate { get; set; }
+        // Date of the session
+        public DateOnly SessionDate { get; set; }
 
         // START TIME
         [Column(TypeName = "time")]
@@ -50,6 +50,7 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         // Optional timestamps
         public DateTime? CancellationDate { get; set; }
         public DateTime? PaidDate { get; set; }
+        public TimeOnly StartTime { get; set; }
 
     }
 }

@@ -21,7 +21,7 @@ namespace J_Tutors_Web_Platform.Controllers
             _authService = authService;
         }
 
-        //[HttpGet]
+        [HttpGet]
         public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
         {
             Console.WriteLine("Inside ASessionCalender GET method");
@@ -220,5 +220,26 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("AAccount");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> SetTheme(string theme)
+        {
+            var pref = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Light"
+                    : string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark"
+                    : "";
+
+            Response.Cookies.Append("ThemePreference", pref, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                HttpOnly = false
+            });
+
+            var username = User?.Identity?.Name;
+            if (!string.IsNullOrWhiteSpace(username))
+                await _adminService.ChangeTheme(username, pref);
+
+            return Ok(new { ok = true, pref });
+        }
     }
 }

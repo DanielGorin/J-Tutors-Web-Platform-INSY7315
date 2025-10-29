@@ -400,6 +400,19 @@ namespace J_Tutors_Web_Platform.Services
 
         //============================== Admin Account ==============================
 
+        public async Task ChangeTheme(string Username, string pref) 
+        {
+            await using var constring = new SqlConnection(_connectionString);
+            await using var cmd = new SqlCommand(
+                "UPDATE Users SET ThemePreference=@p WHERE Username=@u", constring);
+            cmd.Parameters.AddWithValue("@p", (object)pref ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@u", Username);
 
+            await constring.OpenAsync();
+
+            await cmd.ExecuteNonQueryAsync();
+
+            Console.WriteLine("Theme updated successfully");
+        }
     }
 }

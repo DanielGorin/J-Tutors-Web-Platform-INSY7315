@@ -293,15 +293,14 @@
                                         if (session.SessionDate.Day == d && session.SessionDate.Month == 9 && session.SessionDate.Year == 2025)
                                         {
                                             <div class="day-item"
-                                                selId="@session.TutoringSessionID"
-                                                selStatus="@session.Status"
-                                                selStudent="javier"
-                                                selSubject="@session.Subject"
-                                                selDate="@session.SessionDate"
-                                                selTime="@session.StartTime"
-                                                selDuration="@session.DurationHours"
-                                                selPrice="@session.BaseCost"
-                                                selPoints="@session.PointsSpent"
+                                                data-Id="@session.TutoringSessionID"
+                                                data-Status="@session.Status"
+                                                data-Subject="@session.Subject"
+                                                data-Date="@session.SessionDate"
+                                                data-Time="@session.StartTime"
+                                                data-Duration="@session.DurationHours"
+                                                data-Price="@session.BaseCost"
+                                                data-Points="@session.PointsSpent"
                                             >
                                                 <div>@session.Status</div>
                                                 <div>@session.StartTime.ToString(@"hh\:mm")</div>
@@ -348,7 +347,6 @@
                     <div class="kv mb-12">
                         <div class="k">ID</div>        <div id="selId">—</div>
                         <div class="k">Status</div>    <div id="selStatus">—</div>
-                        <div class="k">Student</div>   <div id="selStudent">—</div>
                         <div class="k">Subject</div>   <div id="selSubject">—</div>
                         <div class="k">Date</div>      <div id="selDate">—</div>
                         <div class="k">Time</div>      <div id="selTime">—</div>

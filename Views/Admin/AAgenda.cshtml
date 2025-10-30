@@ -1,0 +1,122 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.AAgendaPageVM
+@{
+    ViewData["Title"] = "Agenda";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["NavSection"] = "Admin";
+
+    var active = string.IsNullOrWhiteSpace(Model?.ActiveTab) ? "Slots" : Model.ActiveTab;
+}
+
+<div class="card shadow p-24">
+    <div class="d-flex justify-content-between align-items-center mb-16">
+        <h1 class="mb-0">Agenda</h1>
+        <div class="d-flex gap-3 text-muted">
+            <span>Scheduled: <strong>@(Model?.ScheduledCount ?? 0)</strong></span>
+            <span>Accepted:  <strong>@(Model?.AcceptedCount ?? 0)</strong></span>
+            <span>Paid:      <strong>@(Model?.PaidCount ?? 0)</strong></span>
+            <span>Cancelled: <strong>@(Model?.CancelledCount ?? 0)</strong></span>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation (Bootstrap, no HTMX) -->
+    <ul class="nav nav-tabs mb-3" id="agendaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(active == "Slots" ? "active" : "")"
+                    id="tab-slots-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#tab-slots"
+                    type="button"
+                    role="tab"
+                    aria-controls="tab-slots"
+                    aria-selected="@(active == "Slots")">
+                Slots
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(active == "Inbox" ? "active" : "")"
+                    id="tab-inbox-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#tab-inbox"
+                    type="button"
+                    role="tab"
+                    aria-controls="tab-inbox"
+                    aria-selected="@(active == "Inbox")">
+                Inbox
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(active == "Calendar" ? "active" : "")"
+                    id="tab-calendar-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#tab-calendar"
+                    type="button"
+                    role="tab"
+                    aria-controls="tab-calendar"
+                    aria-selected="@(active == "Calendar")">
+                Calendar
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="agendaTabContent">
+
+        <!-- SLOTS -->
+        <div class="tab-pane fade @(active == "Slots" ? "show active" : "")"
+             id="tab-slots"
+             role="tabpanel"
+             aria-labelledby="tab-slots-tab">
+            @await Html.PartialAsync(
+                     "~/Views/Admin/AAgendaSlots.cshtml",
+                     Model?.Slots ?? new J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM()
+                     )
+        </div>
+
+        <!-- INBOX -->
+        <div class="tab-pane fade @(active == "Inbox" ? "show active" : "")"
+             id="tab-inbox"
+             role="tabpanel"
+             aria-labelledby="tab-inbox-tab">
+            @await Html.PartialAsync(
+                     "~/Views/Admin/AAgendaInbox.cshtml",
+                     Model?.Inbox ?? new J_Tutors_Web_Platform.ViewModels.AgendaInboxVM()
+                     )
+        </div>
+
+        <!-- CALENDAR -->
+        <div class="tab-pane fade @(active == "Calendar" ? "show active" : "")"
+             id="tab-calendar"
+             role="tabpanel"
+             aria-labelledby="tab-calendar-tab">
+            @await Html.PartialAsync(
+                     "~/Views/Admin/AAgendaCalendar.cshtml",
+                     Model?.Calendar ?? new J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
+            {
+                Year = DateTime.UtcNow.Year,
+                Month = DateTime.UtcNow.Month,
+                IncludeScheduled = false
+            }
+                     )
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Safety: if nothing is active, default to Slots
+        (function () {
+            var hasActive = document.querySelector('#agendaTabs .nav-link.active');
+            if (!hasActive) {
+                var btn = document.getElementById('tab-slots-tab');
+                if (btn) btn.click();
+            }
+        })();
+    </script>
+}
+
+<style>
+    /* Keep pane background neutral; avoid forced white slabs */
+    #agendaTabContent .tab-pane {
+        background: transparent !important;
+    }
+</style>

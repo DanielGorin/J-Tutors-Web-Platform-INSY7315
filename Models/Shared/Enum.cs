@@ -7,10 +7,10 @@ namespace J_Tutors_Web_Platform.Models.Shared
     public enum TutoringSessionStatus
     {
         Scheduled = 0,      // Session is scheduled
-        Completed = 1,      // Session has been completed
-        Cancelled = 2,      // Session was cancelled
-        NoShow = 3,         // User did not show up
-        PendingPayment = 4, // Awaiting payment
+        Accepted = 1,
+        Denied = 2,
+        Completed = 3,      // Session has been completed
+        Cancelled = 4,      // Session was cancelled
         Paid = 5            // Payment completed
     }
 

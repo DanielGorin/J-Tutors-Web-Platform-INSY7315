@@ -6,11 +6,13 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 using J_Tutors_Web_Platform.Models.Users;
-using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.Models.Points;
+using J_Tutors_Web_Platform.Services;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
@@ -21,9 +23,6 @@ namespace J_Tutors_Web_Platform.Controllers
     /// </summary>
     public class UserController : Controller
     {
-        // ─────────────────────────────────────────────────────────────────────────────
-        // Dependencies (services) + logging
-        // ─────────────────────────────────────────────────────────────────────────────
         private readonly UserProfileService _profiles;
         private readonly UserLeaderboardService _leaderboard;
         private readonly UserLedgerService _ledger;
@@ -48,10 +47,6 @@ namespace J_Tutors_Web_Platform.Controllers
         // PROFILE
         // ============================================================================
 
-        /// <summary>
-        /// GET /User/UProfile — render "My Profile" page.
-        /// Auth check → service read → 404/redirect if missing → view.
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> UProfile()
         {
@@ -66,10 +61,6 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/User/UProfile.cshtml", vm);
         }
 
-        /// <summary>
-        /// POST /User/UProfile — persist edits from "My Profile".
-        /// Enforce username uniqueness; update; refresh cookie if name changed; persist theme cookie.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UProfile(
@@ -138,11 +129,8 @@ namespace J_Tutors_Web_Platform.Controllers
             return RedirectToAction(nameof(UProfile));
         }
 
-        /// <summary>
-        /// POST /User/SetTheme — update theme preference cookie (+ DB if signed-in).
-        /// </summary>
         [HttpPost]
-        [IgnoreAntiforgeryToken] // simple API; consider CSRF later
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> SetTheme(string theme)
         {
             var pref = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Light"
@@ -168,14 +156,11 @@ namespace J_Tutors_Web_Platform.Controllers
         // LEADERBOARD
         // ============================================================================
 
-        /// <summary>
-        /// GET /User/UPointsLeaderboard — filterable leaderboard (Current/Total, time range).
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> UPointsLeaderboard(
             LeaderboardViewMode mode = LeaderboardViewMode.Current,
             LeaderboardTimeFilter time = LeaderboardTimeFilter.ThisMonth,
-            string? search = null, // search currently unused (UI removed)
+            string? search = null,
             int page = 1,
             int pageSize = 20)
         {
@@ -190,14 +175,11 @@ namespace J_Tutors_Web_Platform.Controllers
         // POINTS LEDGER
         // ============================================================================
 
-        /// <summary>
-        /// GET /User/UPointsLedger — show receipts + totals for signed-in user.
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> UPointsLedger()
         {
             var username = User.Identity?.Name;
-            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Account");
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Home");
 
             var user = await _profiles.GetUserIdAndUsernameAsync(username);
             if (user == null) return NotFound();
@@ -219,7 +201,7 @@ namespace J_Tutors_Web_Platform.Controllers
 
         /// <summary>
         /// GET /User/UBooking — initial booking screen (optional pre-selected subject).
-        /// Always sends a fully-hydrated VM so the view never null-refs.
+        /// Sends a fully-hydrated VM. Also prints a console-only DEBUG slot summary.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> UBooking(int? subjectId)
@@ -239,6 +221,32 @@ namespace J_Tutors_Web_Platform.Controllers
                 }
             }
 
+            // =============================== DEBUG BLOCK (REMOVE LATER) ===============================
+            // Goal: On UBooking open, print "<NumberOfSlots> <LengthMinutes>" for common lengths
+            // Window: today .. +60 days; All admins (adminId=null). Sliding step: 15 minutes.
+            try
+            {
+                var from = DateTime.Today;
+                var to = from.AddDays(60);
+
+                // Adjust this list as you like (minutes)
+                var lengths = new[] { 30, 45, 60, 75, 90, 105, 120, 150, 180 };
+
+                var counts = await _booking.GetGlobalSlotCountsAsync(from, to, lengths, adminId: null);
+
+                Console.WriteLine("===== DEBUG SLOT SUMMARY (NumberOfSlots LengthMinutes) =====");
+                foreach (var kv in counts.OrderByDescending(k => k.Value))
+                {
+                    Console.WriteLine($"{kv.Value} {kv.Key}");
+                }
+                Console.WriteLine("===== END DEBUG SLOT SUMMARY =====");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[DEBUG] Slot summary failed: " + ex.Message);
+            }
+            // ============================ END DEBUG BLOCK (REMOVE LATER) ==============================
+
             ViewData["NavSection"] = "User";
             return View("~/Views/User/UBooking.cshtml", vm);
         }
@@ -251,28 +259,6 @@ namespace J_Tutors_Web_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> QuoteBooking(UserBookingViewModel form)
         {
-
-            try
-            {
-                using var conn = new Microsoft.Data.SqlClient.SqlConnection(
-                    _booking.GetType()
-                            .GetField("_connStr", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                            .GetValue(_booking)?
-                            .ToString());
-
-                await conn.OpenAsync();
-
-                using var cmd = new Microsoft.Data.SqlClient.SqlCommand(
-                    "SELECT COUNT(*) FROM dbo.AvailabilityBlock;", conn);
-
-                var count = (int)await cmd.ExecuteScalarAsync();
-                Console.WriteLine($"[DEBUG] AvailabilityBlock rows in DB: {count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("[DEBUG] Failed to count availability blocks: " + ex.Message);
-            }
-
             // Rehydrate subjects and resolve selected subject
             var subjects = (await _booking.GetActiveSubjectsAsync()).ToList();
             var subj = subjects.FirstOrDefault(s => s.SubjectID == form.SelectedSubjectID);
@@ -309,7 +295,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return View("~/Views/User/UBooking.cshtml", vmErr);
             }
 
-            // Build base VM (without slots yet)
+            // Base VM (before slots)
             var vm = new UserBookingViewModel
             {
                 Subjects = subjects,
@@ -411,7 +397,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return RedirectToAction(nameof(UBooking), new { subjectId });
             }
 
-            // Use the same availability policy as quote (dynamic admin)
+            // Use same availability policy as quote (dynamic admin)
             var today = DateTime.Today;
             var adminId = await _booking.FindAdminWithAvailabilityAsync(today, today.AddDays(60), preferredAdminId: null);
             if (adminId is null)

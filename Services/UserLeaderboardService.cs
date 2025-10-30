@@ -2,7 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using J_Tutors_Web_Platform.Models.Points;
+using J_Tutors_Web_Platform.ViewModels;
 
 namespace J_Tutors_Web_Platform.Services
 {

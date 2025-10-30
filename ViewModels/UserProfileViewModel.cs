@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace J_Tutors_Web_Platform.Models.Users
+namespace J_Tutors_Web_Platform.ViewModels
 {
     /**
      * user profile view model

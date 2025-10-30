@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -9,10 +7,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
-using J_Tutors_Web_Platform.Models.Users;
-using J_Tutors_Web_Platform.Models.Points;
 using J_Tutors_Web_Platform.Services;
+using J_Tutors_Web_Platform.ViewModels;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
@@ -195,258 +191,92 @@ namespace J_Tutors_Web_Platform.Controllers
             return View(receipts);
         }
 
-        // ============================================================================
-        // BOOKINGS (Quote & Reserve)
-        // ============================================================================
+        // ---------------- BOOKING ----------------
 
-        /// <summary>
-        /// GET /User/UBooking — initial booking screen (optional pre-selected subject).
-        /// Sends a fully-hydrated VM. Also prints a console-only DEBUG slot summary.
-        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> UBooking(int? subjectId)
+        public IActionResult UBooking()
         {
-            var vm = await BuildEmptyBookingVm();
-
-            if (subjectId.HasValue)
-            {
-                vm.SelectedSubjectID = subjectId;
-                var s = vm.Subjects.FirstOrDefault(x => x.SubjectID == subjectId.Value);
-                if (s is not null)
-                {
-                    vm.HourlyRate = s.HourlyRate;
-                    vm.MinHours = s.MinHours;
-                    vm.MaxHours = s.MaxHours;
-                    vm.MaxPointDiscount = s.MaxPointDiscount;
-                }
-            }
-
-            // =============================== DEBUG BLOCK (REMOVE LATER) ===============================
-            // Goal: On UBooking open, print "<NumberOfSlots> <LengthMinutes>" for common lengths
-            // Window: today .. +60 days; All admins (adminId=null). Sliding step: 15 minutes.
-            try
-            {
-                var from = DateTime.Today;
-                var to = from.AddDays(60);
-
-                // Adjust this list as you like (minutes)
-                var lengths = new[] { 30, 45, 60, 75, 90, 105, 120, 150, 180 };
-
-                var counts = await _booking.GetGlobalSlotCountsAsync(from, to, lengths, adminId: null);
-
-                Console.WriteLine("===== DEBUG SLOT SUMMARY (NumberOfSlots LengthMinutes) =====");
-                foreach (var kv in counts.OrderByDescending(k => k.Value))
-                {
-                    Console.WriteLine($"{kv.Value} {kv.Key}");
-                }
-                Console.WriteLine("===== END DEBUG SLOT SUMMARY =====");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("[DEBUG] Slot summary failed: " + ex.Message);
-            }
-            // ============================ END DEBUG BLOCK (REMOVE LATER) ==============================
-
-            ViewData["NavSection"] = "User";
-            return View("~/Views/User/UBooking.cshtml", vm);
-        }
-
-        /// <summary>
-        /// POST /User/QuoteBooking — validate inputs, compute quote, optionally list available slots.
-        /// Uses Request.Form["showSlots"] == "1" to decide whether to load slots.
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> QuoteBooking(UserBookingViewModel form)
-        {
-            // Rehydrate subjects and resolve selected subject
-            var subjects = (await _booking.GetActiveSubjectsAsync()).ToList();
-            var subj = subjects.FirstOrDefault(s => s.SubjectID == form.SelectedSubjectID);
-
-            if (subj is null)
-            {
-                TempData["BookingError"] = "Please choose a subject.";
-                var vmEmpty = await BuildEmptyBookingVm();
-                ViewData["NavSection"] = "User";
-                return View("~/Views/User/UBooking.cshtml", vmEmpty);
-            }
-
-            // Clamp hours to subject min/max, then quote
-            var hours = form.HoursPerSession;
-            if (subj.MinHours > 0 && hours < subj.MinHours) hours = subj.MinHours;
-            if (subj.MaxHours > 0 && hours > subj.MaxHours) hours = subj.MaxHours;
-
-            QuoteResult quote;
-            try
-            {
-                quote = _booking.Quote(
-                    hours,
-                    Math.Max(1, form.SessionCount),
-                    subj.HourlyRate,
-                    form.PointsPercent,
-                    subj.MaxPointDiscount);
-            }
-            catch (Exception ex)
-            {
-                TempData["BookingError"] = ex.Message;
-                var vmErr = await BuildEmptyBookingVm();
-                vmErr.SelectedSubjectID = subj.SubjectID;
-                ViewData["NavSection"] = "User";
-                return View("~/Views/User/UBooking.cshtml", vmErr);
-            }
-
-            // Base VM (before slots)
             var vm = new UserBookingViewModel
             {
-                Subjects = subjects,
-                SelectedSubjectID = subj.SubjectID,
-                HoursPerSession = quote.HoursPerSession,
-                SessionCount = quote.SessionCount,
-                PointsPercent = quote.PointsPercentApplied,
-                HourlyRate = subj.HourlyRate,
-                MinHours = subj.MinHours,
-                MaxHours = subj.MaxHours,
-                MaxPointDiscount = subj.MaxPointDiscount,
-                Quote = quote,
-                AvailableSlots = new List<SlotOption>()
+                Subjects = _booking.GetSubjectsForBooking(),
+                // UserPointsBalance = ... (optional)
             };
-
-            // Decide whether to load slots
-            var showSlots = string.Equals(Request.Form["showSlots"], "1", StringComparison.OrdinalIgnoreCase);
-            if (showSlots)
-            {
-                var today = DateTime.Today;
-                var adminId = await _booking.FindAdminWithAvailabilityAsync(today, today.AddDays(60), preferredAdminId: null);
-                if (adminId is null)
-                {
-                    TempData["BookingWarn"] = "No admins have availability in the next 60 days.";
-                }
-                else
-                {
-                    var slots = await _booking.GetAvailableSlotsAsync(
-                        adminId.Value,
-                        quote.HoursPerSession,
-                        fromInclusive: today,
-                        toExclusive: today.AddDays(60));
-
-                    vm.AvailableSlots = slots.ToList();
-                }
-            }
 
             ViewData["NavSection"] = "User";
             return View("~/Views/User/UBooking.cshtml", vm);
         }
 
-        /// <summary>
-        /// POST /User/ReserveBooking — create pending sessions and consume availability.
-        /// Parses CSV of selected starts "yyyy-MM-dd|HH:mm,..." from the view.
-        /// </summary>
+        [HttpGet]
+        public IActionResult BookingSubjectConfig(int subjectId)
+        {
+            var cfg = _booking.GetSubjectConfig(subjectId);
+            if (cfg == null) return NotFound();
+            return Json(cfg);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BookingAvailability(int subjectId, int durationMinutes, int year, int month)
+        {
+            try
+            {
+                // If you want to scope to a specific admin, resolve it here (e.g., current tenant admin)
+                int? adminId = null; // or set a real value
+                var vm = await _booking.GetAvailabilityMonthAsync(subjectId, durationMinutes, year, month, adminId);
+                return Json(vm);
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "BookingAvailability failed for subject {SubjectId} {Year}-{Month}", subjectId, year, month);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult BookingQuote(int subjectId, int durationMinutes, int discountPercent)
+        {
+            try
+            {
+                var q = _booking.CalculateQuote(subjectId, durationMinutes, discountPercent);
+                return Json(q);
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "BookingQuote failed for subject {SubjectId}", subjectId);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReserveBooking(
-            int subjectId,
-            decimal hoursPerSession,
-            decimal pointsPercent,
-            string selectedStartsCsv)
+        public async Task<IActionResult> BookingRequest([FromForm] BookingRequestVM dto)
         {
-            // Auth → resolve user id
+            // Resolve current user -> int userId
             var username = User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
                 return RedirectToAction("Login", "Home");
 
             var who = await _profiles.GetUserIdAndUsernameAsync(username);
-            if (who is null) return NotFound();
-            var userId = who.Value.userId;
-
-            // Resolve subject + authoritative quote
-            var subjects = await _booking.GetActiveSubjectsAsync();
-            var subj = subjects.FirstOrDefault(s => s.SubjectID == subjectId);
-            if (subj is null)
+            if (who is null)
             {
-                TempData["BookingError"] = "Subject missing.";
+                TempData["BookingError"] = "User not found.";
                 return RedirectToAction(nameof(UBooking));
             }
 
-            var quote = _booking.Quote(
-                hoursPerSession,
-                1, // per-session cost
-                subj.HourlyRate,
-                pointsPercent,
-                subj.MaxPointDiscount);
+            var userId = who.Value.userId;
 
-            // Parse "yyyy-MM-dd|HH:mm" (24-hour)
-            var chosen = new List<(DateTime date, TimeSpan startTime)>();
-            if (!string.IsNullOrWhiteSpace(selectedStartsCsv))
+            // If you need to force booking to a tenant/admin, pass adminId here; else null uses block owner
+            int? adminIdForSlotOwner = null;
+
+            var res = _booking.RequestBooking(userId, dto, adminIdForSlotOwner);
+            if (!res.Ok)
             {
-                foreach (var part in selectedStartsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                {
-                    var pieces = part.Split('|');
-                    if (pieces.Length != 2) continue;
-
-                    if (DateTime.TryParseExact(pieces[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) &&
-                        TimeSpan.TryParseExact(pieces[1], "HH\\:mm", CultureInfo.InvariantCulture, out var start))
-                    {
-                        chosen.Add((date.Date, start));
-                    }
-                }
+                TempData["BookingError"] = res.Message ?? "Could not create booking.";
+                return RedirectToAction(nameof(UBooking));
             }
 
-            if (chosen.Count == 0)
-            {
-                TempData["BookingError"] = "Please choose at least one slot.";
-                return RedirectToAction(nameof(UBooking), new { subjectId });
-            }
-
-            // Use same availability policy as quote (dynamic admin)
-            var today = DateTime.Today;
-            var adminId = await _booking.FindAdminWithAvailabilityAsync(today, today.AddDays(60), preferredAdminId: null);
-            if (adminId is null)
-            {
-                TempData["BookingError"] = "No admin with availability could be found for the selected dates.";
-                return RedirectToAction(nameof(UBooking), new { subjectId });
-            }
-
-            var created = await _booking.CreatePendingSessionsAsync(
-                userId,
-                adminId.Value,
-                subjectId,
-                quote.HoursPerSession,
-                subj.HourlyRate,
-                quote.PointsPercentApplied,
-                chosen);
-
-            if (created == 0)
-                TempData["BookingError"] = "No sessions could be reserved (slots may have been taken).";
-            else if (created < chosen.Count)
-                TempData["BookingWarn"] = $"Only {created} of {chosen.Count} sessions reserved.";
-            else
-                TempData["BookingOk"] = $"Reserved {created} pending session(s).";
-
-            return RedirectToAction(nameof(UBooking), new { subjectId });
+            TempData["BookingOk"] = res.Message ?? "Request sent.";
+            return RedirectToAction(nameof(UBooking));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // Private helpers (VM shaping)
-        // ─────────────────────────────────────────────────────────────────────────────
-
-        private async Task<UserBookingViewModel> BuildEmptyBookingVm()
-        {
-            var subjects = (await _booking.GetActiveSubjectsAsync()).ToList();
-
-            return new UserBookingViewModel
-            {
-                Subjects = subjects,
-                SelectedSubjectID = null,
-                HoursPerSession = 1.0m,
-                SessionCount = 1,
-                PointsPercent = 0,
-                HourlyRate = null,
-                MinHours = null,
-                MaxHours = null,
-                MaxPointDiscount = null,
-                Quote = null,
-                AvailableSlots = new List<SlotOption>()
-            };
-        }
     }
 }

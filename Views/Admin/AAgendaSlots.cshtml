@@ -1,65 +1,64 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM
+@using System.Globalization
+@{
     Layout = null;
+    var vm = Model ?? new J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM();
+    string FmtDate(DateTime d) => d.ToString("yyyy-MM-dd");
+    string FmtTime(TimeSpan t) => new DateTime(t.Ticks).ToString("HH:mm", CultureInfo.InvariantCulture);
 }
+
 <style>
-    /* scoped to THIS view only */
-    body {
-        background: transparent; /* inherit if it's in a modal/partial */
-        color: #f5f5f5; /* light text for dark bg */
+    .agenda-table td, .agenda-table th,
+    .agenda-form label, .agenda-form small,
+    .agenda-form input, .agenda-form select {
+        color: var(--bs-body-color) !important;
     }
 
-    /* headings and small text */
-    h3, h5, .text-muted, small {
-        color: #f5f5f5 !important;
+    .agenda-section {
+        border-radius: .75rem;
+        padding: 1rem;
+        background: transparent;
+        border: 1px solid rgba(127,127,127,.25);
     }
 
-    /* table headers and cells */
-    .agenda-table th {
-        background-color: rgba(255, 255, 255, 0.02);
-        color: #ffffff !important;
+    .table-striped > tbody > tr:nth-of-type(odd) > * {
+        color: var(--bs-body-color);
     }
 
-    .agenda-table td,
-    .agenda-table .text-body {
-        color: #e2e2e2 !important;
-        background-color: transparent;
+    .text-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    /* Make inputs follow theme vars*/
+    .agenda-form .form-control {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
     }
 
-    /* alerts */
-    .alert-info {
-        background-color: rgba(13, 202, 240, 0.08);
-        color: #e2e2e2;
-        border-color: rgba(13, 202, 240, 0.35);
+        /* Better placeholder + help text contrast in dark mode */
+        .agenda-form .form-control::placeholder {
+            color: var(--muted-text-color);
+            opacity: 0.9;
+        }
+
+    /* Keep labels/help readable but allow .text-muted to be muted again */
+    .agenda-form label {
+        color: var(--text-color) !important;
     }
 
-    .alert-success {
-        background-color: rgba(25, 135, 84, 0.1);
-        color: #e2e2e2;
+    .agenda-form small.text-muted {
+        color: var(--muted-text-color) !important;
     }
 
-    .alert-danger {
-        background-color: rgba(220, 53, 69, 0.12);
-        color: #fff;
-    }
-
-    /* form labels + inputs */
-    label.form-label {
-        color: #f5f5f5 !important;
-    }
-
-    .form-control,
-    .form-control:focus {
-        background-color: rgba(0, 0, 0, 0.15);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    /* Focus ring that matches your theme */
+    .agenda-form .form-control:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 0.1rem var(--bg-color), 0 0 0 0.25rem var(--primary-color) !important;
 </style>
-
-@model J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">Availability Slots</h3>
-    <small class="text-muted">Blocks of tutor availability</small>
+    <small class="text-muted">All slots for your admin profile</small>
 </div>
 
 @if (TempData["AgendaOk"] != null)
@@ -71,57 +70,120 @@
     <div class="alert alert-danger">@TempData["AgendaError"]</div>
 }
 
-@if (Model?.Blocks == null || Model.Blocks.Count == 0)
+<!-- Create Slot -->
+<div class="agenda-section mb-4">
+    <h5 class="mb-3">Create a new slot</h5>
+
+    <form asp-controller="AdminAgenda" asp-action="CreateSlot" method="post" class="agenda-form row g-3" novalidate>
+        @Html.AntiForgeryToken()
+
+        <div class="col-12 col-md-4">
+            <label for="slot-date" class="form-label">Date</label>
+            <input id="slot-date"
+                   name="date"
+                   type="date"
+                   class="form-control"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                   required />
+            <small class="text-muted">yyyy-MM-dd</small>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="slot-start" class="form-label">Start time</label>
+            <input id="slot-start"
+                   name="start"
+                   type="time"
+                   class="form-control"
+                   value="09:00"
+                   step="60"
+                   required />
+            <small class="text-muted">24h HH:mm (e.g., 09:00)</small>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label for="slot-duration" class="form-label">Duration (minutes)</label>
+            <input id="slot-duration"
+                   name="durationMinutes"
+                   type="number"
+                   class="form-control"
+                   value="60"
+                   min="15"
+                   max="720"
+                   step="15"
+                   required />
+            <small class="text-muted">15-minute increments (15–720)</small>
+        </div>
+
+        <div class="col-12 d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">
+                Add Slot
+            </button>
+        </div>
+    </form>
+
+    <script>
+        // Client-side guard: ensure duration is a multiple of 15 with a helpful message
+        (function () {
+            const dur = document.getElementById('slot-duration');
+            if (!dur) return;
+            function validate() {
+                const v = parseInt(dur.value, 10);
+                if (!Number.isFinite(v)) return;
+                if (v < 15 || v > 720 || v % 15 !== 0) {
+                    dur.setCustomValidity("Duration must be a multiple of 15 between 15 and 720.");
+                } else {
+                    dur.setCustomValidity("");
+                }
+            }
+            dur.addEventListener('input', validate);
+            validate();
+        })();
+    </script>
+</div>
+
+<!-- Slots Table -->
+@if (vm.Blocks == null || vm.Blocks.Count == 0)
 {
-    <div class="alert alert-info">No availability blocks yet.</div>
+    <div class="alert alert-info">No availability blocks found.</div>
 }
 else
 {
-    <table class="table table-bordered table-striped align-middle shadow-sm agenda-table">
-        <thead>
-            <tr>
-                <th class="text-nowrap">Date</th>
-                <th class="text-nowrap">Start</th>
-                <th class="text-nowrap">End</th>
-                <th class="text-nowrap" style="width:100px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var b in Model.Blocks.OrderBy(x => x.BlockDate).ThenBy(x => x.StartTime))
-            {
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle shadow-sm agenda-table">
+            <thead class="table-dark">
                 <tr>
-                    <td class="text-body">@b.BlockDate.ToString("yyyy-MM-dd")</td>
-                    <td class="text-body">@b.StartTime.ToString(@"hh\:mm")</td>
-                    <td class="text-body">@b.EndTime.ToString(@"hh\:mm")</td>
-                    <td>
-                        <form asp-controller="AdminAgenda" asp-action="DeleteAvailability" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@b.AvailabilityBlockID" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </td>
+                    <th class="text-nowrap">Date</th>
+                    <th class="text-nowrap">Start</th>
+                    <th class="text-nowrap">End</th>
+                    <th class="text-nowrap">Duration</th>
+                    <th class="text-nowrap text-end">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var b in vm.Blocks.OrderBy(x => x.BlockDate).ThenBy(x => x.StartTime))
+                {
+                    var mins = Math.Max(0, (int)(b.EndTime - b.StartTime).TotalMinutes);
+                    <tr>
+                        <td class="text-mono">@b.BlockDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-mono">@FmtTime(b.StartTime)</td>
+                        <td class="text-mono">@FmtTime(b.EndTime)</td>
+                        <td>@mins min</td>
+                        <td class="text-end">
+                            <form asp-controller="AdminAgenda"
+                                  asp-action="DeleteSlot"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Delete this slot?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.AvailabilityBlockID" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
-
-<hr class="my-4" />
-
-<h5>Add New Availability Block</h5>
-<form asp-controller="AdminAgenda" asp-action="CreateSlot" method="post" class="row g-2 align-items-end">
-    <div class="col-md-2">
-        <label class="form-label">Date</label>
-        <input name="date" type="date" class="form-control form-control-sm" required />
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Start Time</label>
-        <input name="start" type="time" class="form-control form-control-sm" required />
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Duration (min)</label>
-        <input name="durationMinutes" type="number" class="form-control form-control-sm" required min="15" max="240" />
-    </div>
-    <div class="col-md-2">
-        <button type="submit" class="btn btn-sm btn-primary w-100">Add Slot</button>
-    </div>
-</form>

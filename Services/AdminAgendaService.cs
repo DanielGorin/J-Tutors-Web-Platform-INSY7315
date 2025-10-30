@@ -100,7 +100,7 @@ VALUES (@AdminID, @BlockDate, @StartTime, @EndTime);";
         {
             return new AgendaInboxVM
             {
-                Scheduled = await QuerySessionsByStatusAsync(adminId, "Scheduled"),
+                Requested = await QuerySessionsByStatusAsync(adminId, "Requested"),
                 Accepted = await QuerySessionsByStatusAsync(adminId, "Accepted"),
                 Paid = await QuerySessionsByStatusAsync(adminId, "Paid"),
                 Cancelled = await QuerySessionsByStatusAsync(adminId, "Cancelled"),
@@ -131,7 +131,7 @@ ORDER BY SessionDate DESC;";
         public async Task<IReadOnlyList<TutoringSession>> GetSessionsForCalendarAsync(
             int year,
             int month,
-            bool includeScheduled,
+            bool includeRequested,
             int? adminId)
         {
             var first = new DateTime(year, month, 1);
@@ -142,7 +142,7 @@ SELECT *
 FROM TutoringSession
 WHERE SessionDate >= @from AND SessionDate < @to
   AND (@adminId IS NULL OR AdminID = @adminId)
-  AND (@include = 1 OR Status <> 'Scheduled')
+  AND (@include = 1 OR Status <> 'Requested')
 ORDER BY SessionDate ASC;";
 
             var p = new Dictionary<string, object?>
@@ -150,7 +150,7 @@ ORDER BY SessionDate ASC;";
                 ["@from"] = first.Date,
                 ["@to"] = next.Date,
                 ["@adminId"] = (object?)adminId ?? DBNull.Value,
-                ["@include"] = includeScheduled ? 1 : 0
+                ["@include"] = includeRequested ? 1 : 0
             };
 
             return await QueryListAsync<TutoringSession>(sql, p);

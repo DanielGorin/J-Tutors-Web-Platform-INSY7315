@@ -3,12 +3,12 @@
 @using System.Linq
 
 @{
-    // Safe defaults
+    // Safe defaults (your baseline)
     var vm = Model ?? new J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
             {
                 Year = DateTime.UtcNow.Year,
                 Month = DateTime.UtcNow.Month,
-                IncludeScheduled = false,
+                IncludeRequested = false,
                 Sessions = Array.Empty<TutoringSession>()
             };
 
@@ -17,49 +17,99 @@
 
     var first = new DateTime(year, month, 1);
     var daysInMonth = DateTime.DaysInMonth(year, month);
-
-    // Sunday = 0 ... Saturday = 6
     var firstDow = (int)first.DayOfWeek;
+
+    var prev = first.AddMonths(-1);
+    var next = first.AddMonths(1);
 
     var sessions = vm.Sessions ?? Array.Empty<TutoringSession>();
 
+    // Slots supplied by controller (ensure controller sets ViewBag.Slots)
+    var slots = (ViewBag.Slots as IReadOnlyList<AvailabilityBlock>) ?? Array.Empty<AvailabilityBlock>();
+
     string MonthName(int y, int m) => new DateTime(y, m, 1).ToString("MMMM yyyy");
 
-    // Helper: sessions for a given day (assumes TutoringSession.SessionDate is DateOnly OR DateTime)
+    // Status as lower string (avoids nullable enum operators)
+    Func<TutoringSession, string> statusOf = s =>
+        s is null ? "" : s.Status.ToString().Trim().ToLowerInvariant();
+
+    // Top counts
+    var requestedCount = sessions.Count(s => statusOf(s) == "requested");
+    var acceptedCount = sessions.Count(s => statusOf(s) == "accepted");
+    var paidCount = sessions.Count(s => statusOf(s) == "paid");
+    var cancelledCount = sessions.Count(s => statusOf(s) == "cancelled");
+    var slotsCount = slots.Count;
+
+    // Per-day filters
     Func<int, IEnumerable<TutoringSession>> sessionsOn = d =>
     {
-        // Target calendar day as DateOnly
         var target = new DateOnly(year, month, d);
-
-        // Compare robustly: DateOnly or DateTime
         return sessions.Where(s =>
         {
-            // Try to read DateOnly if your model uses it
-            // If model uses DateTime, convert to DateOnly for comparison
-            try
-            {
-                // Case 1: property is DateOnly (common in your codebase)
-                DateOnly sd = s.SessionDate; // compile-time type should be DateOnly if defined so
-                return sd == target;
-            }
-            catch
-            {
-                // Case 2: property is DateTime named SessionDate
-                // If your model actually uses DateTime, rename the above line to DateTime sd
-                // and delete this catch. Leaving this fallback for safety if build-time type differs.
-                return false;
-            }
+            try { DateOnly sd = s.SessionDate; return sd == target; }
+            catch { return false; }
         });
+    };
+
+    Func<int, IEnumerable<AvailabilityBlock>> slotsOn = d =>
+    {
+        var date = new DateTime(year, month, d).Date;
+        return slots.Where(b => b.BlockDate.Date == date);
     };
 }
 
+<!-- Header with month and arrows -->
 <div class="d-flex align-items-center justify-content-between mb-3">
+    <a class="btn btn-sm btn-outline-secondary"
+       href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = prev.Year, month = prev.Month, includeRequested = vm.IncludeRequested })"
+       aria-label="Previous month">
+        &laquo;
+    </a>
+
     <h3 class="mb-0">@MonthName(year, month)</h3>
+
+    <a class="btn btn-sm btn-outline-secondary"
+       href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = next.Year, month = next.Month, includeRequested = vm.IncludeRequested })"
+       aria-label="Next month">
+        &raquo;
+    </a>
+</div>
+
+<!-- Top counts + toggles -->
+<div class="card p-2 mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="me-2 fw-semibold">Show:</div>
+
+        <label class="form-check-label d-flex align-items-center gap-2">
+            <input class="form-check-input cal-toggle" type="checkbox" data-type="requested" checked />
+            <span class="badge rounded-pill cal-pill cal-pill-requested">Requested: @requestedCount</span>
+        </label>
+
+        <label class="form-check-label d-flex align-items-center gap-2">
+            <input class="form-check-input cal-toggle" type="checkbox" data-type="accepted" checked />
+            <span class="badge rounded-pill cal-pill cal-pill-accepted">Accepted: @acceptedCount</span>
+        </label>
+
+        <label class="form-check-label d-flex align-items-center gap-2">
+            <input class="form-check-input cal-toggle" type="checkbox" data-type="paid" checked />
+            <span class="badge rounded-pill cal-pill cal-pill-paid">Paid: @paidCount</span>
+        </label>
+
+        <label class="form-check-label d-flex align-items-center gap-2">
+            <input class="form-check-input cal-toggle" type="checkbox" data-type="cancelled" checked />
+            <span class="badge rounded-pill cal-pill cal-pill-cancelled">Cancelled: @cancelledCount</span>
+        </label>
+
+        <label class="form-check-label d-flex align-items-center gap-2">
+            <input class="form-check-input cal-toggle" type="checkbox" data-type="slot" checked />
+            <span class="badge rounded-pill cal-pill cal-pill-slot">Slots: @slotsCount</span>
+        </label>
+    </div>
 </div>
 
 <div class="table-responsive">
     <table class="table table-bordered align-middle mb-0">
-        <thead class="table-light">
+        <thead class="table-dark">
             <tr class="text-center">
                 <th scope="col">Sun</th>
                 <th scope="col">Mon</th>
@@ -74,8 +124,6 @@
             @{
                 var day = 1;
                 var col = 0;
-
-                // First row
             }
             <tr>
                 @for (col = 0; col < firstDow; col++)
@@ -85,18 +133,37 @@
                 @for (; col < 7 && day <= daysInMonth; col++, day++)
                 {
                     var todays = sessionsOn(day).ToList();
+                    var todaysSlots = slotsOn(day).ToList();
                     <td style="height: 7rem;">
                         <div class="d-flex justify-content-between">
-                            <strong>@day</strong>
+                            <strong class="cal-day-number">@day</strong>
                         </div>
 
-                        @if (todays.Count == 0)
+                        <!-- Slots -->
+                        @foreach (var b in todaysSlots.OrderBy(x => x.StartTime))
                         {
-                            <div class="text-muted small mt-1">No sessions</div>
+                            <div class="small mt-1 cal-item" data-type="slot">
+                                <span class="cal-dot cal-dot-slot"></span>
+                                Slot @b.StartTime.ToString(@"hh\:mm")–@b.EndTime.ToString(@"hh\:mm")
+                            </div>
+                        }
+
+                        <!-- Sessions -->
+                        @if (todays.Count == 0 && todaysSlots.Count == 0)
+                        {
+                            <div class="text-muted small mt-1">No items</div>
                         }
                         else
                         {
-                            <div class="small mt-1">@todays.Count session(s)</div>
+                            foreach (var s in todays.OrderBy(s => s.StartTime))
+                            {
+                                var st = statusOf(s); // requested/accepted/paid/cancelled
+                                var label = char.ToUpperInvariant(st.FirstOrDefault()) + (st.Length > 1 ? st.Substring(1) : "");
+                                <div class="small mt-1 cal-item" data-type="@st">
+                                    <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
+                                    @s.StartTime.ToString(@"hh\:mm") @label (#@s.TutoringSessionID)
+                                </div>
+                            }
                         }
                     </td>
                 }
@@ -114,18 +181,37 @@
                         else
                         {
                             var todays = sessionsOn(day).ToList();
+                            var todaysSlots = slotsOn(day).ToList();
                             <td style="height: 7rem;">
                                 <div class="d-flex justify-content-between">
-                                    <strong>@day</strong>
+                                    <strong class="cal-day-number">@day</strong>
                                 </div>
 
-                                @if (todays.Count == 0)
+                                <!-- Slots -->
+                                @foreach (var b in todaysSlots.OrderBy(x => x.StartTime))
                                 {
-                                    <div class="text-muted small mt-1">No sessions</div>
+                                    <div class="small mt-1 cal-item" data-type="slot">
+                                        <span class="cal-dot cal-dot-slot"></span>
+                                        Slot @b.StartTime.ToString(@"hh\:mm")–@b.EndTime.ToString(@"hh\:mm")
+                                    </div>
+                                }
+
+                                <!-- Sessions -->
+                                @if (todays.Count == 0 && todaysSlots.Count == 0)
+                                {
+                                    <div class="text-muted small mt-1">No items</div>
                                 }
                                 else
                                 {
-                                    <div class="small mt-1">@todays.Count session(s)</div>
+                                    foreach (var s in todays.OrderBy(s => s.StartTime))
+                                    {
+                                        var st = statusOf(s);
+                                        var label = char.ToUpperInvariant(st.FirstOrDefault()) + (st.Length > 1 ? st.Substring(1) : "");
+                                        <div class="small mt-1 cal-item" data-type="@st">
+                                            <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
+                                            @s.StartTime.ToString(@"hh\:mm") @label (#@s.TutoringSessionID)
+                                        </div>
+                                    }
                                 }
                             </td>
                             day++;
@@ -138,9 +224,102 @@
 </div>
 
 <style>
-    /* Compact and readable cells */
     .table td {
         vertical-align: top;
         padding: .5rem;
     }
+
+    .cal-day-number {
+        color: var(--text-color);
+        font-weight: 700;
+    }
+
+    body.dark-theme .cal-day-number {
+        color: var(--info-color);
+    }
+
+    .text-muted {
+        color: var(--muted-text-color) !important;
+    }
+
+    .cal-pill {
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+    }
+
+    .cal-pill-requested {
+        background-color: rgba(217,119,6, .18);
+        color: var(--warning-color);
+    }
+
+    .cal-pill-accepted {
+        background-color: rgba(52,211,153,.18);
+        color: var(--success-color);
+    }
+
+    .cal-pill-paid {
+        background-color: rgba(15,45,74, .18);
+        color: var(--primary-color);
+    }
+
+    .cal-pill-cancelled {
+        background-color: rgba(179,185,194,.18);
+        color: var(--muted-text-color);
+    }
+
+    .cal-pill-slot {
+        background-color: rgba(232,90,79, .18);
+        color: var(--accent-color);
+    }
+
+    .cal-dot {
+        display: inline-block;
+        width: .6rem;
+        height: .6rem;
+        border-radius: 50%;
+        margin-right: .4rem;
+        transform: translateY(1px);
+    }
+
+    .cal-dot-requested {
+        background-color: var(--warning-color);
+    }
+
+    .cal-dot-accepted {
+        background-color: var(--success-color);
+    }
+
+    .cal-dot-paid {
+        background-color: var(--primary-color);
+    }
+
+    .cal-dot-cancelled {
+        background-color: var(--muted-text-color);
+    }
+
+    .cal-dot-slot {
+        background-color: var(--accent-color);
+    }
+
+    .cal-item.hidden {
+        display: none !important;
+    }
 </style>
+
+<script>
+    (function () {
+        // Toggle visibility by data-type: requested / accepted / paid / cancelled / slot
+        const toggles = document.querySelectorAll('.cal-toggle');
+        function apply() {
+            toggles.forEach(chk => {
+                const type = chk.getAttribute('data-type');
+                const on = chk.checked;
+                document.querySelectorAll('.cal-item[data-type="' + type + '"]').forEach(el => {
+                    el.classList.toggle('hidden', !on);
+                });
+            });
+        }
+        toggles.forEach(chk => chk.addEventListener('change', apply));
+        apply(); // initial
+    })();
+</script>

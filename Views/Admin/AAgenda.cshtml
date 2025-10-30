@@ -11,7 +11,7 @@
     <div class="d-flex justify-content-between align-items-center mb-16">
         <h1 class="mb-0">Agenda</h1>
         <div class="d-flex gap-3 text-muted">
-            <span>Scheduled: <strong>@(Model?.ScheduledCount ?? 0)</strong></span>
+            <span>Requested: <strong>@(Model?.RequestedCount ?? 0)</strong></span>
             <span>Accepted:  <strong>@(Model?.AcceptedCount ?? 0)</strong></span>
             <span>Paid:      <strong>@(Model?.PaidCount ?? 0)</strong></span>
             <span>Cancelled: <strong>@(Model?.CancelledCount ?? 0)</strong></span>
@@ -94,7 +94,7 @@
             {
                 Year = DateTime.UtcNow.Year,
                 Month = DateTime.UtcNow.Month,
-                IncludeScheduled = false
+                IncludeRequested = false
             }
                      )
         </div>

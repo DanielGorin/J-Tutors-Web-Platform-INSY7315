@@ -187,7 +187,7 @@ SELECT CASE WHEN EXISTS (
     SELECT 1
     FROM   dbo.TutoringSession s
     WHERE  s.AdminID = @a
-      AND  s.Status IN (0,1,2) -- Pending/Accepted/Scheduled (align with your enum)
+      AND  s.Status IN (0,1,2) -- Pending/Accepted/Requested (align with your enum)
       AND  DATEADD(SECOND, DATEDIFF(SECOND,'00:00:00', s.StartTime), CAST(s.SessionDate AS datetime2)) < @endDt
       AND  DATEADD(MINUTE, CAST(s.DurationHours * 60 AS int),
            DATEADD(SECOND, DATEDIFF(SECOND,'00:00:00', s.StartTime), CAST(s.SessionDate AS datetime2))) > @startDt

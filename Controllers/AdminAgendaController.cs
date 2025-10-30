@@ -1,187 +1,289 @@
 ﻿#nullable enable
 using System;
+using System.Globalization;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
+using J_Tutors_Web_Platform.Models.Scheduling;
+using System.Collections.Generic;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
-    // [Authorize(Roles = "Admin")] // optional
+    // Re-enable auth once roles are wired end-to-end
+    [Authorize(Roles = "Admin")]
     public sealed class AdminAgendaController : Controller
     {
         private readonly AdminAgendaService _agenda;
+        private readonly AdminService _adminService;
 
-        public AdminAgendaController(AdminAgendaService agenda)
+        public AdminAgendaController(AdminAgendaService agenda, AdminService adminService)
         {
             _agenda = agenda;
+            _adminService = adminService;
+        }
+
+        // -------------------------------
+        // Helpers
+        // -------------------------------
+        private int? ResolveAdminId()
+        {
+            // Use the same claim as the rest of your Admin area (AdminController)
+            var username = User?.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrWhiteSpace(username)) return null;
+
+            var id = _adminService.GetAdminID(username);
+            return id > 0 ? id : null;
+        }
+
+        // Prefer 24h HH:mm, accept H:mm, and fallback to general TimeSpan parse
+        private static bool TryParseHHmm(string value, out TimeSpan ts)
+        {
+            return TimeSpan.TryParseExact(value, "HH\\:mm", CultureInfo.InvariantCulture, out ts)
+                || TimeSpan.TryParseExact(value, "H\\:mm", CultureInfo.InvariantCulture, out ts)
+                || TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out ts);
+        }
+
+        // Keep for potential future range filters (not used for "ALL slots" mode)
+        private static (DateTime from, DateTime to) NormalizeRange(DateTime? from, DateTime? to)
+        {
+            var todayLocal = DateTime.Today;
+            var f = from?.Date ?? todayLocal;
+            var t = to?.Date ?? f.AddDays(14); // 2-week default window
+            if (t < f) (f, t) = (t, f);
+            return (f, t);
         }
 
         // --------------------------------------------------------------------
-        // Landing page: preload counts + real Slots data so the tab shows items
+        // Landing page (tabbed): Agenda (Slots / Inbox / Calendar)
+        // Route: GET /AdminAgenda/Agenda?tab=Slots|Inbox|Calendar
         // --------------------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> Agenda(string? tab = null, int? adminId = null)
+        public async Task<IActionResult> Agenda(
+            string? tab = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            int? year = null,
+            int? month = null,
+            bool includeRequested = true)
         {
-            var aid = adminId ?? 1; // TODO: replace 1 with your real AdminID lookup
-            ViewBag.AdminId = aid;
-            var inbox = await _agenda.GetInboxAsync(adminId);
-
-            // simple default window for slots: today .. +30 days
-            var from = DateTime.UtcNow.Date;
-            var to = from.AddDays(30);
-
-            var vm = new AAgendaPageVM
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
             {
-                ActiveTab = string.IsNullOrWhiteSpace(tab) ? "Slots" : tab,
-                ScheduledCount = inbox.Scheduled?.Count ?? 0,
-                AcceptedCount = inbox.Accepted?.Count ?? 0,
-                PaidCount = inbox.Paid?.Count ?? 0,
-                CancelledCount = inbox.Cancelled?.Count ?? 0,
+                TempData["AgendaError"] = "Admin not identified. Please sign in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            tab ??= "Slots";
+            ViewBag.AdminId = aid.Value;
+            ViewBag.ActiveTab = tab;
+
+
+
+            // Header counts + inbox (used to render badges in the AAgenda view)
+            var inbox = await _agenda.GetInboxAsync(aid.Value);
+            var requested = inbox?.Requested?.Count ?? 0;
+            var accepted = inbox?.Accepted?.Count ?? 0;
+            var paid = inbox?.Paid?.Count ?? 0;
+            var cancelled = inbox?.Cancelled?.Count ?? 0;
+
+            // Defaults per tab
+            var yy = year ?? DateTime.Now.Year;      // local time semantics
+            var mm = month ?? DateTime.Now.Month;
+
+            var first = new DateTime(yy, mm, 1);
+            var next = first.AddMonths(1);
+            ViewBag.Slots = await _agenda.GetAvailabilityBlocksAsync(first, next, aid.Value);
+
+            var pageVm = new AAgendaPageVM
+            {
+                ActiveTab = tab,
+                RequestedCount = requested,
+                AcceptedCount = accepted,
+                PaidCount = paid,
+                CancelledCount = cancelled,
+
                 Inbox = inbox,
+
+                // SLOTS TAB: show ALL slots for the admin
                 Slots = new AgendaSlotsVM
                 {
-                    From = from,
-                    To = to,
-                    Blocks = await _agenda.GetAvailabilityBlocksAsync(from, to, adminId)
+                    From = null,
+                    To = null,
+                    Blocks = await _agenda.GetAvailabilityBlocksAsync(null, null, aid.Value)
                 },
+
+                // CALENDAR TAB: month sessions; slots will be supplied via ViewBag in Calendar() action as well
                 Calendar = new AgendaCalendarVM
                 {
-                    Year = DateTime.UtcNow.Year,
-                    Month = DateTime.UtcNow.Month,
-                    IncludeScheduled = false,
-                    Sessions = await _agenda.GetSessionsForCalendarAsync(
-                        DateTime.UtcNow.Year,
-                        DateTime.UtcNow.Month,
-                        includeScheduled: false,
-                        adminId: adminId)
+                    Year = yy,
+                    Month = mm,
+                    IncludeRequested = includeRequested,
+                    Sessions = await _agenda.GetSessionsForCalendarAsync(yy, mm, includeRequested, aid.Value)
                 }
             };
 
-            return View("~/Views/Admin/AAgenda.cshtml", vm);
+            return View("~/Views/Admin/AAgenda.cshtml", pageVm);
         }
 
-        // -----------------------
-        // SLOTS (availability tab)
-        // -----------------------
+        // --------------------------------------------------------------------
+        // SLOTS (read)
+        // GET /AdminAgenda/Slots
+        // --------------------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> Slots(DateTime? from = null, DateTime? to = null, int? minutes = null, int? adminId = null)
+        public async Task<IActionResult> Slots(DateTime? from = null, DateTime? to = null)
         {
-            var f = from ?? DateTime.UtcNow.Date;
-            var t = to ?? f.AddDays(30);
-
-            var blocks = await _agenda.GetAvailabilityBlocksAsync(f, t, adminId);
-
-            var vm = new AgendaSlotsVM
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
             {
-                From = f,
-                To = t,
-                Minutes = minutes,
-                Blocks = blocks
-            };
-
-            return View("~/Views/Admin/AAgendaSlots.cshtml", vm);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateSlot(int? adminId, DateTime date, string start, int durationMinutes)
-        {
-            // Ensure we have a valid admin id (prevents FK crashes)
-            if (adminId is null || adminId <= 0)
-            {
-                TempData["AgendaError"] = "Missing or invalid Admin ID.";
+                TempData["AgendaError"] = "Admin not identified.";
                 return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
             }
 
-            // Business rule: no past / no within 3 days
-            var earliest = DateTime.UtcNow.Date.AddDays(3);
-            if (date.Date < earliest)
+            // Show ALL slots (ignore from/to)
+            var vm = new AgendaSlotsVM
             {
-                TempData["AgendaError"] = $"Earliest allowed date is {earliest:dd MMM yyyy}.";
-                return RedirectToAction(nameof(Agenda), new { tab = "Slots", adminId });
+                From = null,
+                To = null,
+                Blocks = await _agenda.GetAvailabilityBlocksAsync(null, null, aid.Value)
+            };
+
+            ViewBag.AdminId = aid.Value;
+            return View("~/Views/Admin/AAgendaSlots.cshtml", vm);
+        }
+
+        // --------------------------------------------------------------------
+        // SLOTS (create)
+        // POST /AdminAgenda/CreateSlot
+        // form: date (yyyy-MM-dd), start (HH:mm), durationMinutes (int)
+        // --------------------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSlot(DateTime date, string start, int durationMinutes)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
+            {
+                TempData["AgendaError"] = "Admin not identified.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
             }
 
-            // Parse time safely regardless of locale
-            if (!TimeSpan.TryParse(start, out var startTs) &&
-                !TimeSpan.TryParseExact(start, @"hh\:mm", null, out startTs))
+            if (string.IsNullOrWhiteSpace(start) || !TryParseHHmm(start, out var startTs))
             {
-                TempData["AgendaError"] = "Invalid start time. Use HH:MM.";
-                return RedirectToAction(nameof(Agenda), new { tab = "Slots", adminId });
+                TempData["AgendaError"] = "Start time format must be HH:mm (e.g., 09:00).";
+                return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
             }
 
-            if (durationMinutes <= 0 || durationMinutes > 8 * 60)
+            if (durationMinutes < 15 || durationMinutes > 720 || durationMinutes % 15 != 0)
             {
-                TempData["AgendaError"] = "Invalid duration.";
-                return RedirectToAction(nameof(Agenda), new { tab = "Slots", adminId });
+                TempData["AgendaError"] = "Duration must be a multiple of 15 between 15 and 720 minutes.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
             }
 
             try
             {
-                await _agenda.CreateAvailabilityBlockAsync(adminId.Value, date, startTs, durationMinutes);
-                TempData["AgendaOk"] = "Availability block created.";
+                await _agenda.CreateAvailabilityBlockAsync(aid.Value, date.Date, startTs, durationMinutes);
+                TempData["AgendaOk"] = "Availability slot created.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                TempData["AgendaError"] = $"Could not create availability block: {ex.Message}";
+                // log ex if you have logging wired
+                TempData["AgendaError"] = "Could not create slot. Please try again.";
             }
 
-            // Keep the user on the tabbed page, Slots open
-            return RedirectToAction(nameof(Agenda), new { tab = "Slots", adminId });
+            return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
         }
 
-
+        // --------------------------------------------------------------------
+        // SLOTS (delete)
+        // POST /AdminAgenda/DeleteSlot
+        // --------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteSlot(int id, int? adminId = null)
+        public async Task<IActionResult> DeleteSlot(int id)
         {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
+            {
+                TempData["AgendaError"] = "Admin not identified.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
+            }
+
+            if (id <= 0)
+            {
+                TempData["AgendaError"] = "Invalid slot id.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
+            }
+
             try
             {
                 await _agenda.DeleteAvailabilityBlockAsync(id);
-                TempData["AgendaOk"] = "Availability block removed.";
+                TempData["AgendaOk"] = "Availability slot deleted.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                TempData["AgendaError"] = $"Could not remove availability block: {ex.Message}";
+                TempData["AgendaError"] = "Could not delete slot. Please try again.";
             }
 
-            // keep user on the tabbed page
-            return RedirectToAction(nameof(Agenda), new { tab = "Slots", adminId });
+            return RedirectToAction(nameof(Agenda), new { tab = "Slots" });
         }
 
-        // ----------------
-        // INBOX (work tab)
-        // ----------------
+        // --------------------------------------------------------------------
+        // INBOX — grouped by status (Requested / Accepted / Paid / Cancelled)
+        // GET /AdminAgenda/Inbox
+        // --------------------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> Inbox(int? adminId = null)
+        public async Task<IActionResult> Inbox()
         {
-            var vm = await _agenda.GetInboxAsync(adminId);
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
+            {
+                TempData["AgendaError"] = "Admin not identified.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Inbox" });
+            }
+
+            var vm = await _agenda.GetInboxAsync(aid.Value);
+            ViewBag.AdminId = aid.Value;
             return View("~/Views/Admin/AAgendaInbox.cshtml", vm);
         }
 
-        // ---------------------------
-        // CALENDAR (monthly sessions)
-        // ---------------------------
+        // --------------------------------------------------------------------
+        // CALENDAR — sessions for month (optionally incl. Requested)
+        // GET /AdminAgenda/Calendar?year=YYYY&month=MM&includeRequested=true|false
+        // --------------------------------------------------------------------
         [HttpGet]
-        public async Task<IActionResult> Calendar(
-            int? year = null,
-            int? month = null,
-            bool includeScheduled = false,
-            int? adminId = null)
+        public async Task<IActionResult> Calendar(int? year = null, int? month = null, bool includeRequested = true)
         {
-            var today = DateTime.UtcNow;
-            var y = year ?? today.Year;
-            var m = month ?? today.Month;
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
+            {
+                TempData["AgendaError"] = "Admin not identified.";
+                return RedirectToAction(nameof(Agenda), new { tab = "Calendar" });
+            }
 
-            var sessions = await _agenda.GetSessionsForCalendarAsync(y, m, includeScheduled, adminId);
+            var yy = year ?? DateTime.Now.Year;
+            var mm = month ?? DateTime.Now.Month;
+
+            var first = new DateTime(yy, mm, 1);
+            var next = first.AddMonths(1);
+
+            var sessions = await _agenda.GetSessionsForCalendarAsync(yy, mm, includeRequested, aid.Value);
+
+            // Provide availability slots for this month to the view (used by toggles)
+            ViewBag.Slots = await _agenda.GetAvailabilityBlocksAsync(first, next, aid.Value);
 
             var vm = new AgendaCalendarVM
             {
-                Year = y,
-                Month = m,
-                IncludeScheduled = includeScheduled,
+                Year = yy,
+                Month = mm,
+                IncludeRequested = includeRequested,
                 Sessions = sessions
             };
 
+            ViewBag.AdminId = aid.Value;
             return View("~/Views/Admin/AAgendaCalendar.cshtml", vm);
         }
     }

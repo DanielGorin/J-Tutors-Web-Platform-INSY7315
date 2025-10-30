@@ -6,7 +6,7 @@
     ViewData["NavSection"] = "Admin";
 }
 
-<!-- Scoped styles for Admin Files -->
+<!-- Scoped styles for file management -->
 <style>
     .afiles, .afiles .card {
         color: var(--text-color) !important;
@@ -142,31 +142,36 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th>File</th>
-                                <th>Added by</th>
-                                <th>Users with access</th>
+                                <th>Username</th>
+                                <th>Access From</th>
+                                <th>Access Till</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var file in Model.FSR) //not completed
+                            @foreach (var file in Model.FSAR) //not completed
                             {
                                 <tr>
+                                    <form>
                                     <td>
                                         <div class="d-flex flex-column">
-                                            <strong>@file.FileName</strong>
+                                            <strong>@file.Username</strong>
                                         </div>
                                     </td>
-                                    <td class="text-center"><span class="badge-chip badge-active">@file.AdminUsername</span></td>
-                                    <td class="text-center"><span class="badge-chip badge-active">@file.UserCount</span></td>
+                                    <td class="text-center"><span type="date" name="StartDate" class="badge-chip badge-active">@file.StartDate</span></td>
+                                    <td class="text-center"><span type="date" name="EndDate" class="badge-chip badge-active">@file.EndDate</span></td>
                                     <td class="text-end">
-                                        <a class="btn btn-outline-primary btn-sm" asp-action="FileShareDownload" asp-route-name="@file.FileName">Download</a>
-                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manageAccessModal">Manage Access</button>
-                                        <form asp-action="DeleteFile" asp-controller="Test">
-                                            <input type="hidden" name="fileName" value="@file.FileName" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Delete</button>
+                                        <input type="hidden" name="FileID" value="@file.FileID" />
+                                        <input type="hidden" name="UserID" value="@file.UserID" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Save Changes</button>
+                                            
+                                        <form>
+                                            <input type="hidden" name="FileID" value="@file.FileID" />
+                                            <input type="hidden" name="UserID" value="@file.UserID" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Remove Access</button>
                                         </form>
                                     </td>
+                                    </form>
                                 </tr>
                             }
                         </tbody>
@@ -187,10 +192,13 @@
         <!-- RIGHT: Upload + Tips -->
         <div class="col-lg-4">
             <div class="card shadow p-24 mb-16">
-                <form asp-action="FileShareUpload" method="post" enctype="multipart/form-data" class="mb-3">
+                <form asp-action="AddFileAccess" method="post" enctype="multipart/form-data" class="mb-3">
                     <div class="drop-zone mb-12">
-                        <input type="file" name="file" class="form-control" />
-                        <button class="btn btn-primary mt-2" type="submit">Upload</button>
+                        <input type="text" name="Username" class="form-control" />
+                        <input type="hidden" name="FileID" value="@Model.CurrentFileID" class="form-control" />
+                        <input type="datetime-local" name="StartDate" class="form-control mt-2" />
+                        <input type="datetime-local" name="EndDate" class="form-control mt-2" />
+                        <button class="btn btn-primary mt-2" type="submit">Give Access</button>
                     </div>
                 </form>
             </div>

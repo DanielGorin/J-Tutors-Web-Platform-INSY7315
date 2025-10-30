@@ -33,6 +33,22 @@ namespace J_Tutors_Web_Platform.Services.Storage
             return id;
         }
 
+        public int GetUserID(string Username)
+        {
+            const string sql = "select UserId from Users where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            var id = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return id;
+        }
+
         public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config, string connectionString)
         {
             var cs = config["AzureStorage:ConnectionString"]
@@ -48,6 +64,22 @@ namespace J_Tutors_Web_Platform.Services.Storage
             _share.CreateIfNotExists(); // idempotent
 
             _connectionString = connectionString;
+        }
+
+        public string GetUsername(int UserID)
+        {
+            const string sql = "select Username from Users where UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+
+            var username = (string)cmd.ExecuteScalar();
+
+            constring.Close();
+            return username;
         }
 
         // ROOT ONLY
@@ -224,16 +256,36 @@ namespace J_Tutors_Web_Platform.Services.Storage
             cmd.Parameters.AddWithValue("@FileName", FileName);
 
             constring.Open();
+
             id = (int)cmd.ExecuteScalar();
+
             constring.Close();
 
             return id;
         }
 
-        public List<FileShareAccess> GetFileShareAccesses(string FileName) 
+        public string GetFileName(int FileID)
         {
-            var fsaList = new List<FileShareAccess>();
-            var fileID = GetFileID(FileName);
+            string fileName;
+
+            const string sql = "select FileName from Files where FileID = @FileID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+
+            constring.Open();
+            fileName = (string)cmd.ExecuteScalar();
+            constring.Close();
+
+            return fileName;
+        }
+
+        public List<FileShareAccessRow> GetFileShareAccessRows(string FileName) 
+        {
+            var fsarList = new List<FileShareAccessRow>();
+            int fileID = GetFileID(FileName);
+            string userName;
 
             const string sql = "select * from FileAccess where FileID = @FileID";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
@@ -246,30 +298,37 @@ namespace J_Tutors_Web_Platform.Services.Storage
 
             while (reader.Read())
             {
-                fsaList.Add(new FileShareAccess
+                userName = GetUsername(reader.GetInt32(2));
+
+                fsarList.Add(new FileShareAccessRow
                 {
                     FileAccessID = reader.GetInt32(0),
-                    FileID = reader.GetInt32(1),
+                    FileID = fileID,
+                    FileName = FileName,
                     UserID = reader.GetInt32(2),
+                    Username = userName,
                     StartDate = reader.GetDateTime(3),
-                    EndDate = reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+                    EndDate = reader.GetDateTime(4)
                 });
             }
 
             constring.Close();
 
-            return fsaList;
+            return fsarList;
         }
 
-        public void AddFileAccess(int FileID, string Username) 
+        public void AddFileAccess(int FileID, string Username, DateTime StartDate, DateTime EndDate) 
         {
-            const string sql = "insert into FileAccess (FileID, UserID, StartDate) values (@FileID, (select UserID from Users where Username = @Username), @StartDate)";
+            var userID = GetUserID(Username);
+
+            const string sql = "insert into FileAccess (FileID, UserID, StartDate, EndDate) values (@FileID, @UserID, @StartDate, @EndDate)";
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
             cmd.Parameters.AddWithValue("@FileID", FileID);
-            cmd.Parameters.AddWithValue("@Username", Username);
-            cmd.Parameters.AddWithValue("@StartDate", DateTime.UtcNow);
+            cmd.Parameters.AddWithValue("@UserID", userID);
+            cmd.Parameters.AddWithValue("@StartDate", StartDate);
+            cmd.Parameters.AddWithValue("@EndDate", EndDate);
 
             constring.Open();
             cmd.ExecuteNonQuery();

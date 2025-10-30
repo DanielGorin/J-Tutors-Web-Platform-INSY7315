@@ -34,18 +34,12 @@ namespace J_Tutors_Web_Platform.Controllers
         // ─────────────────────────────────────────────────────────────────────────────
         private readonly AdminService _adminService;
         private readonly AuthService _authService;
-        Models.Users.User user = new User();
 
         public AdminController(AdminService adminService, AuthService authService)
         {
             _adminService = adminService;
             _authService = authService;
         }
-
-        [HttpGet]
-        public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
-        {
-            Console.WriteLine("Inside ASessionCalender GET method");
 
         [HttpGet]
         public IActionResult ADashboard()

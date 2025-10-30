@@ -57,11 +57,32 @@ namespace J_Tutors_Web_Platform.Controllers.Testing
             return View("~/Views/Admin/AFiles.cshtml", AFilesVM);
         }
 
+        [HttpPost]
+        public IActionResult ManageAccess(string FileName)
+        {
+            var fileID = _fs.GetFileID(FileName);
+
+            var AFilesVM = new AFilesViewModel
+            {
+                FSAR = _fs.GetFileShareAccessRows(FileName),
+                CurrentFileID = fileID
+            };
+
+            return View("~/Views/Admin/AManageAccess.cshtml", AFilesVM);
+        }
+
         public IActionResult DeleteFile(string fileName)
         {
             _fs.DeleteAsync(fileName);
 
             return RedirectToAction("GetFileShareRows", "Test");
+        }
+
+        public IActionResult AddFileAccess(int FileID, string Username, DateTime StartDate, DateTime EndDate) 
+        {
+            _fs.AddFileAccess(FileID, Username, StartDate, EndDate);
+
+            return RedirectToAction("ManageAccess", "Test");
         }
     }
 }

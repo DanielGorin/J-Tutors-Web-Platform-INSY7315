@@ -14,16 +14,16 @@ namespace J_Tutors_Web_Platform.Services
 {
     /// <summary>
     /// Admin Agenda service (SQL / ADO.NET, no EF).
-    /// - Availability (Slots): list/create/delete
-    /// - Inbox buckets: Scheduled/Accepted/Paid/Cancelled
-    /// - Calendar: sessions for [year, month]
+    /// Tables:
+    ///  - AvailabilityBlock(AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime)
+    ///  - TutoringSession(..., SessionDate, Status, AdminID, ...)
     /// 
-    /// Connection: ConnectionStrings:azursql
+    /// Connection: ConnectionStrings:AzureSql
     /// </summary>
     public sealed class AdminAgendaService
     {
         private readonly IConfiguration _config;
-        private const string ConnName = "Azuresql";
+        private const string ConnName = "AzureSql"; // matches your appsettings.json
 
         public AdminAgendaService(IConfiguration config)
         {
@@ -33,13 +33,11 @@ namespace J_Tutors_Web_Platform.Services
         // --------------------------------------------------------------------
         // SLOTS / AVAILABILITY
         // --------------------------------------------------------------------
-        // AVAILABILITY (uses AvailabilityBlock table)
         public async Task<IReadOnlyList<AvailabilityBlock>> GetAvailabilityBlocksAsync(
             DateTime? fromInclusive = null,
             DateTime? toExclusive = null,
             int? adminId = null)
         {
-            // NOTE: BlockDate is a date; StartTime/EndTime are timespans in your model.
             const string sql = @"
 SELECT
     AvailabilityBlockID,
@@ -57,20 +55,19 @@ ORDER BY BlockDate ASC, StartTime ASC;";
             var p = new Dictionary<string, object?>
             {
                 ["@adminId"] = (object?)adminId ?? DBNull.Value,
-                ["@from"] = (object?)fromInclusive?.Date ?? DBNull.Value,
-                ["@to"] = (object?)toExclusive?.Date ?? DBNull.Value,
+                ["@from"] = (object?)(fromInclusive?.Date) ?? DBNull.Value,
+                ["@to"] = (object?)(toExclusive?.Date) ?? DBNull.Value,
             };
 
             return await QueryListAsync<AvailabilityBlock>(sql, p);
         }
 
         public async Task<int> CreateAvailabilityBlockAsync(
-    int adminId,
-    DateTime date,
-    TimeSpan start,
-    int durationMinutes)
+            int adminId,
+            DateTime date,
+            TimeSpan start,
+            int durationMinutes)
         {
-            // EndTime = StartTime + duration
             var end = start.Add(TimeSpan.FromMinutes(durationMinutes));
 
             const string sql = @"
@@ -112,7 +109,6 @@ VALUES (@AdminID, @BlockDate, @StartTime, @EndTime);";
 
         private async Task<IReadOnlyList<TutoringSession>> QuerySessionsByStatusAsync(int? adminId, string status)
         {
-            // Keep it simple; your AdminService uses "select * from TutoringSession"
             const string sql = @"
 SELECT *
 FROM TutoringSession
@@ -133,10 +129,10 @@ ORDER BY SessionDate DESC;";
         // CALENDAR
         // --------------------------------------------------------------------
         public async Task<IReadOnlyList<TutoringSession>> GetSessionsForCalendarAsync(
-    int year,
-    int month,
-    bool includeScheduled,
-    int? adminId)
+            int year,
+            int month,
+            bool includeScheduled,
+            int? adminId)
         {
             var first = new DateTime(year, month, 1);
             var next = first.AddMonths(1);
@@ -161,7 +157,7 @@ ORDER BY SessionDate ASC;";
         }
 
         // ====================================================================
-        // ADO.NET HELPERS (shared, safe, minimal)
+        // ADO.NET HELPERS
         // ====================================================================
         private string GetConnectionString()
             => _config.GetConnectionString(ConnName)
@@ -176,11 +172,7 @@ ORDER BY SessionDate ASC;";
 
         private static SqlCommand BuildCommand(SqlConnection con, string sql, IDictionary<string, object?>? parameters = null)
         {
-            var cmd = new SqlCommand(sql, con)
-            {
-                CommandType = CommandType.Text
-            };
-
+            var cmd = new SqlCommand(sql, con) { CommandType = CommandType.Text };
             if (parameters != null)
             {
                 foreach (var kvp in parameters)
@@ -204,12 +196,12 @@ ORDER BY SessionDate ASC;";
             using var con = await OpenAsync();
             using var cmd = BuildCommand(con, sql, parameters);
             var result = await cmd.ExecuteScalarAsync();
-            if (result == null || result is DBNull)
-                return default!;
+            if (result == null || result is DBNull) return default!;
             return (T)Convert.ChangeType(result, typeof(T), CultureInfo.InvariantCulture);
         }
 
-        private async Task<IReadOnlyList<T>> QueryListAsync<T>(string sql, IDictionary<string, object?>? parameters = null) where T : new()
+        private async Task<IReadOnlyList<T>> QueryListAsync<T>(string sql, IDictionary<string, object?>? parameters = null)
+            where T : new()
         {
             using var con = await OpenAsync();
             using var cmd = BuildCommand(con, sql, parameters);
@@ -224,21 +216,19 @@ ORDER BY SessionDate ASC;";
         }
 
         /// <summary>
-        /// Reflection-based, tolerant mapper: populates any writable property on T whose name
-        /// matches a column name (case-insensitive), handling common type conversions.
+        /// Reflection-based mapper. IMPORTANT: handle DateOnly/TimeOnly BEFORE generic Convert.ChangeType.
         /// </summary>
         private static T MapRecordTo<T>(IDataRecord record) where T : new()
         {
             var t = new T();
             var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            // Build a column name → ordinal map (case-insensitive)
+            // column name → ordinal
             var colOrd = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < record.FieldCount; i++)
             {
                 var name = record.GetName(i);
-                if (!colOrd.ContainsKey(name))
-                    colOrd[name] = i;
+                if (!colOrd.ContainsKey(name)) colOrd[name] = i;
             }
 
             foreach (var p in props)
@@ -246,69 +236,65 @@ ORDER BY SessionDate ASC;";
                 if (!p.CanWrite) continue;
                 if (!colOrd.TryGetValue(p.Name, out var ordinal)) continue;
 
-                var val = record.IsDBNull(ordinal) ? null : record.GetValue(ordinal);
-                if (val == null)
-                {
-                    p.SetValue(t, null);
-                    continue;
-                }
+                var isNull = record.IsDBNull(ordinal);
+                var val = isNull ? null : record.GetValue(ordinal);
 
                 try
                 {
                     var target = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
 
+                    if (val == null)
+                    {
+                        p.SetValue(t, null);
+                        continue;
+                    }
+
+                    // First: special cases for DateOnly / TimeOnly / TimeSpan / DateTime / Enums
+                    if (target == typeof(DateOnly))
+                    {
+                        if (val is DateOnly donly) p.SetValue(t, donly);
+                        else if (val is DateTime dt) p.SetValue(t, DateOnly.FromDateTime(dt));
+                        else if (val is string s && DateTime.TryParse(s, out var pdt)) p.SetValue(t, DateOnly.FromDateTime(pdt));
+                        continue;
+                    }
+
+                    if (target == typeof(TimeOnly))
+                    {
+                        if (val is TimeOnly tonly) p.SetValue(t, tonly);
+                        else if (val is TimeSpan tsp) p.SetValue(t, TimeOnly.FromTimeSpan(tsp));
+                        else if (val is DateTime dt) p.SetValue(t, TimeOnly.FromDateTime(dt));
+                        continue;
+                    }
+
                     if (target == typeof(TimeSpan) && val is TimeSpan ts)
                     {
                         p.SetValue(t, ts);
-                    }
-                    else if (target == typeof(DateTime) && val is DateTime dt)
-                    {
-                        p.SetValue(t, DateTime.SpecifyKind(dt, DateTimeKind.Utc)); // assume UTC for DB times
-                    }
-                    else if (target.IsEnum)
-                    {
-                        // Try to map string or int to enum
-                        if (val is string s)
-                            p.SetValue(t, Enum.Parse(target, s, ignoreCase: true));
-                        else
-                            p.SetValue(t, Enum.ToObject(target, Convert.ToInt32(val, CultureInfo.InvariantCulture)));
-                    }
-                    else
-                    {
-                        var converted = Convert.ChangeType(val, target, CultureInfo.InvariantCulture);
-                        p.SetValue(t, converted);
-                    }
-                    // ... inside the try { } that handles conversions:
-
-                    // DateOnly (SessionDate)
-                    if (target == typeof(DateOnly))
-                    {
-                        if (val is DateOnly donly) { p.SetValue(t, donly); }
-                        else if (val is DateTime dt) { p.SetValue(t, DateOnly.FromDateTime(dt)); }
-                        else if (val is string s && DateTime.TryParse(s, out var pdt)) { p.SetValue(t, DateOnly.FromDateTime(pdt)); }
                         continue;
                     }
 
-                    // TimeOnly (if you ever add in models)
-                    if (target == typeof(TimeOnly))
+                    if (target == typeof(DateTime) && val is DateTime dt2)
                     {
-                        if (val is TimeOnly tonly) { p.SetValue(t, tonly); }
-                        else if (val is TimeSpan tsp) { p.SetValue(t, TimeOnly.FromTimeSpan(tsp)); }
-                        else if (val is DateTime dt) { p.SetValue(t, TimeOnly.FromDateTime(dt)); }
+                        p.SetValue(t, DateTime.SpecifyKind(dt2, DateTimeKind.Utc));
                         continue;
                     }
 
-                    // Existing cases: TimeSpan, DateTime, enums, etc...
+                    if (target.IsEnum)
+                    {
+                        if (val is string es) p.SetValue(t, Enum.Parse(target, es, ignoreCase: true));
+                        else p.SetValue(t, Enum.ToObject(target, Convert.ToInt32(val, CultureInfo.InvariantCulture)));
+                        continue;
+                    }
 
+                    // Fallback: generic conversion
+                    var converted = Convert.ChangeType(val, target, CultureInfo.InvariantCulture);
+                    p.SetValue(t, converted);
                 }
                 catch
                 {
-                    // Tolerate mismatches; leave property at default
+                    // swallow & leave default
                 }
             }
             return t;
         }
-
-
     }
 }

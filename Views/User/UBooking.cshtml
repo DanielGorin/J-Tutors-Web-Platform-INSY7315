@@ -1,5 +1,7 @@
 ﻿@using System.Globalization
+@using J_Tutors_Web_Platform.Services
 @model J_Tutors_Web_Platform.Controllers.UserBookingViewModel
+
 @{
     ViewData["Title"] = "Book Tutoring";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -9,21 +11,30 @@
 }
 
 <style>
-    .booking .form-control, .booking .form-select, .booking input[type="range"]{
-        background-color: var(--surface-color)!important;
-        color: var(--text-color)!important;
-        border:1px solid var(--border-color)!important;
-        border-radius:8px!important;
-        padding:10px 12px!important;
-        width:100%;
+    .booking .form-control, .booking .form-select, .booking input[type="range"] {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        width: 100%;
     }
-    .booking .form-control:focus, .booking .form-select:focus, .booking input[type="range"]:focus{
-        border-color:var(--primary-color)!important;
-        box-shadow:0 0 0 .15rem var(--accent-color)!important;
-        outline:none!important;
+
+        .booking .form-control:focus, .booking .form-select:focus, .booking input[type="range"]:focus {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 .15rem var(--accent-color) !important;
+            outline: none !important;
+        }
+
+    .totals .stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline
     }
-    .totals .stat{display:flex;justify-content:space-between;align-items:baseline}
-    .muted{opacity:.75}
+
+    .muted {
+        opacity: .75
+    }
 </style>
 
 <div class="booking">
@@ -35,14 +46,21 @@
         </div>
     </div>
 
+    @* Alerts *@
     @if (TempData["BookingError"] is string be && !string.IsNullOrWhiteSpace(be))
-    { <div class="alert alert-danger">@be</div> }
+    {
+        <div class="alert alert-danger">@be</div>
+    }
     @if (TempData["BookingWarn"] is string bw && !string.IsNullOrWhiteSpace(bw))
-    { <div class="alert alert-warning">@bw</div> }
+    {
+        <div class="alert alert-warning">@bw</div>
+    }
     @if (TempData["BookingOk"] is string bo && !string.IsNullOrWhiteSpace(bo))
-    { <div class="alert alert-success">@bo</div> }
+    {
+        <div class="alert alert-success">@bo</div>
+    }
 
-    <!--  Subject selection -->
+    @* STEP 1: Subject selection *@
     <div class="card shadow p-24 mb-16">
         <h3 class="mb-12">Choose a Subject</h3>
         <div class="row g-3">
@@ -51,20 +69,19 @@
                 <select class="form-select"
                         asp-for="SelectedSubjectID"
                         asp-items="@(new SelectList(Model.Subjects.OrderBy(x => x.SubjectName),
-                                    nameof(J_Tutors_Web_Platform.Services.ActiveSubjectDto.SubjectID),
-                                    nameof(J_Tutors_Web_Platform.Services.ActiveSubjectDto.SubjectName),
+                                    nameof(ActiveSubjectDto.SubjectID),
+                                    nameof(ActiveSubjectDto.SubjectName),
                                     Model.SelectedSubjectID))"
                         onchange="onSubjectChange(this)"
                         aria-label="Choose Subject">
                     <option value="">Choose…</option>
                 </select>
                 <div class="caption muted mt-1">Selecting a subject reveals booking options.</div>
-
             </div>
         </div>
     </div>
 
-    <!-- Booking inputs (revealed after subject chosen) -->
+    @* STEP 2: Booking inputs (revealed after subject chosen) *@
     @if (hasSubject)
     {
         <div class="card shadow p-24 mb-16">
@@ -117,19 +134,18 @@
                         <span>@(Model.MaxPointDiscount ?? 0)%</span>
                     </div>
                     <div class="caption muted mt-1">
-                        Spending X% of the **base total** in points reduces the cash cost by the same X%.
+                        Spending X% of the <strong>base total</strong> in points reduces the cash cost by the same X%.
                     </div>
                 </div>
 
                 <div class="col-12 d-flex justify-content-end gap-2 mt-8">
-                    <!-- Optional dual-button behavior; both work with current controller -->
                     <button class="btn btn-primary" type="submit" name="showSlots" value="1">Book (Show Slots)</button>
                 </div>
             </form>
         </div>
     }
 
-    <!-- Quote summary -->
+    @* STEP 3: Quote summary *@
     @if (Model.Quote is not null)
     {
         <div class="card shadow p-24 totals mb-16">
@@ -146,7 +162,7 @@
         </div>
     }
 
-    <!-- STEP 3b: Availability & Reserve -->
+    @* STEP 4: Availability & Reserve *@
     @if (Model.Quote is not null)
     {
         <form asp-action="ReserveBooking" asp-controller="User" method="post" class="card shadow p-24">
@@ -167,21 +183,22 @@
                 <table class="table align-middle">
                     <thead><tr><th>Date</th><th>Start</th><th class="text-end">Select</th></tr></thead>
                     <tbody>
-                    @foreach (var g in Model.AvailableSlots.GroupBy(s => s.Date).OrderBy(g => g.Key))
-                    {
-                        foreach (var s in g)
+                        @foreach (var g in Model.AvailableSlots.GroupBy(s => s.Date.Date).OrderBy(g => g.Key))
                         {
-                            var isoDate = s.Date.ToString("yyyy-MM-dd");
-                            var hm      = new DateTime(s.Date.Year, s.Date.Month, s.Date.Day).Add(s.StartTime).ToString("HH:mm");
-                            <tr>
-                                <td>@s.Date:dddd, dd MMM yyyy</td>
-                                <td>@hm</td>
-                                <td class="text-end">
-                                    <input type="checkbox" class="slot-check" value="@(isoDate)|@(hm)" />
-                                </td>
-                            </tr>
+                            foreach (var s in g)
+                            {
+                                var isoDate = s.Date.ToString("yyyy-MM-dd");
+                                var startDt = new DateTime(s.Date.Year, s.Date.Month, s.Date.Day).Add(s.StartTime);
+                                var hm = startDt.ToString("HH:mm");
+                                <tr>
+                                    <td>@s.Date.ToString("dddd, dd MMM yyyy")</td>
+                                    <td>@hm</td>
+                                    <td class="text-end">
+                                        <input type="checkbox" class="slot-check" value="@(isoDate)|@(hm)" />
+                                    </td>
+                                </tr>
+                            }
                         }
-                    }
                     </tbody>
                 </table>
 
@@ -194,22 +211,21 @@
 
         <script>
             // subject change navigates to GET /User/UBooking?subjectId=...
-            function onSubjectChange(sel){
+            function onSubjectChange(sel) {
                 const v = sel.value || "";
-                const url = "@Url.Action("UBooking","User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
+                const url = "@Url.Action("UBooking", "User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
                 window.location.href = url;
             }
 
             // Enforce max selections == SessionCount, maintain CSV for POST
-            (function(){
+            (function () {
                 const boxes = Array.from(document.querySelectorAll('.slot-check'));
                 const hidden = document.getElementById('selectedStartsCsv');
                 const max = @Model.Quote.SessionCount;
 
-                function sync(){
+                function sync() {
                     const chosen = boxes.filter(b => b.checked);
-                    if (chosen.length > max){
-                        // uncheck the most recently checked
+                    if (chosen.length > max) {
                         const last = boxes.reverse().find(b => b.checked);
                         if (last) last.checked = false;
                         boxes.reverse();
@@ -226,9 +242,9 @@
     else
     {
         <script>
-            function onSubjectChange(sel){
+            function onSubjectChange(sel) {
                 const v = sel.value || "";
-                const url = "@Url.Action("UBooking","User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
+                const url = "@Url.Action("UBooking", "User")" + (v ? ("?subjectId=" + encodeURIComponent(v)) : "");
                 window.location.href = url;
             }
         </script>

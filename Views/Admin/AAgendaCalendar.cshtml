@@ -1,0 +1,146 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
+@using J_Tutors_Web_Platform.Models.Scheduling
+@using System.Linq
+
+@{
+    // Safe defaults
+    var vm = Model ?? new J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
+            {
+                Year = DateTime.UtcNow.Year,
+                Month = DateTime.UtcNow.Month,
+                IncludeScheduled = false,
+                Sessions = Array.Empty<TutoringSession>()
+            };
+
+    var year = vm.Year > 0 ? vm.Year : DateTime.UtcNow.Year;
+    var month = vm.Month >= 1 && vm.Month <= 12 ? vm.Month : DateTime.UtcNow.Month;
+
+    var first = new DateTime(year, month, 1);
+    var daysInMonth = DateTime.DaysInMonth(year, month);
+
+    // Sunday = 0 ... Saturday = 6
+    var firstDow = (int)first.DayOfWeek;
+
+    var sessions = vm.Sessions ?? Array.Empty<TutoringSession>();
+
+    string MonthName(int y, int m) => new DateTime(y, m, 1).ToString("MMMM yyyy");
+
+    // Helper: sessions for a given day (assumes TutoringSession.SessionDate is DateOnly OR DateTime)
+    Func<int, IEnumerable<TutoringSession>> sessionsOn = d =>
+    {
+        // Target calendar day as DateOnly
+        var target = new DateOnly(year, month, d);
+
+        // Compare robustly: DateOnly or DateTime
+        return sessions.Where(s =>
+        {
+            // Try to read DateOnly if your model uses it
+            // If model uses DateTime, convert to DateOnly for comparison
+            try
+            {
+                // Case 1: property is DateOnly (common in your codebase)
+                DateOnly sd = s.SessionDate; // compile-time type should be DateOnly if defined so
+                return sd == target;
+            }
+            catch
+            {
+                // Case 2: property is DateTime named SessionDate
+                // If your model actually uses DateTime, rename the above line to DateTime sd
+                // and delete this catch. Leaving this fallback for safety if build-time type differs.
+                return false;
+            }
+        });
+    };
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">@MonthName(year, month)</h3>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light">
+            <tr class="text-center">
+                <th scope="col">Sun</th>
+                <th scope="col">Mon</th>
+                <th scope="col">Tue</th>
+                <th scope="col">Wed</th>
+                <th scope="col">Thu</th>
+                <th scope="col">Fri</th>
+                <th scope="col">Sat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var day = 1;
+                var col = 0;
+
+                // First row
+            }
+            <tr>
+                @for (col = 0; col < firstDow; col++)
+                {
+                    <td class="bg-transparent" style="height: 7rem;"></td>
+                }
+                @for (; col < 7 && day <= daysInMonth; col++, day++)
+                {
+                    var todays = sessionsOn(day).ToList();
+                    <td style="height: 7rem;">
+                        <div class="d-flex justify-content-between">
+                            <strong>@day</strong>
+                        </div>
+
+                        @if (todays.Count == 0)
+                        {
+                            <div class="text-muted small mt-1">No sessions</div>
+                        }
+                        else
+                        {
+                            <div class="small mt-1">@todays.Count session(s)</div>
+                        }
+                    </td>
+                }
+            </tr>
+
+            @while (day <= daysInMonth)
+            {
+                <tr>
+                    @for (col = 0; col < 7; col++)
+                    {
+                        if (day > daysInMonth)
+                        {
+                            <td class="bg-transparent" style="height: 7rem;"></td>
+                        }
+                        else
+                        {
+                            var todays = sessionsOn(day).ToList();
+                            <td style="height: 7rem;">
+                                <div class="d-flex justify-content-between">
+                                    <strong>@day</strong>
+                                </div>
+
+                                @if (todays.Count == 0)
+                                {
+                                    <div class="text-muted small mt-1">No sessions</div>
+                                }
+                                else
+                                {
+                                    <div class="small mt-1">@todays.Count session(s)</div>
+                                }
+                            </td>
+                            day++;
+                        }
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Compact and readable cells */
+    .table td {
+        vertical-align: top;
+        padding: .5rem;
+    }
+</style>

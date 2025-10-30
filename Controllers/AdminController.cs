@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 // using Microsoft.AspNetCore.Authorization; // ← enable if you gate admin with roles
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
+using System.Security.Claims;
+
 using J_Tutors_Web_Platform.Models.Scheduling;
 
 namespace J_Tutors_Web_Platform.Controllers
@@ -28,10 +33,13 @@ namespace J_Tutors_Web_Platform.Controllers
         // Dependencies
         // ─────────────────────────────────────────────────────────────────────────────
         private readonly AdminService _adminService;
+        private readonly AuthService _authService;
+        Models.Users.User user = new User();
 
-        public AdminController(AdminService adminService)
+        public AdminController(AdminService adminService, AuthService authService)
         {
             _adminService = adminService;
+            _authService = authService;
         }
 
         // ============================================================================
@@ -274,6 +282,30 @@ namespace J_Tutors_Web_Platform.Controllers
             };
 
             return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
+        }
+
+        [HttpPost]
+        public IActionResult ChangePassword(string currentPassword, string NewPassword, string ConfirmPassword)
+        {
+            var adminUsername = User.FindFirst(ClaimTypes.Name)?.Value;
+            var result = _authService.AdminLogin(adminUsername, currentPassword);
+
+            if (NewPassword != ConfirmPassword)
+            {
+                Console.WriteLine("password dont match");
+                return View("AAccount");
+            }
+            
+            if (result != "Login Successful")
+            {
+                Console.WriteLine("current password incorrect");
+                return View("AAccount");
+            }
+
+            _authService.ChangeAdminPassword(adminUsername, NewPassword);
+
+            Console.WriteLine("password changed to " + NewPassword);
+            return View("AAccount");
         }
 
         // ============================================================================

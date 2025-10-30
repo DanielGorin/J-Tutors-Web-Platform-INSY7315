@@ -70,6 +70,42 @@ namespace J_Tutors_Web_Platform.Services
 
         }
 
+        public string ChangeAdminPassword(string Username, string NewPassword) 
+        {
+            string salt = GetSalt(Username);
+            string hashedPassword = HashPassword(NewPassword, salt);
+
+            const string sql = "update Admins set PasswordHash = @PasswordHash where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@PasswordHash", hashedPassword);
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            cmd.ExecuteNonQuery();
+
+            return "Password changed successfully";
+        }
+
+        public string GetSalt(string Username) 
+        {
+            const string sql = "select PasswordSalt from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+            cmd.Parameters.AddWithValue("@Username", Username);
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+            //reading through returned data
+            while (reader.Read())
+            {
+                string storedSalt = reader["PasswordSalt"].ToString();
+                return storedSalt;
+            }
+            return "";
+        }
+
         public string Register(string Email, string Username, string Password, string ConfirmPassword, string Phone, DateOnly BirthDate, string ThemePreference, string SubjectInterest, string FirstName, string Surname) 
         {
             //checking if username already exists in database

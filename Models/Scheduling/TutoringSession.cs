@@ -50,7 +50,6 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         // Optional timestamps
         public DateTime? CancellationDate { get; set; }
         public DateTime? PaidDate { get; set; }
-        //public TimeOnly StartTime { get; set; }
 
     }
 }

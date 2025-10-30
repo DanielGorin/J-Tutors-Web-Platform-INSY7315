@@ -11,7 +11,6 @@ namespace J_Tutors_Web_Platform
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddSingleton<FileShareService>();
             builder.Services.AddSingleton<BlobStorageService>();
 
 
@@ -39,6 +38,13 @@ namespace J_Tutors_Web_Platform
                 var configuration = sp.GetRequiredService<IConfiguration>();
                 var connectionString = configuration.GetConnectionString("AzureSql");
                 return new AdminService(connectionString);
+            });
+
+            builder.Services.AddSingleton<FileShareService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new FileShareService(configuration, connectionString);
             });
 
             // Add services to the container.

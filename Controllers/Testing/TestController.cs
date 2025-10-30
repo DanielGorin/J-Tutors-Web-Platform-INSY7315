@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AspNetCoreGeneratedDocument;
 using J_Tutors_Web_Platform.Services.Storage;
+using J_Tutors_Web_Platform.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers.Testing
 {
@@ -21,12 +24,14 @@ namespace J_Tutors_Web_Platform.Controllers.Testing
         [RequestSizeLimit(524_288_000)]
         public async Task<IActionResult> FileShareUpload(IFormFile file)
         {
+            string Username = User.FindFirst(ClaimTypes.Name)?.Value;
+
             if (file is null || file.Length == 0)
-                return RedirectToAction(nameof(FileShare));
+                return RedirectToAction("GetFileShareRows", "Test");
 
             using var s = file.OpenReadStream();
-            await _fs.UploadAsync(s, file.Length, file.FileName);
-            return RedirectToAction(nameof(FileShare));
+            await _fs.UploadAsync(Username,s, file.Length, file.FileName);
+            return RedirectToAction("GetFileShareRows", "Test");
         }
 
         // GET /Test/FileShareDownload?name=MyDoc.pdf
@@ -37,6 +42,26 @@ namespace J_Tutors_Web_Platform.Controllers.Testing
             var stream = await _fs.DownloadAsync(name);
             var downloadName = Path.GetFileName(name);
             return File(stream, "application/octet-stream", downloadName);
+        }
+
+        [HttpGet]
+        public IActionResult GetFileShareRows()
+        {
+            var Username  = User.FindFirst(ClaimTypes.Name)?.Value;
+
+            var AFilesVM = new AFilesViewModel
+            {
+                FSR = _fs.GetFileShareRows(Username),
+            };
+
+            return View("~/Views/Admin/AFiles.cshtml", AFilesVM);
+        }
+
+        public IActionResult DeleteFile(string fileName)
+        {
+            _fs.DeleteAsync(fileName);
+
+            return RedirectToAction("GetFileShareRows", "Test");
         }
     }
 }

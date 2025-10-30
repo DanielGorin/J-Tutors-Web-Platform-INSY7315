@@ -13,6 +13,19 @@ namespace J_Tutors_Web_Platform.Services
             _connectionString = connectionString;
         }
 
+        //public string UpdateLastActive(string Username)
+        //{
+        //    const string sql = "update Users set LastActive = @LastActive where Username = @Username";
+        //    using var constring = new SqlConnection(_connectionString);
+        //    using var cmd = new SqlCommand(sql, constring);
+        //    cmd.Parameters.AddWithValue("@LastActive", DateTime.UtcNow);
+        //    cmd.Parameters.AddWithValue("@Username", Username);
+        //    constring.Open();
+        //    cmd.ExecuteNonQuery();
+
+        //    return "Great Success";
+        //}
+
         public string Login(string Username, string Password) //can be changed to username and email later on for now just uses usernmae.
         {
             const string sql = "select * from Users where Username = @Username";
@@ -135,7 +148,7 @@ namespace J_Tutors_Web_Platform.Services
 
             DateOnly RegistrationDate = DateOnly.FromDateTime(DateTime.Now);
 
-            //inserting new user into database using sql
+            //inserting new user into database using sqlddddd
             const string sql = "insert into Users (Email, Username, PasswordHash, PasswordSalt, Phone, BirthDate, RegistrationDate, ThemePreference, LeaderboardVisible, SubjectInterest, FirstName, Surname) " +
                                "values (@Email, @Username, @PasswordHash, @PasswordSalt, @Phone, @BirthDate, @RegistrationDate, @ThemePreference, @LeaderboardVisible, @SubjectInterest, @FirstName, @Surname)";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use

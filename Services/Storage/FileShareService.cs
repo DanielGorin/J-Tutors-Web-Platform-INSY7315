@@ -1,17 +1,39 @@
-﻿using System;
+﻿using Azure.Storage.Files.Shares;
+using J_Tutors_Web_Platform.Models.AppFiles;
+using J_Tutors_Web_Platform.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Storage.Files.Shares;
+using static System.Net.WebRequestMethods;
 
 namespace J_Tutors_Web_Platform.Services.Storage
 {
     public sealed class FileShareService
     {
         private readonly ShareClient _share;
+        private readonly string _connectionString;
 
-        public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config)
+        public int GetAdminID(string Username)
+        {
+            const string sql = "select AdminId from Admins where Username = @Username";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@Username", Username);
+
+            constring.Open();
+
+            var id = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return id;
+        }
+
+        public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config, string connectionString)
         {
             var cs = config["AzureStorage:ConnectionString"]
                   ?? config.GetConnectionString("StorageAccount");
@@ -24,11 +46,15 @@ namespace J_Tutors_Web_Platform.Services.Storage
 
             _share = new ShareClient(cs.Trim(), shareName.Trim(), opts);
             _share.CreateIfNotExists(); // idempotent
+
+            _connectionString = connectionString;
         }
 
         // ROOT ONLY
-        public async Task<string> UploadAsync(Stream content, long length, string fileName, CancellationToken ct = default)
+        public async Task<string> UploadAsync(string Username, Stream content, long length, string fileName, CancellationToken ct = default)
         {
+            Console.WriteLine("Uploading file to File Share: " + fileName);
+
             if (length <= 0) throw new ArgumentException("length must be > 0");
             if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("fileName required");
 
@@ -41,7 +67,78 @@ namespace J_Tutors_Web_Platform.Services.Storage
             await file.CreateAsync(length, cancellationToken: ct);
             await file.UploadRangeAsync(new Azure.HttpRange(0, length), content, cancellationToken: ct);
 
+            int AdminID = GetAdminID(Username);
+
+            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            provider.TryGetContentType(fileName, out var contentType);
+
+            const string sql = "insert into Files (AdminID, FileName, ContentType) " +
+                               "values (@AdminID, @FileName, @ContentType)";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@AdminID", AdminID);
+            cmd.Parameters.AddWithValue("@FileName", fileName);
+            cmd.Parameters.AddWithValue("@ContentType", contentType ?? "application/octet-stream");
+
+            constring.Open();
+
+            cmd.ExecuteNonQuery();
+
+            constring.Close();
+
+            Console.WriteLine("Inserting file record into database: " + fileName + AdminID);
+
             return file.Name;
+        }
+
+        public int GetUserCount(int FileID) 
+        {
+            const string sql = "select count(*) from FileAccess where FileID = @FileID";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+
+            constring.Open();
+
+            var count = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return count;
+        }
+
+        public List<FileShareRow> GetFileShareRows(string Username) 
+        {
+            var fsrList = new List<FileShareRow>();
+            string fileName;
+            string adminUsername = Username;
+            int userCount;
+            int fileID;
+
+            const string sql = "select * from Files";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                fileName = reader.GetString(2);
+                fileID = reader.GetInt32(0);
+                userCount = GetUserCount(fileID);
+
+                fsrList.Add(new FileShareRow
+                {
+                    FileName = fileName,
+                    AdminUsername = Username,
+                    UserCount = userCount
+                });
+            }
+
+            constring.Close();
+            return fsrList;
         }
 
         public async Task<IReadOnlyList<string>> ListAsync(CancellationToken ct = default)
@@ -71,6 +168,145 @@ namespace J_Tutors_Web_Platform.Services.Storage
             return ms;
         }
 
-        
+        public async Task<Stream> DeleteAsync(string fileName, CancellationToken ct = default)
+        {
+            await _share.CreateIfNotExistsAsync(cancellationToken: ct);
+
+            var root = _share.GetRootDirectoryClient();
+            var file = root.GetFileClient((fileName ?? "").Trim());
+            await file.DeleteAsync(cancellationToken: ct);
+
+            DeleteFile(fileName);
+
+            return Stream.Null;
+        }
+
+        public void DeleteFile(string FileName)
+        {
+            DeleteFileAccess(GetFileID(FileName));
+
+            const string sql = "delete from Files where FileName = @FileName";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileName", FileName);
+            
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+            
+
+        }
+
+        public void DeleteFileAccess(int FileID)
+        {
+            const string sql = "delete from FileAccess where FileID = @FileID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+
+
+        }
+
+        public int GetFileID(string FileName) 
+        {
+            int id;
+
+            const string sql = "select FileID from Files where FileName = @FileName";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileName", FileName);
+
+            constring.Open();
+            id = (int)cmd.ExecuteScalar();
+            constring.Close();
+
+            return id;
+        }
+
+        public List<FileShareAccess> GetFileShareAccesses(string FileName) 
+        {
+            var fsaList = new List<FileShareAccess>();
+            var fileID = GetFileID(FileName);
+
+            const string sql = "select * from FileAccess where FileID = @FileID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", fileID);
+
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                fsaList.Add(new FileShareAccess
+                {
+                    FileAccessID = reader.GetInt32(0),
+                    FileID = reader.GetInt32(1),
+                    UserID = reader.GetInt32(2),
+                    StartDate = reader.GetDateTime(3),
+                    EndDate = reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+                });
+            }
+
+            constring.Close();
+
+            return fsaList;
+        }
+
+        public void AddFileAccess(int FileID, string Username) 
+        {
+            const string sql = "insert into FileAccess (FileID, UserID, StartDate) values (@FileID, (select UserID from Users where Username = @Username), @StartDate)";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+            cmd.Parameters.AddWithValue("@Username", Username);
+            cmd.Parameters.AddWithValue("@StartDate", DateTime.UtcNow);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+        }
+
+        public void UpdateFileAccess(int FileId, int UserID, DateTime StartDate, DateTime? EndDate)
+        {
+            const string sql = "update FileAccess set StartDate = @StartDate, EndDate = @EndDate where FileID = @FileID and UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileId);
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+            cmd.Parameters.AddWithValue("@StartDate", StartDate);
+            cmd.Parameters.AddWithValue("@EndDate", EndDate.HasValue ? (object)EndDate.Value : DBNull.Value);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+        }
+
+        public void DeleteAccess(int FileID, int UserID) 
+        {
+             const string sql = "delete from FileAccess where FileID = @FileID and UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+        }
+
+
+
     }
 }

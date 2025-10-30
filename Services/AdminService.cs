@@ -267,9 +267,94 @@ namespace J_Tutors_Web_Platform.Services
             return userList;
         }
 
-        //public List<UserDirectoryRow> FilterSearch() {}
+        public List<UserDirectoryRow> FilterSearch(string searchUsers, string visFilter, string unpaidFilter)
+        {
+            var userList = new List<UserDirectoryRow>();
+            //var filteredUserList = new List<UserDirectoryRow>();
+            //int totalPoints;
+            //int pointsSpent;
+            //int currentPoints;
+            //bool isVisible;
+            //int unPaidSessions;
+            //double unPaidAmount;
+            //DateTime lastActivity;
 
-        //public List<UserDirectoryRow> SortSearch() {}
+            //const string sql = "select * from Users";
+            //using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            //using var cmd = new SqlCommand(sql, constring);
+
+            //constring.Open();
+            //using SqlDataReader reader = cmd.ExecuteReader();
+
+            ////reading through returned data
+            //while (reader.Read())
+            //{
+            //    totalPoints = GetTotalPoints(reader["Username"].ToString());
+            //    pointsSpent = GetPointsSpent(reader["Username"].ToString());
+            //    currentPoints = totalPoints - pointsSpent;
+
+            //    isVisible = IsLeaderboardVisible(reader["Username"].ToString());
+
+            //    unPaidSessions = 0; //add funcionality later after sessions can be booked
+            //    unPaidAmount = 0.0; //add funcionality later after sessions can be booked
+
+            //    lastActivity = DateTime.Now;
+
+            //    userList.Add(new UserDirectoryRow
+            //    {
+            //        Username = reader["Username"].ToString()!,
+            //        UnpaidSessions = unPaidSessions,
+            //        UnpaidAmount = unPaidAmount,
+            //        CurrentPoints = currentPoints,
+            //        TotalPoints = totalPoints,
+            //        LastActivity = lastActivity,
+            //        LeaderboardVisible = isVisible
+            //    });
+
+            //    if (searchUsers == null) 
+            //    {
+            //        if (unpaidFilter.Equals("all")) 
+            //        {
+            //            if (isVisible.Equals("all"))
+            //            { }
+
+            //            if (isVisible.Equals("hidden"))
+            //            { }
+
+            //            if (isVisible.Equals("visible"))
+            //            { }
+            //        }
+
+            //        if (unpaidFilter.Equals("has"))
+            //        {
+            //            if (isVisible.Equals("all"))
+            //            { }
+
+            //            if (isVisible.Equals("hidden"))
+            //            { }
+
+            //            if (isVisible.Equals("visible"))
+            //            { }
+            //        }
+
+            //        if (unpaidFilter.Equals("none"))
+            //        {
+            //            if (isVisible.Equals("all"))
+            //            { }
+
+            //            if (isVisible.Equals("hidden"))
+            //            { }
+
+            //            if (isVisible.Equals("visible"))
+            //            { }
+            //        }
+            //    }
+            //}
+
+            //constring.Close();
+            return userList;
+        }
+
 
         //============================== Events ==============================
 

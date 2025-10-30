@@ -83,17 +83,17 @@ namespace J_Tutors_Web_Platform.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // File and access setup
-            modelBuilder.Entity<AppFile>()
-                .HasOne(f => f.Admin)
-                .WithMany(a => a.Files)
-                .HasForeignKey(f => f.AdminID)
-                .OnDelete(DeleteBehavior.Cascade);
+            //modelBuilder.Entity<AppFile>()
+            //    .HasOne(f => f.Admin)
+            //    .WithMany(a => a.Files)
+            //    .HasForeignKey(f => f.AdminID)
+            //    .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<FileShareAccess>()
-                .HasOne(fa => fa.File)
-                .WithMany(f => f.FileAccesses)
-                .HasForeignKey(fa => fa.FileID)
-                .OnDelete(DeleteBehavior.Cascade);
+            //modelBuilder.Entity<FileShareAccess>()
+            //    .HasOne(fa => fa.File)
+            //    .WithMany(f => f.FileAccesses)
+            //    .HasForeignKey(fa => fa.FileID)
+            //    .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FileShareAccess>()
                 .HasOne(fa => fa.User)

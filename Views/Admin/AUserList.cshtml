@@ -102,14 +102,14 @@
 
     <!-- Controls: Search / Filters / Sort -->
     <div class="card shadow p-24 mb-16">
-        <div class="row g-3">
+        <form class="row g-3" asp-controller="Admin" asp-action="FilterSearch">
             <div class="col-lg-6">
                 <label for="searchUsers" class="form-label">Search students</label>
-                <input id="searchUsers" type="text" class="form-control" placeholder="Search by username, name, subject…" />
+                <input name="searchUsers" id="searchUsers" type="text" class="form-control" placeholder="Search by username, name, subject…" />
             </div>
             <div class="col-6 col-lg-2">
                 <label for="visFilter" class="form-label">Leaderboard</label>
-                <select id="visFilter" class="form-select">
+                <select name="visFilter" id="visFilter" class="form-select">
                     <option value="all">All</option>
                     <option value="visible">Visible</option>
                     <option value="hidden">Hidden</option>
@@ -117,7 +117,7 @@
             </div>
             <div class="col-6 col-lg-2">
                 <label for="unpaidFilter" class="form-label">Unpaid Sessions</label>
-                <select id="unpaidFilter" class="form-select">
+                <select name="unpaidFilter" id="unpaidFilter" class="form-select">
                     <option value="all">All</option>
                     <option value="has">Has Unpaid</option>
                     <option value="none">None</option>
@@ -126,7 +126,7 @@
             <div class="col-lg-2 d-flex align-items-end">
                 <button class="btn btn-outline-primary w-100" disabled>Apply Filters</button>
             </div>
-        </div>
+        </form>
         <div class="row g-3 mt-8">
             <div class="col-6 col-lg-2">
                 <label for="sortBy" class="form-label">Sort by</label>

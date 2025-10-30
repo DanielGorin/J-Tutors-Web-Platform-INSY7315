@@ -1,7 +1,7 @@
 ﻿@model J_Tutors_Web_Platform.ViewModels.AFilesViewModel
 
 @{
-    ViewData["Title"] = "Admin Files";
+    ViewData["Title"] = "Manage File";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "Admin";
 }
@@ -161,12 +161,9 @@
                                     <td class="text-center"><span class="badge-chip badge-active">@file.UserCount</span></td>
                                     <td class="text-end">
                                         <a class="btn btn-outline-primary btn-sm" asp-action="FileShareDownload" asp-route-name="@file.FileName">Download</a>
-                                        <form asp-action="ManageAccess" asp-controller="Test">
-                                            <input type="hidden" name="fileName" value="@file.FileName" />
-                                            <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Manage Access</button>
-                                        </form>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manageAccessModal">Manage Access</button>
                                         <form asp-action="DeleteFile" asp-controller="Test">
-                                            <input type="hidden" name="fileName" value="@file.FileName"/>
+                                            <input type="hidden" name="fileName" value="@file.FileName" />
                                             <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Delete</button>
                                         </form>
                                     </td>
@@ -209,14 +206,3 @@
         </div>
     </div>
 </div>
-
-@* --------------------------------------------------------------------
-   TODO: Wire Up Admin Files
-   - Download endpoint with audit log (who, when) - partical completetion, delete possible without audit
-   - Delete with confirm; soft-delete or hard-delete policy
-   - Manage Access:
-       • create manage access view, list user with access to a specific file (in prog)
-   - Filters: search, sort, show expired
-   - Pagination: server-driven
-   - Security: admin-only guard
---------------------------------------------------------------------- *@

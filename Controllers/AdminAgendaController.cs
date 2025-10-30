@@ -1,29 +1,24 @@
 ﻿#nullable enable
+using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
-using static J_Tutors_Web_Platform.ViewModels.AAgendaPageVM;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
-    // [Authorize(Roles="Admin")]
     public class AdminAgendaController : Controller
     {
         private readonly AdminAgendaService _agenda;
-        private readonly AdminService _adminService;
 
-        public AdminAgendaController(AdminAgendaService agenda, AdminService adminService)
+        public AdminAgendaController(AdminAgendaService agenda)
         {
             _agenda = agenda;
-            _adminService = adminService;
         }
 
-        /// <summary>
-        /// GET /AdminAgenda/Agenda  (Slots-only for Part 1)
-        /// </summary>
+        // SHELL — /AdminAgenda/Agenda
         [HttpGet]
         public async Task<IActionResult> Agenda()
         {
@@ -31,69 +26,75 @@ namespace J_Tutors_Web_Platform.Controllers
 
             var (scheduled, accepted, paid, cancelled) = await _agenda.GetAgendaCountsAsync();
 
-            // only load Slots data for Part 1
-            var blocks = await _agenda.GetAvailabilityBlocksAsync(null, null, null);
-
             var vm = new AAgendaPageVM
             {
                 ScheduledCount = scheduled,
                 AcceptedCount = accepted,
                 PaidCount = paid,
                 CancelledCount = cancelled,
-                ActiveTab = "slots",
-                Slots = new AgendaSlotsVM
-                {
-                    From = null,
-                    To = null,
-                    Minutes = null,
-                    Blocks = blocks.ToList()
-                }
+                ActiveTab = "slots"
+                // Slots stays null; the Slots tab loads via HTMX
             };
 
             return View("~/Views/Admin/AAgenda.cshtml", vm);
         }
 
-
-        // POST: /AdminAgenda/CreateAvailability
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAvailability(DateTime date, TimeSpan start, int durationMinutes)
+        // TABS — SLOTS → Views/Admin/AAgendaSlots.cshtml
+        [HttpGet]
+        public async Task<IActionResult> Slots(DateTime? from = null, DateTime? to = null, int? minutes = null, int? adminId = null)
         {
-            try
-            {
-                var username = User?.Identity?.Name ?? "";
-                if (string.IsNullOrWhiteSpace(username))
-                    throw new InvalidOperationException("You must be logged in as an admin.");
+            ViewData["NavSection"] = "Admin";
 
-                // Look up adminId from username
-                var adminId = _adminService.GetAdminID(username);
-
-                await _agenda.CreateAvailabilityBlockAsync(adminId, date, start, durationMinutes);
-                TempData["AgendaOk"] = "Availability block created.";
-            }
-            catch (Exception ex)
+            var blocks = await _agenda.GetAvailabilityBlocksAsync(from, to, adminId);
+            var vm = new AgendaSlotsVM
             {
-                TempData["AgendaError"] = ex.Message;
-            }
-            return RedirectToAction(nameof(Agenda));
+                From = from,
+                To = to,
+                Minutes = minutes,
+                Blocks = blocks // IReadOnlyList is fine
+            };
+
+            return PartialView("~/Views/Admin/AAgendaSlots.cshtml", vm);
         }
 
-        // POST: /AdminAgenda/DeleteAvailability
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAvailability(int id)
+        // TABS — INBOX → Views/Admin/AAgendaInbox.cshtml
+        [HttpGet]
+        public async Task<IActionResult> Inbox()
         {
-            try
+            ViewData["NavSection"] = "Admin";
+
+            var (scheduled, accepted, paid, cancelled) = await _agenda.GetInboxBucketsAsync();
+            var vm = new AgendaInboxVM
             {
-                await _agenda.DeleteAvailabilityBlockAsync(id);
-                TempData["AgendaOk"] = "Availability block deleted.";
-            }
-            catch (Exception ex)
-            {
-                TempData["AgendaError"] = ex.Message;
-            }
-            return RedirectToAction(nameof(Agenda));
+                Scheduled = scheduled,
+                Accepted = accepted,
+                Paid = paid,
+                Cancelled = cancelled
+            };
+
+            return PartialView("~/Views/Admin/AAgendaInbox.cshtml", vm);
         }
 
+        // TABS — CALENDAR → Views/Admin/AAgendaCalendar.cshtml
+        [HttpGet]
+        public async Task<IActionResult> Calendar(int? year = null, int? month = null, bool includeScheduled = false, int? adminId = null)
+        {
+            ViewData["NavSection"] = "Admin";
+
+            var today = DateTime.Today;
+            var y = year ?? today.Year;
+            var m = month ?? today.Month;
+
+            var sessions = await _agenda.GetSessionsForCalendarAsync(y, m, includeScheduled, adminId);
+            var vm = new AgendaCalendarVM
+            {
+                Year = y,
+                Month = m,
+                IncludeScheduled = includeScheduled,
+                Sessions = sessions
+            };
+
+            return PartialView("~/Views/Admin/AAgendaCalendar.cshtml", vm);
+        }
     }
 }

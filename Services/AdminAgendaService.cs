@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 
+
 namespace J_Tutors_Web_Platform.Services
 {
     /// <summary>
@@ -159,6 +160,117 @@ namespace J_Tutors_Web_Platform.Services
             cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
             await conn.OpenAsync();
             return await cmd.ExecuteNonQueryAsync();
+        }
+
+        //--------------------------------------------------
+        private static J_Tutors_Web_Platform.Models.Scheduling.TutoringSession MapSession(SqlDataReader r)
+        {
+            var date = (DateTime)r["SessionDate"];
+            // Robust status parse (supports int or string)
+            var statusObj = r["Status"];
+            J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus status;
+            if (statusObj is int i) status = (J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus)i;
+            else if (int.TryParse(Convert.ToString(statusObj, CultureInfo.InvariantCulture), out var asInt))
+                status = (J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus)asInt;
+            else if (Enum.TryParse<J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus>(Convert.ToString(statusObj), true, out var asEnum))
+                status = asEnum;
+            else
+                status = J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Scheduled;
+
+            return new J_Tutors_Web_Platform.Models.Scheduling.TutoringSession
+            {
+                TutoringSessionID = Convert.ToInt32(r["TutoringSessionID"]),
+                UserID = Convert.ToInt32(r["UserID"]),
+                AdminID = Convert.ToInt32(r["AdminID"]),
+                SubjectID = Convert.ToInt32(r["SubjectID"]),
+                SessionDate = DateOnly.FromDateTime(date),
+                StartTime = (TimeSpan)r["StartTime"],
+                DurationHours = Convert.ToDecimal(r["DurationHours"], CultureInfo.InvariantCulture),
+                BaseCost = Convert.ToDecimal(r["BaseCost"], CultureInfo.InvariantCulture),
+                PointsSpent = Convert.ToInt32(r["PointsSpent"]),
+                Status = status,
+                CancellationDate = r["CancellationDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(r["CancellationDate"]),
+                PaidDate = r["PaidDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(r["PaidDate"])
+            };
+        }
+
+        public async Task<List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>> GetAllSessionsAsync()
+        {
+            const string sql = @"SELECT TutoringSessionID, UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status, CancellationDate, PaidDate FROM dbo.TutoringSession ORDER BY SessionDate, StartTime;";
+
+            var list = new List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>();
+            await using var conn = new SqlConnection(_connStr);
+            await using var cmd = new SqlCommand(sql, conn);
+            await conn.OpenAsync();
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+                list.Add(MapSession(r));
+            return list;
+        }
+
+        public async Task<(List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession> scheduled,
+                           List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession> accepted,
+                           List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession> paid,
+                           List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession> cancelled)>
+            GetInboxBucketsAsync()
+        {
+            var all = await GetAllSessionsAsync();
+            return (
+                all.Where(s => s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Scheduled).ToList(),
+                all.Where(s => s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Accepted).ToList(),
+                all.Where(s => s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Paid).ToList(),
+                all.Where(s => s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Cancelled).ToList()
+            );
+        }
+        private static (DateTime from, DateTime to) MonthWindow(int year, int month)
+        {
+            var from = new DateTime(year, month, 1);
+            var to = from.AddMonths(1);
+            return (from, to);
+        }
+
+        // Generic fetch with optional window/admin filter.
+        // Reuses your MapSession(SqlDataReader r).
+        public async Task<List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>> GetSessionsAsync(
+            DateTime? fromInclusive,
+            DateTime? toExclusive,
+            int? adminId)
+        {
+            var sql = @"SELECT TutoringSessionID, UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status, CancellationDate, PaidDate FROM dbo.TutoringSession WHERE 1=1";
+
+            if (fromInclusive.HasValue) sql += " AND SessionDate >= @from";
+            if (toExclusive.HasValue) sql += " AND SessionDate <  @to";
+            if (adminId.HasValue) sql += " AND AdminID = @a";
+            sql += " ORDER BY SessionDate, StartTime";
+
+            var list = new List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>();
+
+            await using var conn = new SqlConnection(_connStr);
+            await using var cmd = new SqlCommand(sql, conn);
+            if (fromInclusive.HasValue) cmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Value.Date;
+            if (toExclusive.HasValue) cmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Value.Date;
+            if (adminId.HasValue) cmd.Parameters.Add("@a", SqlDbType.Int).Value = adminId.Value;
+
+            await conn.OpenAsync();
+            await using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+                list.Add(MapSession(r));
+
+            return list;
+        }
+
+        // Calendar-specific: returns Accepted sessions, plus Scheduled if requested,
+        // within the given year/month (and optionally for a specific admin).
+        public async Task<List<J_Tutors_Web_Platform.Models.Scheduling.TutoringSession>> GetSessionsForCalendarAsync(
+            int year, int month, bool includeScheduled, int? adminId = null)
+        {
+            var (from, to) = MonthWindow(year, month);
+            var all = await GetSessionsAsync(from, to, adminId);
+
+            return all.Where(s =>
+                   s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Accepted
+                || (includeScheduled && s.Status == J_Tutors_Web_Platform.Models.Shared.TutoringSessionStatus.Scheduled)
+            ).ToList();
         }
 
     }

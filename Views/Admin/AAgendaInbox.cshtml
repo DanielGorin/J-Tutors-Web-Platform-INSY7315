@@ -1,9 +1,21 @@
 ﻿@model J_Tutors_Web_Platform.ViewModels.AgendaInboxVM
-Layout = null;
-<h3 class="mb-12">Inbox</h3>
+@{
+    Layout = null;
+}
+<style>
+    .inbox-table td, .inbox-table th {
+        color: var(--bs-body-color) !important;
+    }
 
-<div class="mb-12">
-    <h5 class="mb-6">Scheduled (@(Model?.Scheduled?.Count ?? 0))</h5>
+    .badge {
+        font-weight: 600;
+    }
+</style>
+
+<h3 class="mb-3">Inbox</h3>
+
+<div class="mb-3">
+    <h6 class="mb-2">Scheduled (@(Model?.Scheduled?.Count ?? 0))</h6>
     @if (Model?.Scheduled == null || !Model.Scheduled.Any())
     {
         <div class="text-muted">none</div>
@@ -14,16 +26,16 @@ Layout = null;
             @foreach (var s in Model.Scheduled.OrderBy(x => x.SessionDate).ThenBy(x => x.StartTime))
             {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — UserID @s.UserID</span>
-                    <span class="badge bg-warning">Scheduled</span>
+                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
+                    <span class="badge bg-warning text-dark">Scheduled</span>
                 </li>
             }
         </ul>
     }
 </div>
 
-<div class="mb-12">
-    <h5 class="mb-6">Accepted (@(Model?.Accepted?.Count ?? 0))</h5>
+<div class="mb-3">
+    <h6 class="mb-2">Accepted (@(Model?.Accepted?.Count ?? 0))</h6>
     @if (Model?.Accepted == null || !Model.Accepted.Any())
     {
         <div class="text-muted">none</div>
@@ -34,7 +46,7 @@ Layout = null;
             @foreach (var s in Model.Accepted.OrderBy(x => x.SessionDate).ThenBy(x => x.StartTime))
             {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — UserID @s.UserID</span>
+                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
                     <span class="badge bg-success">Accepted</span>
                 </li>
             }
@@ -42,8 +54,8 @@ Layout = null;
     }
 </div>
 
-<div class="mb-12">
-    <h5 class="mb-6">Paid (@(Model?.Paid?.Count ?? 0))</h5>
+<div class="mb-3">
+    <h6 class="mb-2">Paid (@(Model?.Paid?.Count ?? 0))</h6>
     @if (Model?.Paid == null || !Model.Paid.Any())
     {
         <div class="text-muted">none</div>
@@ -54,7 +66,7 @@ Layout = null;
             @foreach (var s in Model.Paid.OrderByDescending(x => x.PaidDate ?? DateTime.MinValue))
             {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — UserID @s.UserID</span>
+                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
                     <span class="badge bg-primary">Paid</span>
                 </li>
             }
@@ -62,8 +74,8 @@ Layout = null;
     }
 </div>
 
-<div class="mb-12">
-    <h5 class="mb-6">Cancelled (@(Model?.Cancelled?.Count ?? 0))</h5>
+<div class="mb-3">
+    <h6 class="mb-2">Cancelled (@(Model?.Cancelled?.Count ?? 0))</h6>
     @if (Model?.Cancelled == null || !Model.Cancelled.Any())
     {
         <div class="text-muted">none</div>
@@ -74,7 +86,7 @@ Layout = null;
             @foreach (var s in Model.Cancelled.OrderByDescending(x => x.CancellationDate ?? DateTime.MinValue))
             {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — UserID @s.UserID</span>
+                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
                     <span class="badge bg-secondary">Cancelled</span>
                 </li>
             }

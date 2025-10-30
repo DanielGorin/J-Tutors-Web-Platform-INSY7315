@@ -1,15 +1,17 @@
 ﻿@model J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
 @{
+    Layout = null;
     var first = new DateTime(Model.Year, Model.Month, 1);
     var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
-    var byDay = Model.Sessions.GroupBy(s => s.SessionDate.Day)
-                              .ToDictionary(g => g.Key, g => g.ToList());
+    var byDay = Model.Sessions
+        .GroupBy(s => s.SessionDate.Day)
+        .ToDictionary(g => g.Key, g => g.ToList());
 }
 
 <div class="d-flex justify-content-between align-items-center mb-12">
     <h3 class="mb-0">Calendar — @first.ToString("MMMM yyyy")</h3>
 
-    <form hx-get="@Url.Action("_AgendaCalendar","Admin")"
+    <form hx-get="@Url.Action("Calendar","AdminAgenda")"
           hx-target="#tabBody" hx-swap="innerHTML"
           class="d-flex gap-2 align-items-center">
         <input type="number" name="year" min="2000" value="@Model.Year" class="form-control form-control-sm" style="width:90px" />
@@ -33,7 +35,7 @@
                     foreach (var s in list.OrderBy(x => x.StartTime))
                     {
                         <div class="small">
-                            @s.StartTime.ToString() — #@s.TutoringSessionID (@s.Status)
+                            @s.StartTime.ToString(@"hh\:mm") — #@s.TutoringSessionID (@s.Status)
                         </div>
                     }
                 }

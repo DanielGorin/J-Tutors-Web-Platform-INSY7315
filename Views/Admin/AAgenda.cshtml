@@ -1,10 +1,9 @@
-﻿@model J_Tutors_Web_Platform.ViewModels.AdminAgendaShellVM
+﻿@model J_Tutors_Web_Platform.ViewModels.AAgendaPageVM
 @{
     ViewData["Title"] = "Agenda";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "Admin";
 }
-<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 
 <div class="card shadow p-24">
     <div class="d-flex justify-content-between align-items-center mb-16">
@@ -19,32 +18,12 @@
 
     <ul class="nav nav-tabs">
         <li class="nav-item">
-            <button class="nav-link active"
-                    hx-get="@Url.Action("_AgendaSlots","Admin")"
-                    hx-target="#tabBody" hx-trigger="load" hx-swap="innerHTML"
-                    type="button">
-                Slots
-            </button>
+            <span class="nav-link active">Slots</span>
         </li>
-        <li class="nav-item">
-            <button class="nav-link"
-                    hx-get="@Url.Action("_AgendaInbox","Admin")"
-                    hx-target="#tabBody" hx-swap="innerHTML"
-                    type="button">
-                Inbox
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link"
-                    hx-get="@Url.Action("_AgendaCalendar","Admin")"
-                    hx-target="#tabBody" hx-swap="innerHTML"
-                    type="button">
-                Calendar
-            </button>
-        </li>
+        @* Future parts will add real links for Inbox/Calendar *@
     </ul>
 
-    <div id="tabBody" class="mt-16">
-        <div class="text-muted">Loading…</div>
+    <div class="mt-16">
+        <partial name="~/Views/Admin/AAgendaSlots.cshtml" model="Model.Slots" />
     </div>
 </div>

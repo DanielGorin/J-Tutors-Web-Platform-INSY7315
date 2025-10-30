@@ -1,35 +1,127 @@
-﻿@model J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM
+﻿@{
+    Layout = null;
+}
+<style>
+    /* scoped to THIS view only */
+    body {
+        background: transparent; /* inherit if it's in a modal/partial */
+        color: #f5f5f5; /* light text for dark bg */
+    }
 
-<div class="d-flex justify-content-between align-items-center mb-12">
-    <h3 class="mb-0">Slots</h3>
-    <small class="text-muted">Availability blocks</small>
+    /* headings and small text */
+    h3, h5, .text-muted, small {
+        color: #f5f5f5 !important;
+    }
+
+    /* table headers and cells */
+    .agenda-table th {
+        background-color: rgba(255, 255, 255, 0.02);
+        color: #ffffff !important;
+    }
+
+    .agenda-table td,
+    .agenda-table .text-body {
+        color: #e2e2e2 !important;
+        background-color: transparent;
+    }
+
+    /* alerts */
+    .alert-info {
+        background-color: rgba(13, 202, 240, 0.08);
+        color: #e2e2e2;
+        border-color: rgba(13, 202, 240, 0.35);
+    }
+
+    .alert-success {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #e2e2e2;
+    }
+
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.12);
+        color: #fff;
+    }
+
+    /* form labels + inputs */
+    label.form-label {
+        color: #f5f5f5 !important;
+    }
+
+    .form-control,
+    .form-control:focus {
+        background-color: rgba(0, 0, 0, 0.15);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+</style>
+
+@model J_Tutors_Web_Platform.ViewModels.AgendaSlotsVM
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Availability Slots</h3>
+    <small class="text-muted">Blocks of tutor availability</small>
 </div>
 
-@if (Model.Blocks.Count == 0)
+@if (TempData["AgendaOk"] != null)
+{
+    <div class="alert alert-success">@TempData["AgendaOk"]</div>
+}
+@if (TempData["AgendaError"] != null)
+{
+    <div class="alert alert-danger">@TempData["AgendaError"]</div>
+}
+
+@if (Model?.Blocks == null || Model.Blocks.Count == 0)
 {
     <div class="alert alert-info">No availability blocks yet.</div>
 }
 else
 {
-    <table class="table table-sm align-middle">
+    <table class="table table-bordered table-striped align-middle shadow-sm agenda-table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>AdminID</th>
+                <th class="text-nowrap">Date</th>
+                <th class="text-nowrap">Start</th>
+                <th class="text-nowrap">End</th>
+                <th class="text-nowrap" style="width:100px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var b in Model.Blocks.OrderBy(x => x.BlockDate).ThenBy(x => x.StartTime))
             {
                 <tr>
-                    <td>@b.BlockDate.ToString("yyyy-MM-dd")</td>
-                    <td>@b.StartTime</td>
-                    <td>@b.EndTime</td>
-                    <td>@b.AdminID</td>
+                    <td class="text-body">@b.BlockDate.ToString("yyyy-MM-dd")</td>
+                    <td class="text-body">@b.StartTime.ToString(@"hh\:mm")</td>
+                    <td class="text-body">@b.EndTime.ToString(@"hh\:mm")</td>
+                    <td>
+                        <form asp-controller="AdminAgenda" asp-action="DeleteAvailability" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@b.AvailabilityBlockID" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 }
+
+<hr class="my-4" />
+
+<h5>Add New Availability Block</h5>
+<form asp-controller="AdminAgenda" asp-action="CreateAvailability" method="post" class="row g-2 align-items-end">
+    <div class="col-md-2">
+        <label class="form-label">Date</label>
+        <input name="date" type="date" class="form-control form-control-sm" required />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Start Time</label>
+        <input name="start" type="time" class="form-control form-control-sm" required />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Duration (min)</label>
+        <input name="durationMinutes" type="number" class="form-control form-control-sm" required min="15" max="240" />
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Add Slot</button>
+    </div>
+</form>

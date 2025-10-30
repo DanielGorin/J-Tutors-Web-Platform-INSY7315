@@ -33,7 +33,7 @@ namespace J_Tutors_Web_Platform.ViewModels
 
     public sealed class AgendaInboxVM
     {
-        public IReadOnlyList<TutoringSession> Scheduled { get; set; } = Array.Empty<TutoringSession>(); // awaiting admin action
+        public IReadOnlyList<TutoringSession> Scheduled { get; set; } = Array.Empty<TutoringSession>();
         public IReadOnlyList<TutoringSession> Accepted { get; set; } = Array.Empty<TutoringSession>();
         public IReadOnlyList<TutoringSession> Paid { get; set; } = Array.Empty<TutoringSession>();
         public IReadOnlyList<TutoringSession> Cancelled { get; set; } = Array.Empty<TutoringSession>();
@@ -42,8 +42,8 @@ namespace J_Tutors_Web_Platform.ViewModels
     public sealed class AgendaCalendarVM
     {
         public int Year { get; set; }
-        public int Month { get; set; } // 1..12
-        public bool IncludeScheduled { get; set; } // “pending-like” in your model
+        public int Month { get; set; } // 1-12
+        public bool IncludeScheduled { get; set; }
         public IReadOnlyList<TutoringSession> Sessions { get; set; } = Array.Empty<TutoringSession>();
     }
 }

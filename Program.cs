@@ -75,7 +75,7 @@ namespace J_Tutors_Web_Platform
             //----------------------------------------------------
             //pattern: "{controller=Home}/{action=Info}/{id?}"); // INFO - FUNCTIONAL
             //pattern: "{controller=Home}/{action=Login}/{id?}"); // LOGIN - FUNCTIONAL
-            //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL
+            //pattern: "{controller=Home}/{action=AdminLogin}/{id?}"); // ADMINLOGIN - non FUNCTIONAL (needs to be differentiated)
             //pattern: "{controller=Home}/{action=Register}/{id?}"); // REGSITER - FUINCITONAL
             //----------------------------------------------------
 
@@ -88,15 +88,15 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=UEventHistory}/{id?}"); // USER EVENT HISTORY
             //pattern: "{controller=Home}/{action=UPointsLedger}/{id?}"); // USER POINTS LEDGER - FUNCTIONAL
             //pattern: "{controller=Home}/{action=UPointsLeaderboard}/{id?}"); // USER POINTS LEADERBOARD - FUNCTIONAL
-            //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING
-            //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS
+            //pattern: "{controller=Home}/{action=UBooking}/{id?}"); // USER BOOKING - (close)
+            //pattern: "{controller=Home}/{action=USessions}/{id?}"); // USER SESSIONS - (close)
             //----------------------------------------------------
 
             //ADMIN:
             //----------------------------------------------------
-            //pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD
-            //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR
-            //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST
+            //pattern: "{controller=Home}/{action=ADashboard}/{id?}"); // ADMIN DASHBOARD - close
+            //pattern: "{controller=Home}/{action=ASessionsCalendar}/{id?}"); // ADMIN SESSIONS CALENDAR - close
+            //pattern: "{controller=Home}/{action=AUserList}/{id?}"); // ADMIN USER LIST - FUNCTIONAL (no sort)
             //pattern: "{controller=Home}/{action=AUserDetails}/{id?}"); // ADMIN USER DETAILS
             //pattern: "{controller=Home}/{action=AEventList}/{id?}"); // ADMIN EVENT LIST
             //pattern: "{controller=Home}/{action=AEventDetails}/{id?}"); // ADMIN EVENT DETAILS
@@ -104,7 +104,7 @@ namespace J_Tutors_Web_Platform
             //pattern: "{controller=Home}/{action=APricing}/{id?}"); // ADMIN PRICE MANAGEMENT - FUNCTINOAL
             //pattern: "{controller=Home}/{action=ALeaderboard}/{id?}"); // ADMIN LEADERBOARD
             //pattern: "{controller=Home}/{action=AAnalytics}/{id?}"); // ADMIN ANALYTICS
-            //pattern: "{controller=Home}/{action=AAccount}/{id?}"); // ADMIN ACCOUNT
+            //pattern: "{controller=Home}/{action=AAccount}/{id?}"); // ADMIN ACCOUNT - FUNCTIONAL (light and dark brocken)
 
 
 

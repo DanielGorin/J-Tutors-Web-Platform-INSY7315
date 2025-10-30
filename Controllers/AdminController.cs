@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 // using Microsoft.AspNetCore.Authorization; // ← enable if you gate admin with roles
 using J_Tutors_Web_Platform.Services;
+using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

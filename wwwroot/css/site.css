@@ -46,7 +46,7 @@ body.dark-theme {
     --surface-color: #1B1E22;
     --border-color: #2A2F35;
     --text-color: #E6E8EB;
-    --muted-text-color: #B3B9C2;
+    --muted-text-color: #A4ACB6;
     --primary-color: #2E73E6;
     --accent-color: #FF7A70;
     --success-color: #34D399;
@@ -69,6 +69,16 @@ a {
     a:hover {
         color: var(--accent-color);
     }
+
+body.light-theme {
+    --bs-body-color: var(--text-color);
+    --bs-secondary-color: var(--muted-text-color);
+}
+
+body.dark-theme {
+    --bs-body-color: var(--text-color);
+    --bs-secondary-color: var(--muted-text-color);
+}
 
 /* ============================================================
    TYPOGRAPHY

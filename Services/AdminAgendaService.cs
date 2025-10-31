@@ -100,7 +100,7 @@ VALUES (@AdminID, @BlockDate, @StartTime, @EndTime);";
         {
             return new AgendaInboxVM
             {
-                Scheduled = await QuerySessionsByStatusAsync(adminId, "Scheduled"),
+                Requested = await QuerySessionsByStatusAsync(adminId, "Requested"),
                 Accepted = await QuerySessionsByStatusAsync(adminId, "Accepted"),
                 Paid = await QuerySessionsByStatusAsync(adminId, "Paid"),
                 Cancelled = await QuerySessionsByStatusAsync(adminId, "Cancelled"),
@@ -131,7 +131,7 @@ ORDER BY SessionDate DESC;";
         public async Task<IReadOnlyList<TutoringSession>> GetSessionsForCalendarAsync(
             int year,
             int month,
-            bool includeScheduled,
+            bool includeRequested,
             int? adminId)
         {
             var first = new DateTime(year, month, 1);
@@ -142,7 +142,7 @@ SELECT *
 FROM TutoringSession
 WHERE SessionDate >= @from AND SessionDate < @to
   AND (@adminId IS NULL OR AdminID = @adminId)
-  AND (@include = 1 OR Status <> 'Scheduled')
+  AND (@include = 1 OR Status <> 'Requested')
 ORDER BY SessionDate ASC;";
 
             var p = new Dictionary<string, object?>
@@ -150,7 +150,7 @@ ORDER BY SessionDate ASC;";
                 ["@from"] = first.Date,
                 ["@to"] = next.Date,
                 ["@adminId"] = (object?)adminId ?? DBNull.Value,
-                ["@include"] = includeScheduled ? 1 : 0
+                ["@include"] = includeRequested ? 1 : 0
             };
 
             return await QueryListAsync<TutoringSession>(sql, p);
@@ -296,5 +296,190 @@ ORDER BY SessionDate ASC;";
             }
             return t;
         }
+        private async Task<IReadOnlyList<AgendaInboxRowVM>> QueryInboxRowsByStatusAsync(int? adminId, string status)
+        {
+            // NOTE: Status is stored as a string in DB (per your confirmation).
+            const string sql = @"
+SELECT 
+    ts.TutoringSessionID,
+    s.SubjectName,
+    ts.DurationHours,
+    (u.FirstName + ' ' + u.Surname) AS RequestingFullName,
+    ts.BaseCost,
+    ts.PointsSpent,
+    ts.Status
+FROM TutoringSession ts
+JOIN Users u     ON ts.UserID   = u.UserID
+JOIN Subjects s  ON ts.SubjectID = s.SubjectID
+WHERE ts.Status = @status
+  AND (@adminId IS NULL OR ts.AdminID = @adminId)
+ORDER BY ts.SessionDate ASC, ts.StartTime ASC;";
+
+            var p = new Dictionary<string, object?>
+            {
+                ["@status"] = status,
+                ["@adminId"] = (object?)adminId ?? DBNull.Value
+            };
+
+            // Manual projection (don’t use reflection mapper here; types differ)
+            var list = new List<AgendaInboxRowVM>();
+            using var con = await OpenAsync();
+            using var cmd = BuildCommand(con, sql, p);
+            using var r = await cmd.ExecuteReaderAsync();
+
+            while (await r.ReadAsync())
+            {
+                list.Add(new AgendaInboxRowVM
+                {
+                    TutoringSessionID = r.GetInt32(r.GetOrdinal("TutoringSessionID")),
+                    SubjectName = r.GetString(r.GetOrdinal("SubjectName")),
+                    DurationHours = (decimal)r.GetDecimal(r.GetOrdinal("DurationHours")),
+                    RequestingFullName = r.GetString(r.GetOrdinal("RequestingFullName")),
+                    BaseCost = (decimal)r.GetDecimal(r.GetOrdinal("BaseCost")),
+                    PointsSpent = r.GetInt32(r.GetOrdinal("PointsSpent")),
+                    Status = r.GetString(r.GetOrdinal("Status"))
+                });
+            }
+            return list;
+        }
+
+        public async Task<AgendaInboxDisplayVM> GetInboxDisplayAsync(int? adminId)
+        {
+            return new AgendaInboxDisplayVM
+            {
+                Requested = await QueryInboxRowsByStatusAsync(adminId, "Requested"),
+                Accepted = await QueryInboxRowsByStatusAsync(adminId, "Accepted"),
+                Paid = await QueryInboxRowsByStatusAsync(adminId, "Paid"),
+                Cancelled = await QueryInboxRowsByStatusAsync(adminId, "Cancelled"),
+            };
+        }
+
+        public async Task<SessionDetailsVM?> GetSessionDetailsAsync(int sessionId)
+        {
+            const string sql = @"
+SELECT TOP 1
+    ts.TutoringSessionID,
+    ts.Status,
+    s.SubjectName,
+    ts.SessionDate,
+    ts.StartTime,
+    ts.DurationHours,
+    u.UserID,
+    u.FirstName,
+    u.Surname,
+    u.Email,
+    ts.BaseCost,
+    ts.PointsSpent
+FROM TutoringSession ts
+JOIN Users u     ON ts.UserID = u.UserID
+JOIN Subjects s  ON ts.SubjectID = s.SubjectID
+WHERE ts.TutoringSessionID = @id;";
+
+            var p = new Dictionary<string, object?> { ["@id"] = sessionId };
+
+            using var con = await OpenAsync();
+            using var cmd = BuildCommand(con, sql, p);
+            using var r = await cmd.ExecuteReaderAsync();
+            if (!await r.ReadAsync()) return null;
+
+            // project row
+            var vm = new SessionDetailsVM
+            {
+                TutoringSessionID = r.GetInt32(r.GetOrdinal("TutoringSessionID")),
+                Status = r.GetString(r.GetOrdinal("Status")),
+                SubjectName = r.GetString(r.GetOrdinal("SubjectName")),
+                SessionDate = DateOnly.FromDateTime(r.GetDateTime(r.GetOrdinal("SessionDate"))),
+                StartTime = (r["StartTime"] is TimeSpan ts ? ts : TimeSpan.Zero),
+                DurationHours = r.GetDecimal(r.GetOrdinal("DurationHours")),
+                UserID = r.GetInt32(r.GetOrdinal("UserID")),
+                FirstName = r.GetString(r.GetOrdinal("FirstName")),
+                Surname = r.GetString(r.GetOrdinal("Surname")),
+                Email = r.GetString(r.GetOrdinal("Email")),
+                BaseCost = r.GetDecimal(r.GetOrdinal("BaseCost")),
+                PointsSpent = r.GetInt32(r.GetOrdinal("PointsSpent")),
+            };
+
+            // fill unpaid total
+            vm.UnpaidRandForUser = await GetUnpaidRandForUserAsync(vm.UserID);
+            return vm;
+        }
+
+        public async Task<decimal> GetUnpaidRandForUserAsync(int userId)
+        {
+            const string sql = @"
+SELECT COALESCE(SUM(CASE 
+    WHEN (BaseCost - PointsSpent) < 0 THEN 0 
+    ELSE (BaseCost - PointsSpent) 
+END), 0)
+FROM TutoringSession
+WHERE UserID = @uid
+  AND Status = 'Accepted'
+  AND PaidDate IS NULL;";
+
+            var p = new Dictionary<string, object?> { ["@uid"] = userId };
+            return await ExecuteScalarAsync<decimal>(sql, p);
+        }
+
+        public async Task<(bool Ok, string Message)> UpdateSessionStatusAsync(int sessionId, string newStatus)
+        {
+            const string getSql = @"
+SELECT TutoringSessionID, Status, PaidDate, CancellationDate
+FROM TutoringSession
+WHERE TutoringSessionID = @id";
+
+            using var con = await OpenAsync();
+
+            string currentStatus;
+            // ⬇️ Reader is fully disposed before we go on to the UPDATE
+            using (var getCmd = BuildCommand(con, getSql, new Dictionary<string, object?> { ["@id"] = sessionId }))
+            using (var r = await getCmd.ExecuteReaderAsync())
+            {
+                if (!await r.ReadAsync())
+                    return (false, "Session not found.");
+
+                currentStatus = r["Status"] as string ?? "";
+            }
+
+            // Legal transitions:
+            bool legal = currentStatus switch
+            {
+                "Requested" => newStatus is "Accepted" or "Denied",
+                "Accepted" => newStatus is "Paid" or "Cancelled",
+                _ => false
+            };
+            if (!legal) return (false, $"Illegal transition: {currentStatus} → {newStatus}");
+
+            string updateSql;
+            var p = new Dictionary<string, object?> { ["@id"] = sessionId, ["@status"] = newStatus };
+
+            if (newStatus == "Paid")
+            {
+                updateSql = @"UPDATE TutoringSession
+                      SET Status = @status, PaidDate = SYSUTCDATETIME()
+                      WHERE TutoringSessionID = @id;";
+            }
+            else if (newStatus == "Cancelled")
+            {
+                updateSql = @"UPDATE TutoringSession
+                      SET Status = @status, CancellationDate = SYSUTCDATETIME()
+                      WHERE TutoringSessionID = @id;";
+            }
+            else
+            {
+                updateSql = @"UPDATE TutoringSession
+                      SET Status = @status, PaidDate = NULL, CancellationDate = NULL
+                      WHERE TutoringSessionID = @id;";
+            }
+
+            using var updCmd = BuildCommand(con, updateSql, p);
+            var rows = await updCmd.ExecuteNonQueryAsync();
+            return rows > 0 ? (true, "Status updated.") : (false, "No changes applied.");
+        }
+
+
+
+
+
+
     }
 }

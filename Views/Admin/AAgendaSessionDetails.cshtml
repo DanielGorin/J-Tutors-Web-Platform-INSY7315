@@ -1,0 +1,77 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.SessionDetailsVM
+@{
+    Layout = null;
+    string Price(decimal v) => "R " + v.ToString("0.00");
+}
+
+<div class="card p-16">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="mb-0">@Model.SubjectName</h5>
+        <span class="badge @(Model.Status switch {
+            "Requested" => "bg-warning text-dark",
+            "Accepted"  => "bg-success",
+            "Paid"      => "bg-primary",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-light text-dark"
+        })">@Model.Status</span>
+    </div>
+
+    <div class="text-muted mb-2">
+        @Model.SessionDate.ToString("yyyy-MM-dd") &middot; @Model.StartTime.ToString(@"hh\:mm")
+        &middot; @Model.DurationHours.ToString("0.##")h
+    </div>
+
+    <div class="mb-3">
+        <div><strong>Requested by:</strong> @Model.RequestingFullName</div>
+        <div class="text-muted small">@Model.Email</div>
+    </div>
+
+    <div class="mb-3">
+        <div><strong>Base cost:</strong> @Price(Model.BaseCost)</div>
+        <div><strong>Points spent:</strong> @Model.PointsSpent pts</div>
+        <div><strong>Final:</strong> @Price(Model.FinalRand)</div>
+    </div>
+
+    <div class="mb-3">
+        <span class="chip">Unpaid total (this user): @Price(Model.UnpaidRandForUser)</span>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        @switch (Model.Status)
+        {
+            case "Requested":
+                <button type="button" class="btn btn-success" data-action="Accept" data-session-id="@Model.TutoringSessionID">Accept</button>
+                <button type="button" class="btn btn-outline-danger" data-action="Deny" data-session-id="@Model.TutoringSessionID">Deny</button>
+                break;
+
+            case "Accepted":
+                <button type="button" class="btn btn-primary" data-action="MarkPaid" data-session-id="@Model.TutoringSessionID">Mark Paid</button>
+                <button type="button" class="btn btn-outline-warning" data-action="Cancel" data-session-id="@Model.TutoringSessionID">Cancel</button>
+                break;
+
+            case "Paid":
+                <span class="text-muted">This session is paid. No further actions available.</span>
+                break;
+
+            case "Cancelled":
+                <span class="text-muted">This session is cancelled. No further actions available.</span>
+                break;
+
+            default:
+                <span class="text-muted">No actions available.</span>
+                break;
+        }
+    </div>
+
+
+    @* Step 3 will add action buttons here *@
+</div>
+
+<style>
+    /* Make the card and its borders follow theme variables */
+    .card {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+</style>

@@ -3,7 +3,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-// using Microsoft.AspNetCore.Authorization; // ← enable if you gate admin with roles
+//using Microsoft.AspNetCore.Authorization; // ← enable if you gate admin with roles
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
 using J_Tutors_Web_Platform.Models.Scheduling;
@@ -35,19 +35,20 @@ namespace J_Tutors_Web_Platform.Controllers
         private readonly AdminService _adminService;
         private readonly AuthService _authService;
 
+
         public AdminController(AdminService adminService, AuthService authService)
         {
             _adminService = adminService;
             _authService = authService;
         }
-
-        [HttpGet]
-        public IActionResult ADashboard()
-        {
-            ViewData["NavSection"] = "Admin";
-            // TODO: Populate dashboard metrics/widgets here if desired
-            return View("~/Views/Admin/ADashboard.cshtml");
-        }
+            [HttpGet]
+            public IActionResult ADashboard()
+            {
+                ViewData["NavSection"] = "Admin";
+                // TODO: Populate dashboard metrics/widgets here if desired
+                return View("~/Views/Admin/ADashboard.cshtml");
+            }
+        
 
         // ============================================================================
         // USERS: Directory

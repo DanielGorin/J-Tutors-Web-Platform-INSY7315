@@ -7,7 +7,7 @@ namespace J_Tutors_Web_Platform.ViewModels
     public sealed class AAgendaPageVM
     {
         // Header counts
-        public int ScheduledCount { get; set; }
+        public int RequestedCount { get; set; }
         public int AcceptedCount { get; set; }
         public int PaidCount { get; set; }
         public int CancelledCount { get; set; }
@@ -19,6 +19,7 @@ namespace J_Tutors_Web_Platform.ViewModels
         public AgendaSlotsVM? Slots { get; set; }
         public AgendaInboxVM? Inbox { get; set; }
         public AgendaCalendarVM? Calendar { get; set; }
+        public AgendaInboxDisplayVM? InboxDisplay { get; set; }
     }
 
     public sealed class AgendaSlotsVM
@@ -33,7 +34,7 @@ namespace J_Tutors_Web_Platform.ViewModels
 
     public sealed class AgendaInboxVM
     {
-        public IReadOnlyList<TutoringSession> Scheduled { get; set; }
+        public IReadOnlyList<TutoringSession> Requested { get; set; }
             = Array.Empty<TutoringSession>();
         public IReadOnlyList<TutoringSession> Accepted { get; set; }
             = Array.Empty<TutoringSession>();
@@ -47,7 +48,7 @@ namespace J_Tutors_Web_Platform.ViewModels
     {
         public int Year { get; set; }
         public int Month { get; set; } // 1-12
-        public bool IncludeScheduled { get; set; }
+        public bool IncludeRequested { get; set; }
 
         public IReadOnlyList<TutoringSession> Sessions { get; set; }
             = Array.Empty<TutoringSession>();

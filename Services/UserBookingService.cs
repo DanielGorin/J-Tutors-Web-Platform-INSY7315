@@ -5,539 +5,390 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using J_Tutors_Web_Platform.Models.Shared;
+using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    // DTOs
-    public sealed record ActiveSubjectDto(
-        int SubjectID,
-        string SubjectName,
-        decimal HourlyRate,
-        decimal MinHours,
-        decimal MaxHours,
-        decimal MaxPointDiscount);
-
-    public sealed record QuoteResult(
-        decimal HoursPerSession,
-        int SessionCount,
-        decimal HourlyRate,
-        decimal BaseTotal,
-        decimal PointsPercentApplied,
-        decimal PointsValueZar,
-        decimal PayableAfterPoints);
-
-    public sealed record AvailabilityCapacity(
-        int AdminID,
-        DateTime Date,
-        TimeSpan Start,
-        TimeSpan End,
-        int BlockMinutes,
-        int MinutesPerSession,
-        int SlotCount);
-
-    public sealed record SlotOption(DateTime Date, TimeSpan StartTime, int Minutes);
-
     /// <summary>
-    /// SERVICE: UserBookingService
-    /// PURPOSE: Subjects & pricing read; quoting; availability; reservation.
-    /// STORAGE: Azure SQL via ADO.NET (SqlConnection/SqlCommand).
+    /// User booking flow using ADO.NET (no EF).
+    /// Tables used:
+    ///  - Subjects(SubjectID, SubjectName, IsActive, ...)
+    ///  - PricingRule(PricingRuleID, SubjectID, HourlyRate, MinHours, MaxHours, MaxPointDiscount, ...)
+    ///  - AvailabilityBlock(AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime)
+    ///  - TutoringSession(..., UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status, ...)
     /// </summary>
     public sealed class UserBookingService
     {
-        private readonly string _connStr;
-        private readonly ILogger<UserBookingService> _log;
+        private readonly IConfiguration _config;
+        private readonly AdminAgendaService _agenda;
+        private const string ConnName = "AzureSql";
 
-        public UserBookingService(IConfiguration cfg, ILogger<UserBookingService> log)
+        public UserBookingService(IConfiguration config, AdminAgendaService agenda)
         {
-            _connStr = cfg.GetConnectionString("AzureSql")
-                ?? throw new ArgumentException("Missing DB connection string.", nameof(cfg));
-            _log = log;
+            _config = config;
+            _agenda = agenda;
         }
 
-        // -------------------- Subjects & Pricing --------------------
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Connection helpers
+        // ─────────────────────────────────────────────────────────────────────────────
+        private string GetConnectionString()
+            => _config.GetConnectionString(ConnName)
+               ?? throw new InvalidOperationException($"Connection string '{ConnName}' not found.");
 
-        public async Task<IReadOnlyList<ActiveSubjectDto>> GetActiveSubjectsAsync()
+        private async Task<SqlConnection> OpenAsync()
+        {
+            var con = new SqlConnection(GetConnectionString());
+            await con.OpenAsync();
+            return con;
+        }
+
+        private static SqlCommand Cmd(SqlConnection con, string sql, IDictionary<string, object?>? p = null)
+        {
+            var cmd = new SqlCommand(sql, con) { CommandType = CommandType.Text };
+            if (p != null)
+                foreach (var kv in p)
+                    cmd.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+            return cmd;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Subjects (dropdown)
+        // ─────────────────────────────────────────────────────────────────────────────
+        public IReadOnlyList<SubjectListItemVM> GetSubjectsForBooking()
         {
             const string sql = @"
-SELECT s.SubjectID, s.SubjectName,
-       ISNULL(pr.HourlyRate,0)       AS HourlyRate,
-       ISNULL(pr.MinHours,0)         AS MinHours,
-       ISNULL(pr.MaxHours,0)         AS MaxHours,
-       ISNULL(pr.MaxPointDiscount,0) AS MaxPointDiscount
-FROM   dbo.Subjects s
-LEFT   JOIN dbo.PricingRule pr ON pr.SubjectID = s.SubjectID
-WHERE  s.IsActive = 1
-ORDER  BY s.SubjectName;";
+SELECT SubjectID, SubjectName
+FROM Subjects
+WHERE IsActive = 1
+ORDER BY SubjectName;";
 
-            var list = new List<ActiveSubjectDto>();
+            using var con = new SqlConnection(GetConnectionString());
+            con.Open();
+            using var cmd = new SqlCommand(sql, con);
+            using var r = cmd.ExecuteReader();
 
-            await using var conn = new SqlConnection(_connStr);
-            await using var cmd = new SqlCommand(sql, conn);
-            await conn.OpenAsync();
-
-            await using var r = await cmd.ExecuteReaderAsync();
-            while (await r.ReadAsync())
+            var list = new List<SubjectListItemVM>();
+            while (r.Read())
             {
-                list.Add(new ActiveSubjectDto(
-                    r.GetInt32(r.GetOrdinal("SubjectID")),
-                    r.GetString(r.GetOrdinal("SubjectName")),
-                    r.IsDBNull(r.GetOrdinal("HourlyRate")) ? 0m : Convert.ToDecimal(r["HourlyRate"], CultureInfo.InvariantCulture),
-                    r.IsDBNull(r.GetOrdinal("MinHours")) ? 0m : Convert.ToDecimal(r["MinHours"], CultureInfo.InvariantCulture),
-                    r.IsDBNull(r.GetOrdinal("MaxHours")) ? 0m : Convert.ToDecimal(r["MaxHours"], CultureInfo.InvariantCulture),
-                    r.IsDBNull(r.GetOrdinal("MaxPointDiscount")) ? 0m : Convert.ToDecimal(r["MaxPointDiscount"], CultureInfo.InvariantCulture)
-                ));
+                list.Add(new SubjectListItemVM
+                {
+                    Id = r.GetInt32(0),
+                    Name = r.GetString(1)
+                });
             }
-
             return list;
         }
 
-        /// <summary>
-        /// Server-authoritative quote. Locks hours to 0.5 increments and points to 10% increments capped by subject rule.
-        /// </summary>
-        public QuoteResult Quote(
-            decimal hoursPerSession,
-            int sessionCount,
-            decimal hourlyRate,
-            decimal requestedPointsPercent,
-            decimal capPercent)
-        {
-            // 0.5 hour step (round away from zero)
-            hoursPerSession = Math.Round(hoursPerSession * 2, MidpointRounding.AwayFromZero) / 2m;
-            if (hoursPerSession <= 0) throw new ArgumentException("Hours per session must be > 0.", nameof(hoursPerSession));
-            if (sessionCount <= 0) throw new ArgumentException("Session count must be > 0.", nameof(sessionCount));
-            if (hourlyRate < 0) throw new ArgumentException("Hourly rate must be ≥ 0.", nameof(hourlyRate));
-
-            // Cap + lock to 10%
-            var pct = Math.Clamp(requestedPointsPercent, 0m, capPercent);
-            pct = Math.Round(pct / 10m, MidpointRounding.AwayFromZero) * 10m;
-
-            var baseTotal = Math.Round(sessionCount * hoursPerSession * hourlyRate, 2);
-            var pointsValue = Math.Round(baseTotal * (pct / 100m), 2);
-            var payable = Math.Max(0, baseTotal - pointsValue);
-
-            return new QuoteResult(hoursPerSession, sessionCount, hourlyRate, baseTotal, pct, pointsValue, payable);
-        }
-
-        // -------------------- Availability → SlotOptions --------------------
-
-        public async Task<IReadOnlyList<SlotOption>> GetAvailableSlotsAsync(
-            int adminId,
-            decimal hoursPerSession,
-            DateTime fromInclusive,
-            DateTime toExclusive)
-        {
-            var minutesPerSession = (int)Math.Round(hoursPerSession * 60m);
-            if (minutesPerSession <= 0) return Array.Empty<SlotOption>();
-
-            const string sqlBlocks = @"
-SELECT AvailabilityBlockID, BlockDate, StartTime, EndTime
-FROM   dbo.AvailabilityBlock
-WHERE  AdminID = @a
-  AND  BlockDate >= @fromDate
-  AND  BlockDate <  @toDate
-ORDER  BY BlockDate, StartTime;";
-
-            var slots = new List<SlotOption>();
-
-            await using var conn = new SqlConnection(_connStr);
-            await conn.OpenAsync();
-
-            await using (var cmd = new SqlCommand(sqlBlocks, conn))
-            {
-                cmd.Parameters.AddWithValue("@a", adminId);
-                cmd.Parameters.AddWithValue("@fromDate", fromInclusive.Date);
-                cmd.Parameters.AddWithValue("@toDate", toExclusive.Date);
-
-                await using var r = await cmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
-                {
-                    var date = ((DateTime)r["BlockDate"]).Date;
-                    var st = (TimeSpan)r["StartTime"];
-                    var et = (TimeSpan)r["EndTime"];
-
-                    // Slide across the block in 15-minute increments
-                    var cursor = st;
-                    while (cursor.Add(TimeSpan.FromMinutes(minutesPerSession)) <= et)
-                    {
-                        if (await IsFreeAsync(conn, adminId, date, cursor, minutesPerSession))
-                            slots.Add(new SlotOption(date, cursor, minutesPerSession));
-
-                        cursor = cursor.Add(TimeSpan.FromMinutes(15));
-                    }
-                }
-            }
-
-            // Keep results reasonable
-            return slots.Count > 2000 ? slots.Take(2000).ToList() : slots;
-        }
-
-        // Overlap check using SessionDate (date) + StartTime (time)
-        private static async Task<bool> IsFreeAsync(
-            SqlConnection conn, int adminId, DateTime date, TimeSpan startTime, int minutes)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Subject config from latest PricingRule
+        // ─────────────────────────────────────────────────────────────────────────────
+        public SubjectConfigVM? GetSubjectConfig(int subjectId)
         {
             const string sql = @"
-DECLARE @startDt  datetime2 = DATEADD(SECOND, DATEDIFF(SECOND,'00:00:00', @startTime), CAST(@date AS datetime2));
-DECLARE @endDt    datetime2 = DATEADD(MINUTE, @mins, @startDt);
+SELECT TOP 1 s.SubjectID, s.SubjectName,
+       pr.HourlyRate, pr.MinHours, pr.MaxHours, pr.MaxPointDiscount
+FROM Subjects s
+LEFT JOIN PricingRule pr ON pr.SubjectID = s.SubjectID
+WHERE s.SubjectID = @sid AND s.IsActive = 1
+ORDER BY pr.PricingRuleID DESC;";
 
--- overlap if existingStart < newEnd AND existingEnd > newStart
-SELECT CASE WHEN EXISTS (
-    SELECT 1
-    FROM   dbo.TutoringSession s
-    WHERE  s.AdminID = @a
-      AND  s.Status IN (0,1,2) -- Pending/Accepted/Scheduled (align with your enum)
-      AND  DATEADD(SECOND, DATEDIFF(SECOND,'00:00:00', s.StartTime), CAST(s.SessionDate AS datetime2)) < @endDt
-      AND  DATEADD(MINUTE, CAST(s.DurationHours * 60 AS int),
-           DATEADD(SECOND, DATEDIFF(SECOND,'00:00:00', s.StartTime), CAST(s.SessionDate AS datetime2))) > @startDt
-) THEN 0 ELSE 1 END;";
+            using var con = new SqlConnection(GetConnectionString());
+            con.Open();
+            using var cmd = new SqlCommand(sql, con);
+            cmd.Parameters.AddWithValue("@sid", subjectId);
 
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@a", adminId);
-            cmd.Parameters.AddWithValue("@date", date.Date);
-            cmd.Parameters.AddWithValue("@startTime", startTime);
-            cmd.Parameters.AddWithValue("@mins", minutes);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return null;
 
-            var ok = (int)await cmd.ExecuteScalarAsync();
-            return ok == 1;
+            if (r.IsDBNull(r.GetOrdinal("HourlyRate")))
+                throw new InvalidOperationException("No pricing rule defined for this subject.");
+
+            var hourly = r.GetDecimal(r.GetOrdinal("HourlyRate"));
+            var minHours = r.GetDecimal(r.GetOrdinal("MinHours"));
+            var maxHours = r.GetDecimal(r.GetOrdinal("MaxHours"));
+            var maxPointDiscount = r.GetDecimal(r.GetOrdinal("MaxPointDiscount"));
+
+            int minMin = (int)Math.Round(minHours * 60m, MidpointRounding.AwayFromZero);
+            int maxMin = (int)Math.Round(maxHours * 60m, MidpointRounding.AwayFromZero);
+            int maxPct = (int)Math.Floor(maxPointDiscount);
+
+            return new SubjectConfigVM
+            {
+                SubjectId = r.GetInt32(r.GetOrdinal("SubjectID")),
+                SubjectName = r.GetString(r.GetOrdinal("SubjectName")),
+                HourlyRate = hourly,
+                MinDurationMinutes = minMin,
+                MaxDurationMinutes = maxMin,
+                DurationStepMinutes = 30,
+                MaxDiscountPercent = Math.Max(0, maxPct),
+                DiscountStepPercent = 10
+            };
         }
 
-        // -------------------- Reserve (create pending) & consume availability --------------------
-
-        public async Task<int> CreatePendingSessionsAsync(
-            int userId,
-            int adminId,
-            int subjectId,
-            decimal hoursPerSession,
-            decimal hourlyRate,
-            decimal pointsPercentApplied,
-            IEnumerable<(DateTime date, TimeSpan startTime)> selected)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Quote
+        // ─────────────────────────────────────────────────────────────────────────────
+        public QuoteVM CalculateQuote(int subjectId, int durationMinutes, int discountPercentRaw)
         {
-            var minutes = (int)Math.Round(hoursPerSession * 60m);
-            var created = 0;
+            var cfg = GetSubjectConfig(subjectId) ?? throw new InvalidOperationException("Subject not found.");
+            var duration = ClampToStep(durationMinutes, cfg.MinDurationMinutes, cfg.MaxDurationMinutes, cfg.DurationStepMinutes);
+            var pct = ClampToStep(discountPercentRaw, 0, cfg.MaxDiscountPercent, cfg.DiscountStepPercent);
 
-            await using var conn = new SqlConnection(_connStr);
-            await conn.OpenAsync();
-            await using var tx = await conn.BeginTransactionAsync();
+            var durationHours = (decimal)duration / 60m;
+            var baseCost = cfg.HourlyRate * durationHours;
 
-            try
+            var moneyDiscount = Math.Round(baseCost * pct / 100m, 2, MidpointRounding.AwayFromZero);
+            var final = baseCost - moneyDiscount;
+
+            return new QuoteVM
             {
-                foreach (var (date, start) in selected.OrderBy(s => s.date).ThenBy(s => s.startTime))
+                BaseCost = baseCost,
+                DiscountPercentApplied = pct,
+                PointsToCharge = pct, // 1 point per 1%
+                MoneyDiscount = moneyDiscount,
+                FinalCost = final
+            };
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Month availability (uses AdminAgendaService for slots, SQL for sessions)
+        // ─────────────────────────────────────────────────────────────────────────────
+        public async Task<AvailabilityMonthVM> GetAvailabilityMonthAsync(
+            int subjectId, int durationMinutes, int year, int month, int? adminId)
+        {
+            var cfg = GetSubjectConfig(subjectId) ?? throw new InvalidOperationException("Subject not found.");
+            var duration = ClampToStep(durationMinutes, cfg.MinDurationMinutes, cfg.MaxDurationMinutes, cfg.DurationStepMinutes);
+            var durationTs = TimeSpan.FromMinutes(duration);
+
+            var first = new DateTime(year, month, 1);
+            var next = first.AddMonths(1);
+            var cutoffDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
+
+            // A) Availability blocks (re-use AdminAgendaService)
+            var blocks = await _agenda.GetAvailabilityBlocksAsync(first, next, adminId);
+
+            // B) Sessions that *block* time: Requested/Accepted/Paid
+            const string sql = @"
+SELECT SessionDate, StartTime, DurationHours
+FROM TutoringSession
+WHERE SubjectID = @sid
+  AND (@aid IS NULL OR AdminID = @aid)
+  AND SessionDate >= @from AND SessionDate < @to
+  AND Status IN ('Requested','Accepted','Paid');";
+
+            var sessions = new List<(DateOnly Date, TimeSpan Start, decimal DurHours)>();
+            using (var con = await OpenAsync())
+            using (var cmd = Cmd(con, sql, new Dictionary<string, object?>
+            {
+                ["@sid"] = subjectId,
+                ["@aid"] = (object?)adminId ?? DBNull.Value,
+                ["@from"] = first.Date,
+                ["@to"] = next.Date
+            }))
+            using (var r = await cmd.ExecuteReaderAsync())
+            {
+                while (await r.ReadAsync())
                 {
-                    if (!await IsFreeAsync(conn, adminId, date, start, minutes))
-                        continue;
+                    var date = DateOnly.FromDateTime(r.GetDateTime(0));
+                    var start = (TimeSpan)r["StartTime"];
+                    var dur = r.GetDecimal(2);
+                    sessions.Add((date, start, dur));
+                }
+            }
 
-                    var baseCost = Math.Round(hoursPerSession * hourlyRate, 2);
-                    var discount = Math.Round(baseCost * (pointsPercentApplied / 100m), 2);
-                    var pointsUsed = (int)Math.Round(discount, MidpointRounding.AwayFromZero); // 1:1
+            var days = new List<DayAvailabilityVM>();
 
-                    const string ins = @"
-INSERT INTO dbo.TutoringSession
-    (UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status)
-VALUES
-    (@u, @a, @s, @d, @t, @dur, @cost, @pts, 0); -- 0 = Pending";
+            foreach (var grp in blocks
+                     .Where(b => DateOnly.FromDateTime(b.BlockDate) >= cutoffDate)
+                     .GroupBy(b => DateOnly.FromDateTime(b.BlockDate)))
+            {
+                var day = grp.Key;
+                var slotVms = new List<SlotVM>();
+                var daySessions = sessions.Where(s => s.Date == day).ToList();
 
-                    await using (var cmd = new SqlCommand(ins, conn, (SqlTransaction)tx))
+                foreach (var b in grp.OrderBy(b => b.StartTime))
+                {
+                    var blockStart = b.StartTime;
+                    var blockEnd = b.EndTime;
+
+                    if (blockEnd - blockStart < durationTs) continue;
+
+                    var options = new List<TimeOptionVM>();
+                    for (var start = blockStart; start + durationTs <= blockEnd; start = start.Add(TimeSpan.FromMinutes(30)))
                     {
-                        cmd.Parameters.AddWithValue("@u", userId);
-                        cmd.Parameters.AddWithValue("@a", adminId);
-                        cmd.Parameters.AddWithValue("@s", subjectId);
-                        cmd.Parameters.AddWithValue("@d", date.Date);
-                        cmd.Parameters.AddWithValue("@t", start);
-                        cmd.Parameters.AddWithValue("@dur", hoursPerSession);
-                        cmd.Parameters.AddWithValue("@cost", baseCost);
-                        cmd.Parameters.AddWithValue("@pts", pointsUsed);
-                        await cmd.ExecuteNonQueryAsync();
+                        var end = start + durationTs;
+
+                        bool clash = daySessions.Any(s =>
+                        {
+                            var sEnd = s.Start + TimeSpan.FromHours((double)s.DurHours);
+                            return start < sEnd && end > s.Start;
+                        });
+                        if (clash) continue;
+
+                        options.Add(new TimeOptionVM
+                        {
+                            SessionDate = day,
+                            StartTime = start,
+                            EndTime = end
+                        });
                     }
 
-                    await ConsumeAvailabilityAsync(conn, (SqlTransaction)tx, adminId, date, start, minutes);
-                    created++;
+                    if (options.Count == 0) continue;
+
+                    slotVms.Add(new SlotVM
+                    {
+                        AvailabilityBlockId = b.AvailabilityBlockID,
+                        BlockDate = day,
+                        BlockStart = blockStart,
+                        BlockEnd = blockEnd,
+                        StartOptions = options
+                    });
                 }
 
-                await tx.CommitAsync();
-                return created;
+                if (slotVms.Count > 0)
+                {
+                    days.Add(new DayAvailabilityVM { Day = day.Day, Slots = slotVms });
+                }
             }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "Failed to create pending sessions.");
-                await tx.RollbackAsync();
-                throw;
-            }
+
+            return new AvailabilityMonthVM { Year = year, Month = month, Days = days };
         }
 
-        private static async Task ConsumeAvailabilityAsync(
-            SqlConnection conn, SqlTransaction tx, int adminId, DateTime date, TimeSpan start, int minutes)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Create booking request (validates range + conflicts in SQL)
+        // ─────────────────────────────────────────────────────────────────────────────
+        public BookingResult RequestBooking(int userId, BookingRequestVM dto, int? adminIdForSlotOwner = null)
         {
-            var end = start.Add(TimeSpan.FromMinutes(minutes));
+            var cfg = GetSubjectConfig(dto.SubjectId) ?? throw new InvalidOperationException("Subject not found.");
 
-            const string find = @"
-SELECT TOP 1 AvailabilityBlockID, StartTime, EndTime
-FROM   dbo.AvailabilityBlock
-WHERE  AdminID = @a
-  AND  BlockDate = @d
-  AND  @start >= StartTime
-  AND  @end   <= EndTime
-ORDER  BY StartTime;";
-
-            int? id = null;
-            TimeSpan? oldStart = null;
-            TimeSpan? oldEnd = null;
-
-            await using (var cmd = new SqlCommand(find, conn, tx))
+            // Parse "HH:mm"
+            if (!TimeSpan.TryParseExact(dto.StartTime, "hh\\:mm", CultureInfo.InvariantCulture, out var startTs) &&
+                !TimeSpan.TryParseExact(dto.StartTime, "h\\:mm", CultureInfo.InvariantCulture, out startTs) &&
+                !TimeSpan.TryParse(dto.StartTime, out startTs))
             {
-                cmd.Parameters.AddWithValue("@a", adminId);
-                cmd.Parameters.AddWithValue("@d", date.Date);
-                cmd.Parameters.AddWithValue("@start", start);
-                cmd.Parameters.AddWithValue("@end", end);
-
-                await using var r = await cmd.ExecuteReaderAsync();
-                if (await r.ReadAsync())
-                {
-                    id = r.GetInt32(0);
-                    oldStart = (TimeSpan)r["StartTime"];
-                    oldEnd = (TimeSpan)r["EndTime"];
-                }
+                return new BookingResult { Ok = false, Message = "Invalid start time format." };
             }
 
-            if (id is null) return;
+            var duration = ClampToStep(dto.DurationMinutes, cfg.MinDurationMinutes, cfg.MaxDurationMinutes, cfg.DurationStepMinutes);
+            var pct = ClampToStep(dto.DiscountPercent, 0, cfg.MaxDiscountPercent, cfg.DiscountStepPercent);
 
-            // consume head/tail/split
-            if (start <= oldStart && end >= oldEnd)
+            var durationTs = TimeSpan.FromMinutes(duration);
+            var endTs = startTs + durationTs;
+
+            // ≥ 2 days away
+            var cutoff = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
+            if (dto.SessionDate < cutoff)
+                return new BookingResult { Ok = false, Message = "Selected date must be at least 2 days in the future." };
+
+            // 1) Find containing availability block
+            const string findBlockSql = @"
+SELECT TOP 1 AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime
+FROM AvailabilityBlock
+WHERE CAST(BlockDate AS date) = @date
+  AND (@aid IS NULL OR AdminID = @aid)
+  AND StartTime <= @start AND EndTime >= @end
+ORDER BY StartTime;";
+
+            int? blockAdminId = null;
+            using (var con = OpenAsync().GetAwaiter().GetResult())
+            using (var cmd = Cmd(con, findBlockSql, new Dictionary<string, object?>
             {
-                await using var del = new SqlCommand("DELETE FROM dbo.AvailabilityBlock WHERE AvailabilityBlockID=@id", conn, tx);
-                del.Parameters.AddWithValue("@id", id.Value);
-                await del.ExecuteNonQueryAsync();
-            }
-            else if (start <= oldStart && end < oldEnd)
+                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
+                ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
+                ["@start"] = startTs,
+                ["@end"] = endTs
+            }))
+            using (var r = cmd.ExecuteReader())
             {
-                await using var upd = new SqlCommand("UPDATE dbo.AvailabilityBlock SET StartTime=@st WHERE AvailabilityBlockID=@id", conn, tx);
-                upd.Parameters.AddWithValue("@st", end);
-                upd.Parameters.AddWithValue("@id", id.Value);
-                await upd.ExecuteNonQueryAsync();
+                if (!r.Read())
+                    return new BookingResult { Ok = false, Message = "Selected time is not within an availability block." };
+                blockAdminId = r.GetInt32(r.GetOrdinal("AdminID"));
             }
-            else if (start > oldStart && end >= oldEnd)
+
+            // 2) Check conflict in SQL
+            const string conflictSql = @"
+SELECT COUNT(*) 
+FROM TutoringSession
+WHERE SessionDate = @date
+  AND SubjectID = @sid
+  AND (@aid IS NULL OR AdminID = @aid)
+  AND Status IN ('Requested','Accepted','Paid')
+  AND StartTime < @end
+  AND DATEADD(minute, CAST(DurationHours * 60 as int), StartTime) > @start;";
+
+            int conflicts;
+            using (var con = OpenAsync().GetAwaiter().GetResult())
+            using (var cmd = Cmd(con, conflictSql, new Dictionary<string, object?>
             {
-                await using var upd = new SqlCommand("UPDATE dbo.AvailabilityBlock SET EndTime=@et WHERE AvailabilityBlockID=@id", conn, tx);
-                upd.Parameters.AddWithValue("@et", start);
-                upd.Parameters.AddWithValue("@id", id.Value);
-                await upd.ExecuteNonQueryAsync();
-            }
-            else
+                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
+                ["@sid"] = dto.SubjectId,
+                ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
+                ["@start"] = startTs,
+                ["@end"] = endTs
+            }))
             {
-                const string split = @"
-UPDATE dbo.AvailabilityBlock SET EndTime=@leftEnd WHERE AvailabilityBlockID=@id;
-INSERT INTO dbo.AvailabilityBlock (AdminID, BlockDate, StartTime, EndTime)
-VALUES (@a, @d, @rightStart, @rightEnd);";
-                await using var cmd = new SqlCommand(split, conn, tx);
-                cmd.Parameters.AddWithValue("@leftEnd", start);
-                cmd.Parameters.AddWithValue("@id", id.Value);
-                cmd.Parameters.AddWithValue("@a", adminId);
-                cmd.Parameters.AddWithValue("@d", date.Date);
-                cmd.Parameters.AddWithValue("@rightStart", end);
-                cmd.Parameters.AddWithValue("@rightEnd", oldEnd!);
-                await cmd.ExecuteNonQueryAsync();
+                conflicts = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
             }
+            if (conflicts > 0)
+                return new BookingResult { Ok = false, Message = "That time is no longer available." };
+
+            // 3) Compute price (authoritative)
+            var quote = CalculateQuote(dto.SubjectId, duration, pct);
+            var durationHours = (decimal)duration / 60m;
+
+            // 4) Insert session
+            const string insertSql = @"
+INSERT INTO TutoringSession
+(UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status)
+OUTPUT INSERTED.TutoringSessionID
+VALUES
+(@userId, @adminId, @sid, @date, @start, @durHours, @base, @pts, @status);";
+
+            int newId;
+            using (var con = OpenAsync().GetAwaiter().GetResult())
+            using (var cmd = Cmd(con, insertSql, new Dictionary<string, object?>
+            {
+                ["@userId"] = userId,
+                ["@adminId"] = blockAdminId!,
+                ["@sid"] = dto.SubjectId,
+                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
+                ["@start"] = startTs,
+                ["@durHours"] = durationHours,
+                ["@base"] = quote.BaseCost,
+                ["@pts"] = quote.PointsToCharge,
+                ["@status"] = "Requested"
+            }))
+            {
+                var scalar = cmd.ExecuteScalar();
+                newId = scalar is null || scalar is DBNull ? 0 : Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
+            }
+
+            return new BookingResult
+            {
+                Ok = newId > 0,
+                BookingId = newId,
+                Message = newId > 0 ? "Request sent to admin for approval." : "Could not create booking."
+            };
         }
 
-        public async Task<int?> FindAdminWithAvailabilityAsync(
-            DateTime fromInclusive,
-            DateTime toExclusive,
-            int? preferredAdminId = null)
+        // ─────────────────────────────────────────────────────────────────────────────
+        // Helpers
+        // ─────────────────────────────────────────────────────────────────────────────
+        private static int ClampToStep(int value, int min, int max, int step)
         {
-            await using var conn = new SqlConnection(_connStr);
-            await conn.OpenAsync();
+            if (value < min) value = min;
+            if (value > max) value = max;
 
-            Console.WriteLine($"[DEBUG] FindAdminWithAvailability window = [{fromInclusive:yyyy-MM-dd} .. {toExclusive:yyyy-MM-dd})");
+            var offset = value - min;
+            var snapped = (int)Math.Round(offset / (double)step) * step + min;
 
-            // Count rows in window (date-only compare)
-            const string SQL_COUNT = @"
-SELECT COUNT(*)
-FROM dbo.AvailabilityBlock
-WHERE CAST(BlockDate AS date) >= @from
-  AND CAST(BlockDate AS date) <  @to;";
-
-            int inRangeCount;
-            await using (var countCmd = new SqlCommand(SQL_COUNT, conn))
-            {
-                countCmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Date;
-                countCmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Date;
-                inRangeCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
-            }
-            Console.WriteLine($"[DEBUG] AvailabilityBlock rows in range: {inRangeCount}");
-
-            // Preferred admin first (only if present in window)
-            if (preferredAdminId is int pid)
-            {
-                const string SQL_PREF = @"
-SELECT TOP 1 1
-FROM dbo.AvailabilityBlock
-WHERE AdminID = @a
-  AND CAST(BlockDate AS date) >= @from
-  AND CAST(BlockDate AS date) <  @to;";
-                await using var prefCmd = new SqlCommand(SQL_PREF, conn);
-                prefCmd.Parameters.Add("@a", SqlDbType.Int).Value = pid;
-                prefCmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Date;
-                prefCmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Date;
-
-                var has = await prefCmd.ExecuteScalarAsync();
-                Console.WriteLine($"[DEBUG] Preferred AdminID={pid} has rows in window? {(has != null ? "YES" : "NO")}");
-                if (has != null) return pid;
-            }
-
-            // Any admin with rows in window
-            const string SQL_PICK_IN_RANGE = @"
-SELECT TOP 1 AdminID
-FROM dbo.AvailabilityBlock
-WHERE CAST(BlockDate AS date) >= @from
-  AND CAST(BlockDate AS date) <  @to
-ORDER BY AdminID;";
-            await using (var pickCmd = new SqlCommand(SQL_PICK_IN_RANGE, conn))
-            {
-                pickCmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Date;
-                pickCmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Date;
-                var val = await pickCmd.ExecuteScalarAsync();
-                if (val != null && val != DBNull.Value)
-                {
-                    var got = Convert.ToInt32(val);
-                    Console.WriteLine($"[DEBUG] Picked AdminID in window: {got}");
-                    return got;
-                }
-            }
-
-            // Diagnostics if nothing matched the window
-            const string SQL_SPAN = @"SELECT MIN(CAST(BlockDate AS date)), MAX(CAST(BlockDate AS date)) FROM dbo.AvailabilityBlock;";
-            await using (var spanCmd = new SqlCommand(SQL_SPAN, conn))
-            await using (var r = await spanCmd.ExecuteReaderAsync())
-            {
-                if (await r.ReadAsync())
-                {
-                    var min = r.IsDBNull(0) ? (DateTime?)null : r.GetDateTime(0);
-                    var max = r.IsDBNull(1) ? (DateTime?)null : r.GetDateTime(1);
-                    Console.WriteLine($"[DEBUG] AvailabilityBlock global span: min={min:yyyy-MM-dd}, max={max:yyyy-MM-dd}");
-                }
-            }
-
-            const string SQL_ADMINS = @"SELECT DISTINCT AdminID FROM dbo.AvailabilityBlock ORDER BY AdminID;";
-            await using (var adminsCmd = new SqlCommand(SQL_ADMINS, conn))
-            await using (var r2 = await adminsCmd.ExecuteReaderAsync())
-            {
-                var ids = new List<int>();
-                while (await r2.ReadAsync()) ids.Add(r2.GetInt32(0));
-                Console.WriteLine($"[DEBUG] Distinct AdminIDs present: {(ids.Count == 0 ? "(none)" : string.Join(", ", ids))}");
-            }
-
-            // Fallback: return any AdminID at all so UI can still progress
-            const string SQL_ANY = @"SELECT TOP 1 AdminID FROM dbo.AvailabilityBlock ORDER BY AdminID;";
-            await using (var anyCmd = new SqlCommand(SQL_ANY, conn))
-            {
-                var any = await anyCmd.ExecuteScalarAsync();
-                if (any != null && any != DBNull.Value)
-                {
-                    var got = Convert.ToInt32(any);
-                    Console.WriteLine($"[DEBUG] Fallback AdminID (outside window): {got}");
-                    return got;
-                }
-            }
-
-            Console.WriteLine("[DEBUG] No AvailabilityBlock rows exist.");
-            return null;
+            if (snapped < min) snapped = min;
+            if (snapped > max) snapped = max;
+            return snapped;
         }
-
-        /// <summary>
-        /// Capacity rows (internal; reused by debug slot counting).
-        /// </summary>
-        public async Task<IReadOnlyList<AvailabilityCapacity>> GetCapacityReportAsync(
-            DateTime fromInclusive,
-            DateTime toExclusive,
-            int minutesPerSession,
-            int? adminId = null)
-        {
-            if (minutesPerSession <= 0) return Array.Empty<AvailabilityCapacity>();
-
-            const string SQL = @"
-SELECT AdminID, BlockDate, StartTime, EndTime
-FROM dbo.AvailabilityBlock
-WHERE CAST(BlockDate AS date) >= @from
-  AND CAST(BlockDate AS date) <  @to
-  /**adminFilter**/
-ORDER BY BlockDate, StartTime;";
-
-            var rows = new List<AvailabilityCapacity>();
-
-            await using var conn = new SqlConnection(_connStr);
-            await conn.OpenAsync();
-
-            var sql = SQL.Replace("/**adminFilter**/", adminId.HasValue ? "AND AdminID = @a" : string.Empty);
-
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.Add("@from", SqlDbType.Date).Value = fromInclusive.Date;
-            cmd.Parameters.Add("@to", SqlDbType.Date).Value = toExclusive.Date;
-            if (adminId.HasValue) cmd.Parameters.Add("@a", SqlDbType.Int).Value = adminId.Value;
-
-            await using var r = await cmd.ExecuteReaderAsync();
-            while (await r.ReadAsync())
-            {
-                var a = r.GetInt32(r.GetOrdinal("AdminID"));
-                var d = ((DateTime)r["BlockDate"]).Date;
-                var st = (TimeSpan)r["StartTime"];
-                var et = (TimeSpan)r["EndTime"];
-
-                var blockMinutes = (int)(et - st).TotalMinutes;
-
-                int slotCount = 0;
-                if (blockMinutes >= minutesPerSession)
-                {
-                    // number of (minutesPerSession)-long windows if we slide in 15-minute steps
-                    slotCount = ((blockMinutes - minutesPerSession) / 15) + 1;
-                    if (slotCount < 0) slotCount = 0;
-                }
-
-                rows.Add(new AvailabilityCapacity(
-                    AdminID: a,
-                    Date: d,
-                    Start: st,
-                    End: et,
-                    BlockMinutes: blockMinutes,
-                    MinutesPerSession: minutesPerSession,
-                    SlotCount: slotCount));
-            }
-
-            return rows
-                .OrderByDescending(x => x.SlotCount)
-                .ThenBy(x => x.Date)
-                .ThenBy(x => x.AdminID)
-                .ToList();
-        }
-
-        // ========================== DEBUG: slot counts by length ==========================
-        // TEMP/DEBUG: For a list of session lengths (in minutes), compute the total number
-        // of sliding-window slots available in the next N days across all admins (or one).
-        // Uses the same 15-minute step rule as GetCapacityReportAsync.
-        public async Task<IDictionary<int, int>> GetGlobalSlotCountsAsync(
-            DateTime fromInclusive,
-            DateTime toExclusive,
-            IEnumerable<int> minutesPerSessionList,
-            int? adminId = null)
-        {
-            var result = new Dictionary<int, int>();
-
-            // Deduplicate + sort ascending for predictable output
-            var lengths = minutesPerSessionList
-                .Where(m => m > 0)
-                .Distinct()
-                .OrderBy(m => m)
-                .ToArray();
-
-            foreach (var m in lengths)
-            {
-                var rows = await GetCapacityReportAsync(fromInclusive, toExclusive, m, adminId);
-                var total = rows.Sum(r => r.SlotCount);
-                result[m] = total;
-            }
-
-            return result;
-        }
-        // ======================== END DEBUG: slot counts by length ========================
     }
 }

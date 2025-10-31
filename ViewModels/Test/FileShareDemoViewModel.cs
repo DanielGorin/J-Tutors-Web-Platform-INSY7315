@@ -1,7 +1,7 @@
 ﻿#nullable enable
 using System.Collections.Generic;
 
-namespace J_Tutors_Web_Platform.Models.Test
+namespace J_Tutors_Web_Platform.ViewModels.Test
 {
     public class FileShareDemoViewModel
     {

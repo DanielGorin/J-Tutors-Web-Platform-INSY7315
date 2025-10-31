@@ -45,7 +45,7 @@ namespace J_Tutors_Web_Platform.Models.Scheduling
         public int PointsSpent { get; set; }
 
         // Current status of the session 
-        public TutoringSessionStatus Status { get; set; } = TutoringSessionStatus.Scheduled;
+        public TutoringSessionStatus Status { get; set; } = TutoringSessionStatus.Accepted;
 
         // Optional timestamps
         public DateTime? CancellationDate { get; set; }

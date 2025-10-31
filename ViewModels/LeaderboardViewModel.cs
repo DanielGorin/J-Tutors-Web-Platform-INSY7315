@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace J_Tutors_Web_Platform.Models.Points
+namespace J_Tutors_Web_Platform.ViewModels
 {
     public enum LeaderboardViewMode { Current, Total }
     public enum LeaderboardTimeFilter { ThisMonth, Last30Days, LastMonth, AllTime }

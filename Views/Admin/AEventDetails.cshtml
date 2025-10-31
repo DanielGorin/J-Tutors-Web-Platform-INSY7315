@@ -1,4 +1,6 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.EventViewModel
+
+@{
     ViewData["Title"] = "Event Detail";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "Admin"; // ensure Admin navbar shows
@@ -145,97 +147,71 @@
 
     <!-- TOP: Event Basics (edit) + Summary / Quick actions -->
     <div class="row g-3 mb-16">
-        <div class="col-lg-8">
+        <div class="col-lg-16">
             <div class="card shadow p-24 h-100">
-                <h3 class="mb-8">Event Basics</h3>
+                @foreach (var evnt in Model.Events)
+                {
+                    <form asp-action="UpdateEvent" asp-controller="Event">
+                        <h4>Create Event (UI only for now)</h4>
+                        <div class="row g-3">
+                            <input type="hidden" name="EventID" value="@evnt.EventID" />
+                            <div class="col-lg-6">
+                                <label class="form-label" for="evName">Event Name</label>
+                                <input id="evName" name="Title" value="@evnt.Title" class="form-control" placeholder="Event 8" />
+                            </div>
+                            <div class="col-lg-6">
+                                <label class="form-label" for="evLocation">Location</label>
+                                <input id="evLocation" name="Location" value="@evnt.Location" class="form-control" placeholder="Community Centre" />
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <label class="form-label" for="evDate">Date</label>
+                                <input id="evDate" name="EventDate" value="@evnt.EventDate" type="datetime" class="form-control" />
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <label class="form-label" for="evStart">Start</label>
+                                <input id="evStart" name="StartTime" value="@evnt.StartTime" type="time" class="form-control" />
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <label class="form-label" for="evDuration">Duration (minutes)</label>
+                                <input id="evDuration" name="DurationMinutes" value="@evnt.DurationMinutes" type="number" class="form-control" placeholder="120" />
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <label class="form-label" for="evPoints">Points Reward</label>
+                                <input id="evPoints" name="PointsReward" value="@evnt.PointsReward" type="number" class="form-control" placeholder="25" />
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <label class="form-label" for="evGoal">Goal Participants</label>
+                                <input id="evGoal" name="GoalParticipants" value="@evnt.GoalParticipants" type="number" class="form-control" placeholder="20" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="evDescription">Description</label>
+                                <textarea id="evDescription" name="Description" rows="3" class="form-control">@evnt.Description</textarea>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label" for="evWhatsappURL">Whatsapp group URL</label>
+                                <input id="evWhatsappURL" name="WhatsappGroupUrl" value="@evnt.WhatsappGroupUrl" type="text" class="form-control" placeholder="placeholder.url" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label" for="evStatus">Status</label>
+                                <select id="evStatus" name="Status">
+                                    <option value="Draft">Draft</option>
+                                    <option value="Published">Published</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </div>
+                    </form>
+                }
 
                 @* ===== DEMO DATA (replace when wiring) ===== *@
-                <form>
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label" for="evName">Event Name</label>
-                            <input id="evName" class="form-control" value="Event 1" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="evPoints">Points Reward</label>
-                            <input id="evPoints" type="number" class="form-control" value="25" />
-                        </div>
-
-                        <div class="col-6 col-md-3">
-                            <label class="form-label" for="evDate">Date</label>
-                            <input id="evDate" type="date" class="form-control" value="2025-10-12" />
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label" for="evStart">Start</label>
-                            <input id="evStart" type="time" class="form-control" value="09:00" />
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label" for="evDuration">Duration (HH:MM)</label>
-                            <input id="evDuration" class="form-control" value="02:00" />
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label" for="evGoal">Goal Participants</label>
-                            <input id="evGoal" type="number" class="form-control" value="20" />
-                        </div>
-
-                        <div class="col-md-8">
-                            <label class="form-label" for="evLocation">Location</label>
-                            <input id="evLocation" class="form-control" value="Greenfield Park" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="evStatus">Status</label>
-                            <select id="evStatus" class="form-select">
-                                <option selected>Open</option>
-                                <option>Ended</option>
-                                <option>Completed</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label" for="evDescription">Description</label>
-                            <textarea id="evDescription" rows="3" class="form-control">Description: What the event is about. The quick brown fox jumped over the lazy dog.</textarea>
-                        </div>
-                    </div>
-                    <div class="mt-12 d-flex gap-2">
-                        <button class="btn btn-primary" disabled>Save Changes</button>
-                        <button class="btn btn-outline-secondary" disabled>Delete Event</button>
-                    </div>
-                </form>
+                
                 @* ===== /DEMO DATA =========================== *@
             </div>
         </div>
-
-        <div class="col-lg-4">
-            <div class="card shadow p-24 h-100">
-                <h3 class="mb-8">Summary & Quick Actions</h3>
-
-                <div class="mb-8 d-flex justify-content-between">
-                    <div>Date</div><strong>2025-10-12</strong>
-                </div>
-                <div class="mb-8 d-flex justify-content-between">
-                    <div>Time</div><strong>09:00 · 2h 00m</strong>
-                </div>
-                <div class="mb-8 d-flex justify-content-between">
-                    <div>Location</div><strong>Greenfield Park</strong>
-                </div>
-                <div class="mb-8 d-flex justify-content-between">
-                    <div>Points</div><strong>25</strong>
-                </div>
-                <div class="mb-8 d-flex justify-content-between">
-                    <div>Capacity</div><strong>Goal 20 · Current 12</strong>
-                </div>
-                <div class="mb-8">
-                    <span class="chip chip-open">Open</span>
-                </div>
-
-                <div class="d-flex flex-column gap-2 mt-8">
-                    <a class="btn btn-outline-primary btn-sm" disabled>Open WhatsApp Group</a>
-                    <a class="btn btn-outline-secondary btn-sm" disabled>Copy Share Link</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- PARTICIPANTS: Applied vs Enrolled -->
     <div class="row g-3 mb-16">
         <div class="col-lg-6">

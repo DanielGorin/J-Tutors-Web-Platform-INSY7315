@@ -47,7 +47,7 @@
                 {
                     @* ---- OLD ---- *@
                     <li class="nav-item"><a class="nav-link @Active("UDashboard")" asp-controller="Home" asp-action="UDashboard">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("UEvents")" asp-controller="Home" asp-action="UEvents">New Events</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("GetUEventList")" asp-controller="Event" asp-action="GetUEventList">New Events</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UEventHistory")" asp-controller="Home" asp-action="UEventHistory">Events History</a></li>
                     <li class="nav-item"><a class="nav-link @Active("USessions")" asp-controller="Home" asp-action="USessions">My Sessions</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UFileLibrary")" asp-controller="Home" asp-action="UFileLibrary">File Library</a></li>
@@ -66,7 +66,7 @@
                     <li class="nav-item"><a class="nav-link @Active("ASessionCalendar")" asp-controller="Admin" asp-action="ASessionCalendar">Sessions &amp; Calendar</a></li>
                     <li class="nav-item"><a class="nav-link @Active("Agenda")" asp-controller="AdminAgenda" asp-action="Agenda">Agenda</a></li>
                     <li class="nav-item"><a class="nav-link @Active("AUsers")" asp-controller="Admin" asp-action="AUserList">Users</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("AEvents")" asp-controller="Home" asp-action="AEventList">Events</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("GetAEventList")" asp-controller="Event" asp-action="GetAEventList">Events</a></li>
                     <li class="nav-item"><a class="nav-link @Active("AFiles")" asp-controller="Test" asp-action="GetFileShareRows">Files</a></li>
                     <li class="nav-item"><a class="nav-link @Active("AQuotations")" asp-controller="Home" asp-action="APricing">Quotations</a></li>
                     <li class="nav-item"><a class="nav-link @Active("ALeaderboard")" asp-controller="Home" asp-action="ALeaderboard">Leaderboard</a></li>

@@ -34,7 +34,7 @@ namespace J_Tutors_Web_Platform.Models.Events
         public string? Location { get; set; }
 
         // Date and time details
-        public DateTime EventDate { get; set; }
+        public DateOnly EventDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public int DurationMinutes { get; set; }
 
@@ -50,8 +50,8 @@ namespace J_Tutors_Web_Platform.Models.Events
         public EventStatus Status { get; set; } = EventStatus.Draft;
 
         // Timestamps
-        public DateTime CreationDate { get; set; }
-        public DateTime UpdateDate { get; set; }
+        public DateOnly CreationDate { get; set; }
+        public DateOnly UpdateDate { get; set; }
 
         // Navigation
         public ICollection<EventParticipation> Participations { get; set; } = new List<EventParticipation>();

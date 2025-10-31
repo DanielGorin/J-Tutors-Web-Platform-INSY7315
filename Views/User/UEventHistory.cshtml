@@ -1,4 +1,7 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.EventViewModel
+@using J_Tutors_Web_Platform.Models.Shared
+
+@{
     ViewData["Title"] = "Events History";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
@@ -138,13 +141,14 @@
         </div>
     </div>
 
-    <!-- Results Table -->
+    <!-- Inactive Events Table -->
     <div class="card shadow p-24">
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
                     <tr>
                         <th>Event</th>
+                        <th>Location</th>
                         <th>Date</th>
                         <th>Start</th>
                         <th>Duration</th>
@@ -164,46 +168,47 @@
                     @* --------------------------------------------------------------
                     Example row structure (REFERENCE ONLY — do not render now)*@
 
-                    <tr>
-                    <td>
-                    <div class="d-flex flex-column">
-                    <strong>Event 1</strong>
-                                <span class="caption">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.</span>
-                    </div>
-                    </td>
-                    <td>2025-08-12</td>
-                    <td>09:00</td>
-                    <td>2h 00m</td>
-                    <td><span class="chip chip-completed">Completed</span></td>
-                    <td>25</td>
-                    <td class="text-end">
-                    <a class="btn btn-sm btn-outline-primary">View Receipt</a>
-                    </td>
-                    </tr>
+                    @if (Model != null)
+                    {
+                        @foreach (var evnt in Model.DetailedEventRows)
+                        {
+                            @if (evnt.Status != EventStatus.Draft)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong>@evnt.Title</strong>
+                                            <span class="caption">@evnt.Description</span>
+                                        </div>
+                                    </td>
+                                    <td>@evnt.Location</td>
+                                    <td>@evnt.EventDate</td>
+                                    <td>@evnt.StartTime</td>
 
-                    <tr>
-                    <td><strong>Event 2</strong></td>
-                    <td>2025-07-01</td>
-                    <td>14:30</td>
-                    <td>3h 30m</td>
-                    <td><span class="chip chip-missed">No-Show</span></td>
-                    <td>0</td>
-                    <td class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button>
-                    </td>
-                    </tr>
+                                    @if (evnt.Status == EventStatus.Cancelled)
+                                    {
+                                        <td><span class="chip chip-completed">Cancelled</span></td>
+                                        <td>0</td>
+                                    }
+                                    @if ((evnt.Status == EventStatus.Published))
+                                    {
+                                        <td><span class="chip chip-completed">Completed</span></td>
+                                        <td>@evnt.PointsReward</td>
+                                    }
+                                    @if ((evnt.Status == EventStatus.Completed))
+                                    {
+                                        <td><span class="chip chip-completed">Completed</span></td>
+                                        <td>@evnt.PointsReward</td>
+                                    }
 
-                    <tr>
-                    <td><strong>Event 3</strong></td>
-                    <td>2025-06-18</td>
-                    <td>08:00</td>
-                    <td>2h 00m</td>
-                    <td><span class="chip chip-cancelled">Cancelled</span></td>
-                    <td>0</td>
-                    <td class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary" disabled>No Receipt</button>
-                    </td>
-                    </tr>
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-outline-primary">View Receipt</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                    
                     @* -------------------------------------------------------------- *@
                 </tbody>
             </table>

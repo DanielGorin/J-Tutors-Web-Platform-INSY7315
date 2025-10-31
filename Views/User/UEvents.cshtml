@@ -1,4 +1,7 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.EventViewModel
+@using J_Tutors_Web_Platform.Models.Shared
+
+@{
     ViewData["Title"] = "New Events";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
@@ -119,82 +122,73 @@
         </div>
     </div>
 
-    <!-- Events Grid (exactly 3 demo cards) -->
-    <div class="row g-3">
-
-        <!-- PARTICIPATING -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow p-24 event-card">
-                <h3 class="mb-8">Event 1</h3>
-                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
-
-                <div class="meta mb-16">
-                    <div class="meta-item"><strong>Date:</strong> 2025-10-12</div>
-                    <div class="meta-item"><strong>Start:</strong> 09:00</div>
-                    <div class="meta-item"><strong>Duration:</strong> 2h 00m</div>
-                    <div class="meta-item"><strong>Points:</strong> 25 pts</div>
-                    <div class="meta-item"><strong>Location:</strong> Greenpoint park</div>
-                </div>
-
-                <div class="mb-16">
-                    <span class="chip chip-participating">Participating</span>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center event-actions">
-                    <button class="btn btn-sm btn-outline-secondary">Leave</button>
-                    <div class="caption">You’re currently signed up.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- AVAILABLE -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow p-24 event-card">
-                <h3 class="mb-8">Event 2</h3>
-                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
-
-                <div class="meta mb-16">
-                    <div class="meta-item"><strong>Date:</strong> 2025-10-18</div>
-                    <div class="meta-item"><strong>Start:</strong> 14:00</div>
-                    <div class="meta-item"><strong>Duration:</strong> 3h 00m</div>
-                    <div class="meta-item"><strong>Points:</strong> 40 pts</div>
-                    <div class="meta-item"><strong>Location:</strong> Rondebosch library</div>
-                </div>
-
-                <div class="mb-16">
-                    <span class="chip chip-available">Available</span>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center event-actions">
-                    <button class="btn btn-sm btn-outline-primary">Apply</button>
-                    <div class="caption">Spots open • Eligible.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FULL -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow p-24 event-card">
-                <h3 class="mb-8">Event 3</h3>
-                <p class="mb-16">Event Description - The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog</p>
-
-                <div class="meta mb-16">
-                    <div class="meta-item"><strong>Date:</strong> 2025-10-22</div>
-                    <div class="meta-item"><strong>Start:</strong> 08:00</div>
-                    <div class="meta-item"><strong>Duration:</strong> 2h 30m</div>
-                    <div class="meta-item"><strong>Points:</strong> 30 pts</div>
-                    <div class="meta-item"><strong>Location:</strong> Capetown High </div>
-                </div>
-
-                <div class="mb-16">
-                    <span class="chip chip-full">Full</span>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center event-actions">
-                    <button class="btn btn-sm btn-outline-secondary" disabled>Full</button>
-                    <div class="caption">Join list closed.</div>
-                </div>
-            </div>
+    <!-- ======= PAST TAB (UI only, shown for completeness) ======= -->
+    <div class="card shadow p-24 mb-16">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Ended</th>
+                        <th>Location</th>
+                        <th>Participants</th>
+                        <th>Points</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* ========== Upcoming events a user can attend ========== *@
+                    @if (Model != null)
+                    {
+                        @foreach (var evnt in Model.DetailedEventRows)
+                        {
+                            @if ((evnt.EventDate >= DateOnly.FromDateTime(DateTime.Now)) && (evnt.GoalParticipants > evnt.CurrentParticipants) && (evnt.Status == EventStatus.Published))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong>@evnt.Title</strong>
+                                        </div>
+                                        <div
+                                            class="caption">@evnt.Description</div>
+                                    </td>
+                                    <td>@evnt.EventDate</td>
+                                    <td>@evnt.StartTime</td>
+                                    <td>@evnt.DurationMinutes minutes</td>
+                                    <td>@evnt.Location</td>
+                                    <td>Goal @evnt.GoalParticipants · Current @evnt.CurrentParticipants</td>
+                                    <td>@evnt.PointsReward</td>
+                                    @if (evnt.Status == EventStatus.Cancelled)
+                                    {
+                                        <td><span class="chip chip-unavailable">Cancelled</span></td>
+                                    }
+                                    @if (evnt.Status == EventStatus.Completed)
+                                    {
+                                        <td><span class="chip chip-unavailable">Ended</span></td>
+                                    }
+                                    @if (evnt.Status == EventStatus.Published)
+                                    {
+                                        <td><span class="chip chip-available">Open</span></td>
+                                    }
+                                    @if (evnt.Status == EventStatus.Draft)
+                                    {
+                                        <td><span class="chip chip-unavailable">Draft</span></td>
+                                    }
+                                    <td class="text-end">
+                                        <form asp-action="JoinEvent" asp-controller"">
+                                            <input type="hidden" value="@evnt.EventID" id="EventID" name="EventID" />
+                                            <button class="btn btn-sm btn-outline-primary">Join</button> @*= non functional =*@
+                                        </form> 
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                    @* ============================================================ *@
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

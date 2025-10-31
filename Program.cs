@@ -41,6 +41,13 @@ namespace J_Tutors_Web_Platform
                 return new AdminService(connectionString);
             });
 
+            builder.Services.AddSingleton<EventService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new EventService(connectionString);
+            });
+
             builder.Services.AddSingleton<FileShareService>(sp =>
             {
                 var configuration = sp.GetRequiredService<IConfiguration>();

@@ -1,182 +1,86 @@
-﻿@using J_Tutors_Web_Platform.Models.Points
-@model IEnumerable<J_Tutors_Web_Platform.Models.Points.PointsReceipt>
+﻿@using J_Tutors_Web_Platform.ViewModels
+@model UserLedgerPageViewModel
 
 @{
-    ViewData["Title"] = "Points & Receipts";
+    ViewData["Title"] = "Points Ledger";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
 
-    int totalEarned = ViewBag.TotalEarned ?? 0;
-    int totalDeducted = ViewBag.TotalDeducted ?? 0;
-    int balance = ViewBag.CurrentBalance ?? 0;
-
-    // helper to choose earn/deduct styling by amount sign
-    string CardClass(PointsReceipt r) => (r.Amount >= 0) ? "receipt-earn" : "receipt-deduct";
-    string AmountClass(PointsReceipt r) => (r.Amount >= 0) ? "amount-positive" : "amount-negative";
-    string ChipClass(PointsReceipt r) => (r.Amount >= 0) ? "chip chip-earn" : "chip chip-deduct";
-    string ChipText(PointsReceipt r) => (r.Amount >= 0) ? "Earn" : "Deduct";
+    string KindLabel(LedgerRowKind k) => k switch
+    {
+        LedgerRowKind.Earned => "Earned",
+        LedgerRowKind.Spent => "Spent",
+        _ => "Adjustment"
+    };
+    string AmountText(int a) => (a >= 0 ? "+" : "") + a.ToString();
 }
 
 <style>
-    .points .form-control, .points select {
-        background-color: var(--surface-color) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        padding: 10px 12px !important;
-        width: 100%;
-    }
-
-        .points .form-control::placeholder {
-            color: var(--muted-text-color) !important;
-        }
-
-        .points .form-control:focus, .points select:focus {
-            outline: none !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
-        }
-
-    /* Receipt cards */
-    .points .receipt-card {
+    .ledger-min .row-card {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
         border-left: 4px solid var(--border-color);
-        background-color: var(--surface-color);
-        border: 1px solid var(--border-color);
         border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
     }
 
-    .points .receipt-earn {
-        border-left-color: var(--success-color);
-    }
+        .ledger-min .row-card.earned {
+            border-left-color: var(--success-color);
+        }
 
-    .points .receipt-deduct {
-        border-left-color: var(--error-color);
-    }
+        .ledger-min .row-card.spent {
+            border-left-color: var(--error-color);
+        }
 
-    .points .amount-positive {
-        color: var(--success-color);
-        font-weight: 700;
-    }
+        .ledger-min .row-card.adjust {
+            border-left-color: var(--accent-color);
+        }
 
-    .points .amount-negative {
-        color: var(--error-color);
-        font-weight: 700;
-    }
-
-    .points .chip {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        border: 1px solid var(--border-color);
-        margin-left: 8px;
-    }
-
-    .points .chip-earn {
-        border-color: var(--success-color);
-        color: var(--success-color);
-    }
-
-    .points .chip-deduct {
-        border-color: var(--error-color);
-        color: var(--error-color);
-    }
-
-    .points .caption {
+    .ledger-min .muted {
         color: var(--muted-text-color);
+    }
+
+    .ledger-min .amt-pos {
+        color: var(--success-color);
+        font-weight: 700;
+    }
+
+    .ledger-min .amt-neg {
+        color: var(--error-color);
+        font-weight: 700;
     }
 </style>
 
-<div class="points">
+<div class="ledger-min">
+    <h1 class="mb-3">Points Ledger</h1>
 
-    <!-- Header / Nav -->
-    <div class="d-flex justify-content-between align-items-center mb-16">
-        <h1 class="mb-0">Points &amp; Receipts</h1>
-        <div class="d-flex gap-2">
-            <a asp-controller="Home" asp-action="UDashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    @if (Model.Rows == null || Model.Rows.Count == 0)
+    {
+        <div class="row-card">
+            <div class="muted">No point transactions yet.</div>
         </div>
-    </div>
-
-    <!-- Ledger summary -->
-    <div class="card shadow p-24 mb-16">
-        <div class="row">
-            <div class="col-md-4 mb-8">
-                <div class="d-flex justify-content-between">
-                    <div>Total Earned</div><strong>@totalEarned</strong>
-                </div>
-            </div>
-            <div class="col-md-4 mb-8">
-                <div class="d-flex justify-content-between">
-                    <div>Total Deducted</div><strong>@totalDeducted</strong>
-                </div>
-            </div>
-            <div class="col-md-4 mb-8">
-                <div class="d-flex justify-content-between">
-                    <div>Current Balance</div><strong>@balance</strong>
-                </div>
-            </div>
-        </div>
-        <div class="caption mt-8">
-            Newest transactions appear first. Positive amounts are points earned; negative amounts are deductions.
-        </div>
-    </div>
-
-    <!-- Receipts list (cards) -->
-    <div>
-        @if (Model == null || !Model.Any())
+    }
+    else
+    {
+        foreach (var r in Model.Rows)
         {
-            <div class="receipt-card shadow d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="caption">Date: —</div>
-                    <div class="mt-8">No point transactions to display yet.</div>
-                </div>
-            </div>
-        }
-        else
-        {
-            foreach (var r in Model)
-            {
-                <div class="receipt-card @CardClass(r) shadow">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="caption">
-                                Date: @r.ReceiptDate.ToString("yyyy-MM-dd HH:mm")
-                            </div>
+            var css = r.Kind == LedgerRowKind.Earned ? "earned"
+            : r.Kind == LedgerRowKind.Spent ? "spent"
+            : "adjust";
+            var amtClass = r.Amount >= 0 ? "amt-pos" : "amt-neg";
 
-                            @if (!string.IsNullOrWhiteSpace(r.Reason))
-                            {
-                                <div class="mt-8"><strong>Justification:</strong> @r.Reason</div>
-                            }
-                            else
-                            {
-                                <div class="mt-8"><strong>Justification:</strong> —</div>
-                            }
-
-                            <div class="caption mt-8">
-                                Reference: @(string.IsNullOrWhiteSpace(r.Reference) ? "—" : r.Reference)
-                            </div>
+            <div class="row-card @css shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="muted">
+                            @r.ReceiptDateUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
                         </div>
-
-                        <div class="text-end">
-                            <div class="@AmountClass(r)">@((r.Amount >= 0 ? "+" : "") + r.Amount)</div>
-                            <span class="@ChipClass(r)">@ChipText(r)</span>
-                        </div>
+                        <div><strong>@KindLabel(r.Kind)</strong></div>
                     </div>
+                    <div class="@amtClass">@AmountText(r.Amount)</div>
                 </div>
-            }
+            </div>
         }
-    </div>
-
-    <!-- (Optional) Pagination placeholder if you later add paging -->
-    <div class="d-flex justify-content-between align-items-center mt-16">
-        <div class="caption text-muted">
-            @((Model?.Count() ?? 0) == 0 ? "Showing 0 of 0" : $"Showing {(Model?.Count() ?? 0)} item(s)")
-        </div>
-        <div>
-            <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
-            <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
-        </div>
-    </div>
+    }
 </div>

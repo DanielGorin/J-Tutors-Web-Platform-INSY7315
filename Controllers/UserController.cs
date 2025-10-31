@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
+using J_Tutors_Web_Platform.ViewModels;
+
 
 namespace J_Tutors_Web_Platform.Controllers
 {
@@ -170,26 +172,25 @@ namespace J_Tutors_Web_Platform.Controllers
         // ============================================================================
         // POINTS LEDGER
         // ============================================================================
-
         [HttpGet]
         public async Task<IActionResult> UPointsLedger()
         {
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Home");
 
-            var user = await _profiles.GetUserIdAndUsernameAsync(username);
-            if (user == null) return NotFound();
+            var who = await _profiles.GetUserIdAndUsernameAsync(username);
+            if (who is null) return NotFound();
 
-            var receipts = await _ledger.GetReceiptsForUserAsync(user.Value.userId);
-            var totals = await _ledger.GetTotalsForUserAsync(user.Value.userId);
+            int userId = who.Value.userId;
+            var rows = await _ledger.GetReceiptRowsAsync(userId);
 
-            ViewBag.TotalEarned = totals.earned;
-            ViewBag.TotalDeducted = totals.deducted;
-            ViewBag.CurrentBalance = totals.balance;
+            var vm = new UserLedgerPageViewModel { UserId = userId, Rows = rows };
 
             ViewData["NavSection"] = "User";
-            return View(receipts);
+            return View("~/Views/User/UPointsLedger.cshtml", vm);
         }
+
+
 
         // ---------------- BOOKING ----------------
 
@@ -199,7 +200,7 @@ namespace J_Tutors_Web_Platform.Controllers
             var vm = new UserBookingViewModel
             {
                 Subjects = _booking.GetSubjectsForBooking(),
-                // UserPointsBalance = ... (optional)
+
             };
 
             ViewData["NavSection"] = "User";
@@ -219,8 +220,8 @@ namespace J_Tutors_Web_Platform.Controllers
         {
             try
             {
-                // If you want to scope to a specific admin, resolve it here (e.g., current tenant admin)
-                int? adminId = null; // or set a real value
+
+                int? adminId = null;
                 var vm = await _booking.GetAvailabilityMonthAsync(subjectId, durationMinutes, year, month, adminId);
                 return Json(vm);
             }
@@ -250,7 +251,6 @@ namespace J_Tutors_Web_Platform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookingRequest([FromForm] BookingRequestVM dto)
         {
-            // Resolve current user -> int userId
             var username = User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
                 return RedirectToAction("Login", "Home");
@@ -264,10 +264,10 @@ namespace J_Tutors_Web_Platform.Controllers
 
             var userId = who.Value.userId;
 
-            // If you need to force booking to a tenant/admin, pass adminId here; else null uses block owner
             int? adminIdForSlotOwner = null;
 
-            var res = _booking.RequestBooking(userId, dto, adminIdForSlotOwner);
+            var res = await _booking.RequestBooking(userId, dto, adminIdForSlotOwner);
+
             if (!res.Ok)
             {
                 TempData["BookingError"] = res.Message ?? "Could not create booking.";
@@ -277,6 +277,5 @@ namespace J_Tutors_Web_Platform.Controllers
             TempData["BookingOk"] = res.Message ?? "Request sent.";
             return RedirectToAction(nameof(UBooking));
         }
-
     }
 }

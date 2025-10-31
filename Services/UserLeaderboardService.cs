@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.SqlTypes;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -36,10 +37,10 @@ namespace J_Tutors_Web_Platform.Services
             int page,
             int pageSize)
         {
-            // SUB-SEGMENT timeframe (UTC)
+            // 1) Concrete timeframe (UTC), clamped like AdminUserDirectory
             var (startUtc, endUtc) = ComputeWindowUtc(time);
 
-            // SUB-SEGMENT read ALL users (include even those with 0 points)
+            // 2) Read ALL users (include those with 0 points)
             var users = new List<(int UserID, string Username)>();
             await using (var conn = new SqlConnection(_connStr))
             await using (var cmd = new SqlCommand(@"SELECT UserID, Username FROM Users", conn))
@@ -52,65 +53,59 @@ namespace J_Tutors_Web_Platform.Services
                 }
             }
 
-            // SUB-SEGMENT aggregate: Total points in window (sum of positive earns)
-            // Definition: SUM(Amount) WHERE Amount > 0 AND within [start, end)
-            var totalInPeriod = new Dictionary<int, int>(); // UserID -> sum
-            await using (var conn = new SqlConnection(_connStr))
+            // 3) Single aggregate over window using *Directory math*
+            //    PointsTotal   = SUM(CASE WHEN Type IN (0,2) THEN Amount ELSE 0 END)
+            //    SpentPositive = SUM(CASE WHEN Type = 1 THEN -Amount ELSE 0 END)
+            //    PointsCurrent = PointsTotal - SpentPositive
+            var totals = new Dictionary<int, (int PointsTotal, int SpentPositive)>();
+
+            const string sql = @"
+WITH W AS (
+    SELECT UserID, [Type], Amount
+    FROM dbo.PointsReceipt
+    WHERE ReceiptDate >= @start AND ReceiptDate < @end
+)
+SELECT 
+    UserID,
+    SUM(CASE WHEN [Type] IN (0,2) THEN Amount ELSE 0 END)  AS PointsTotal,
+    SUM(CASE WHEN [Type] = 1      THEN -Amount ELSE 0 END) AS SpentPositive
+FROM W
+GROUP BY UserID;";
+
+            await using (var conn2 = new SqlConnection(_connStr))
+            await using (var cmd2 = new SqlCommand(sql, conn2))
             {
-                var sql = @"SELECT UserID, SUM(Amount) AS TotalEarned FROM dbo.PointsReceipt WHERE Amount > 0" + 
-                    (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") + (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") + @"GROUP BY UserID";
+                cmd2.Parameters.AddWithValue("@start", startUtc);
+                cmd2.Parameters.AddWithValue("@end", endUtc);
 
-                await using var cmd = new SqlCommand(sql, conn);
-                if (startUtc.HasValue) cmd.Parameters.AddWithValue("@start", startUtc.Value);
-                if (endUtc.HasValue) cmd.Parameters.AddWithValue("@end", endUtc.Value);
-
-                await conn.OpenAsync();
-                await using var r = await cmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
+                await conn2.OpenAsync();
+                await using var r2 = await cmd2.ExecuteReaderAsync();
+                while (await r2.ReadAsync())
                 {
-                    var uid = r.GetInt32(0);
-                    var sum = r.IsDBNull(1) ? 0 : Convert.ToInt32(r[1]);
-                    totalInPeriod[uid] = sum;
+                    var uid = r2.GetInt32(0);
+                    var pt = r2.IsDBNull(1) ? 0 : Convert.ToInt32(r2[1]);
+                    var sp = r2.IsDBNull(2) ? 0 : Convert.ToInt32(r2[2]);
+                    totals[uid] = (pt, sp);
                 }
             }
 
-            // SUB-SEGMENT aggregate: Current points in window (net affecting balance)
-            // Definition: SUM(Amount) WHERE AffectsAllTime = 1 AND within [start, end)
-            var currentInPeriod = new Dictionary<int, int>(); // UserID -> net
-            await using (var conn = new SqlConnection(_connStr))
-            {
-                var sql = @"SELECT UserID, SUM(Amount) AS Net FROM dbo.PointsReceipt WHERE AffectsAllTime = 1 
-                    " + (startUtc.HasValue ? "AND ReceiptDate >= @start " : "") +
-                    (endUtc.HasValue ? "AND ReceiptDate <  @end " : "") + @"GROUP BY UserID";
-
-                await using var cmd = new SqlCommand(sql, conn);
-                if (startUtc.HasValue) cmd.Parameters.AddWithValue("@start", startUtc.Value);
-                if (endUtc.HasValue) cmd.Parameters.AddWithValue("@end", endUtc.Value);
-
-                await conn.OpenAsync();
-                await using var r = await cmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
-                {
-                    var uid = r.GetInt32(0);
-                    var sum = r.IsDBNull(1) ? 0 : Convert.ToInt32(r[1]);
-                    currentInPeriod[uid] = sum;
-                }
-            }
-
-            // SUB-SEGMENT build rows (no visibility filter)
+            // 4) Build rows with unified metrics
             var rows = new List<LeaderboardRowVM>();
             foreach (var u in users)
             {
+                var (pt, sp) = totals.TryGetValue(u.UserID, out var t) ? t : (0, 0);
+                var current = pt - sp;
+
                 rows.Add(new LeaderboardRowVM
                 {
                     UserID = u.UserID,
                     Username = u.Username,
 
-                    // New columns the view needs:
-                    TotalEarned = totalInPeriod.TryGetValue(u.UserID, out var te) ? te : 0,  // "Total Points"
-                    EarnedInPeriod = currentInPeriod.TryGetValue(u.UserID, out var cp) ? cp : 0, // "Current Points"
+                    // Match your view columns:
+                    TotalEarned = pt,          // "Total Points" = Earned + Adjustments (±)
+                    EarnedInPeriod = current,  // "Current Points" = Total - SpentPositive
 
-                    // Legacy fields kept for compatibility (not used in the simplified table):
+                    // Legacy/compat fields:
                     NetAllTime = 0,
                     EarnedThisMonth = 0,
                     IsCurrentUser = currentUsername != null && u.Username.Equals(currentUsername, StringComparison.OrdinalIgnoreCase),
@@ -118,7 +113,7 @@ namespace J_Tutors_Web_Platform.Services
                 });
             }
 
-            // SUB-SEGMENT sort + rank (stable by Username for ties)
+            // 5) Sort + stable rank
             rows = (mode == LeaderboardViewMode.Current)
                 ? rows.OrderByDescending(x => x.EarnedInPeriod).ThenBy(x => x.Username).ToList()
                 : rows.OrderByDescending(x => x.TotalEarned).ThenBy(x => x.Username).ToList();
@@ -136,7 +131,7 @@ namespace J_Tutors_Web_Platform.Services
                 rows[i].Rank = rank;
             }
 
-            // SUB-SEGMENT paging (1-based)
+            // 6) Paging
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 20;
             var total = rows.Count;
@@ -159,13 +154,15 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ─────────────────────────────────────────────────────────────────────────────
-        // HELPER: timeframe calculator (UTC)
+        // HELPER: timeframe calculator (UTC) — concrete bounds for all modes
         // ─────────────────────────────────────────────────────────────────────────────
-        private static (DateTime? startUtc, DateTime? endUtc) ComputeWindowUtc(LeaderboardTimeFilter time)
+        private static (DateTime startUtc, DateTime endUtc) ComputeWindowUtc(LeaderboardTimeFilter time)
         {
-            var nowUtc = DateTime.UtcNow;
+            // Use concrete bounds (no nulls), and clamp AllTime start to SQL datetime minimum
+            // to match AdminUserDirectory and avoid DateTime.MinValue underflow.
+            DateTime nowUtc = DateTime.UtcNow;
 
-            DateTime FirstDayOfThisMonthUtc()
+            static DateTime FirstDayOfThisMonthUtc()
             {
                 var todayLocal = DateTime.Today;
                 var firstLocal = new DateTime(todayLocal.Year, todayLocal.Month, 1, 0, 0, 0, DateTimeKind.Local);
@@ -175,20 +172,23 @@ namespace J_Tutors_Web_Platform.Services
             switch (time)
             {
                 case LeaderboardTimeFilter.ThisMonth:
-                    return (FirstDayOfThisMonthUtc(), null);
+                    return (FirstDayOfThisMonthUtc(), nowUtc);
+
                 case LeaderboardTimeFilter.Last30Days:
-                    return (nowUtc.AddDays(-30), null);
+                    return (nowUtc.AddDays(-30), nowUtc);
+
                 case LeaderboardTimeFilter.LastMonth:
                     var todayLocal = DateTime.Today;
                     var firstThis = new DateTime(todayLocal.Year, todayLocal.Month, 1);
-                    var lastMonthEndLocal = firstThis.AddDays(-1);
+                    var lastMonthEndLocal = firstThis.AddDays(-1); // last day of previous month
                     var lastMonthStartLocal = new DateTime(lastMonthEndLocal.Year, lastMonthEndLocal.Month, 1);
                     var startUtc = DateTime.SpecifyKind(lastMonthStartLocal, DateTimeKind.Local).ToUniversalTime();
-                    var endUtc = DateTime.SpecifyKind(lastMonthEndLocal.AddDays(1), DateTimeKind.Local).ToUniversalTime(); // exclusive
+                    var endUtc = DateTime.SpecifyKind(lastMonthEndLocal.AddDays(1), DateTimeKind.Local).ToUniversalTime(); // exclusive-like end
                     return (startUtc, endUtc);
+
                 case LeaderboardTimeFilter.AllTime:
                 default:
-                    return (null, null);
+                    return (SqlDateTime.MinValue.Value, nowUtc);
             }
         }
     }

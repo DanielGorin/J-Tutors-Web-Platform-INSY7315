@@ -1,11 +1,17 @@
-﻿using J_Tutors_Web_Platform.Models.Points;
-using J_Tutors_Web_Platform.Models.Shared;
+﻿#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.Threading.Tasks;
+using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    // SERVICE: UserLedgerService
-    // PURPOSE: Handles all DB logic for the Points Ledger page.
+    /// Minimal data provider for the User Points Ledger (date, amount, type only)
     public class UserLedgerService
     {
         private readonly string _connStr;
@@ -17,58 +23,66 @@ namespace J_Tutors_Web_Platform.Services
             _log = log;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // READ: All receipts for a user (newest → oldest)
-        // ─────────────────────────────────────────────────────────────
-        public async Task<List<PointsReceipt>> GetReceiptsForUserAsync(int userId)
+        public async Task<List<UserLedgerRowViewModel>> GetReceiptRowsAsync(int userId)
         {
-            var list = new List<PointsReceipt>();
-            var sql = @"SELECT * FROM dbo.PointsReceipt WHERE UserID = @id ORDER BY ReceiptDate DESC";
+            var rows = new List<UserLedgerRowViewModel>();
+
+            const string sql = @"
+SELECT
+  PointsReceiptID,
+  ReceiptDate,
+  Type,
+  Amount
+FROM dbo.PointsReceipt
+WHERE UserID = @uid
+ORDER BY ReceiptDate DESC;";
 
             await using var conn = new SqlConnection(_connStr);
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@id", userId);
-
             await conn.OpenAsync();
-            await using var r = await cmd.ExecuteReaderAsync();
+            await using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uid", userId);
+
+            await using var r = await cmd.ExecuteReaderAsync(CommandBehavior.Default);
             while (await r.ReadAsync())
             {
-                list.Add(new PointsReceipt
+                var typeVal = r.GetValue(r.GetOrdinal("Type")); // robust against int/string
+                rows.Add(new UserLedgerRowViewModel
                 {
-                    PointsReceiptID = r.GetInt32(0),
-                    ReceiptDate = r.GetDateTime(1),
-                    Type = (PointsReceiptType)r.GetInt32(2),
-                    Amount = r.GetInt32(3),
-                    Reason = r["Reason"] as string,
-                    Reference = r["Reference"] as string
+                    PointsReceiptID = r.GetInt32(r.GetOrdinal("PointsReceiptID")),
+                    ReceiptDateUtc = DateTime.SpecifyKind(r.GetDateTime(r.GetOrdinal("ReceiptDate")), DateTimeKind.Utc),
+                    Kind = ParseKindFromDb(typeVal),
+                    Amount = r.GetInt32(r.GetOrdinal("Amount"))
                 });
             }
 
-            return list;
+            return rows;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // READ: Totals (earned, deducted, balance)
-        // ─────────────────────────────────────────────────────────────
-        public async Task<(int earned, int deducted, int balance)> GetTotalsForUserAsync(int userId)
+        // ---- Helper: maps DB "Type" (0/1/2 OR "0"/"1"/"2" OR "Earned"/"Spent"/"Adjustment") to enum
+        private static LedgerRowKind ParseKindFromDb(object? dbVal)
         {
-            var sql = @"SELECT SUM(CASE WHEN Amount > 0 THEN Amount ELSE 0 END) AS Earned, SUM(CASE WHEN Amount < 0 THEN -Amount ELSE 0 END) AS Deducted, SUM(Amount) AS Balance FROM dbo.PointsReceipt WHERE UserID = @id";
+            if (dbVal is null || dbVal is DBNull) return LedgerRowKind.Adjustment;
 
-            await using var conn = new SqlConnection(_connStr);
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@id", userId);
-
-            await conn.OpenAsync();
-            await using var r = await cmd.ExecuteReaderAsync();
-            if (await r.ReadAsync())
+            switch (dbVal)
             {
-                return (
-                    r.IsDBNull(0) ? 0 : r.GetInt32(0),
-                    r.IsDBNull(1) ? 0 : r.GetInt32(1),
-                    r.IsDBNull(2) ? 0 : r.GetInt32(2)
-                );
+                case int i: return i switch { 0 => LedgerRowKind.Earned, 1 => LedgerRowKind.Spent, 2 => LedgerRowKind.Adjustment, _ => LedgerRowKind.Adjustment };
+                case long l: return l switch { 0 => LedgerRowKind.Earned, 1 => LedgerRowKind.Spent, 2 => LedgerRowKind.Adjustment, _ => LedgerRowKind.Adjustment };
+                case short s: return s switch { 0 => LedgerRowKind.Earned, 1 => LedgerRowKind.Spent, 2 => LedgerRowKind.Adjustment, _ => LedgerRowKind.Adjustment };
+                case byte b: return b switch { 0 => LedgerRowKind.Earned, 1 => LedgerRowKind.Spent, 2 => LedgerRowKind.Adjustment, _ => LedgerRowKind.Adjustment };
+                case string st:
+                    {
+                        var v = st.Trim();
+                        if (int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var asInt))
+                            return ParseKindFromDb(asInt);
+
+                        return v.Equals("earned", StringComparison.OrdinalIgnoreCase) ? LedgerRowKind.Earned
+                             : v.Equals("spent", StringComparison.OrdinalIgnoreCase) ? LedgerRowKind.Spent
+                             : v.Equals("adjustment", StringComparison.OrdinalIgnoreCase) ? LedgerRowKind.Adjustment
+                             : LedgerRowKind.Adjustment;
+                    }
+                default:
+                    return LedgerRowKind.Adjustment;
             }
-            return (0, 0, 0);
         }
     }
 }

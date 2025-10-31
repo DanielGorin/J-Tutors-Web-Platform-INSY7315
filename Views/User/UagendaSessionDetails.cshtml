@@ -1,0 +1,30 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.UserSessionDetailsVM
+@{
+    string HHmm(TimeSpan t) => new DateTime(t.Ticks).ToString("HH:mm");
+}
+
+<div class="p-3">
+    <h5 class="mb-3">Session #@Model.TutoringSessionID</h5>
+
+    <dl class="row mb-0">
+        <dt class="col-5">Status</dt>
+        <dd class="col-7">@Model.Status</dd>
+
+        <dt class="col-5">Date</dt>
+        <dd class="col-7">@Model.SessionDate.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-5">Start</dt>
+        <dd class="col-7">@HHmm(Model.StartTime)</dd>
+
+        <dt class="col-5">Duration (hrs)</dt>
+        <dd class="col-7">@Model.DurationHours</dd>
+
+        <dt class="col-5">Final Rands</dt>
+        <dd class="col-7">R @Model.FinalRand</dd>
+
+        <dt class="col-5">Points Spent</dt>
+        <dd class="col-7">@Model.PointsSpent</dd>
+    </dl>
+
+    <hr />
+</div>

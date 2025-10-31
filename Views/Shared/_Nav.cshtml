@@ -49,7 +49,8 @@
                     <li class="nav-item"><a class="nav-link @Active("UDashboard")" asp-controller="Home" asp-action="UDashboard">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link @Active("GetUEventList")" asp-controller="Event" asp-action="GetUEventList">New Events</a></li>
                     <li class="nav-item"><a class="nav-link @Active("GetUEventHistory")" asp-controller="Event" asp-action="GetUEventHistory">Events History</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("USessions")" asp-controller="Home" asp-action="USessions">My Sessions</a></li>
+                    <li class="nav-item"><a class="nav-link" href="@Url.Action("USessions","User")">My Sessions</a></li>
+
                     <li class="nav-item"><a class="nav-link @Active("GetUserFiles")" asp-controller="Test" asp-action="GetUserFiles">File Library</a></li>
                     @* ---- NEW ---- *@
                     <li class="nav-item"><a class="nav-link @Active("UPointsLedger")" asp-controller="User" asp-action="UPointsLedger">Points</a></li>

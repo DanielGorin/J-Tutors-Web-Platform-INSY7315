@@ -26,19 +26,22 @@ namespace J_Tutors_Web_Platform.Controllers
         private readonly UserLedgerService _ledger;
         private readonly UserBookingService _booking;
         private readonly ILogger<UserController> _log;
+        private readonly UserAgendaService _uagenda;
 
         public UserController(
             UserProfileService profiles,
             UserLeaderboardService leaderboard,
             UserLedgerService ledger,
             UserBookingService booking,
-            ILogger<UserController> log)
+            ILogger<UserController> log,
+            UserAgendaService uagenda)
         {
             _profiles = profiles;
             _leaderboard = leaderboard;
             _ledger = ledger;
             _booking = booking;
             _log = log;
+            _uagenda = uagenda;
         }
 
         // ============================================================================
@@ -276,6 +279,51 @@ namespace J_Tutors_Web_Platform.Controllers
 
             TempData["BookingOk"] = res.Message ?? "Request sent.";
             return RedirectToAction(nameof(UBooking));
+        }
+
+      
+
+        private async Task<int?> ResolveUserIdAsync()
+        {
+            var username = User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(username)) return null;
+            var who = await _profiles.GetUserIdAndUsernameAsync(username);
+            return who?.userId;
+        }
+
+        // Calendar page: /User/USessions?year=YYYY&month=MM&includeRequested=bool
+        [HttpGet]
+        public async Task<IActionResult> USessions(int? year = null, int? month = null, bool includeRequested = true)
+        {
+            var uid = await ResolveUserIdAsync();
+            if (uid is null) return RedirectToAction("Login", "Home");
+
+            var yy = year ?? DateTime.Now.Year;
+            var mm = month ?? DateTime.Now.Month;
+
+            var vm = new UserAgendaViewModel
+            {
+                Year = yy,
+                Month = mm,
+                IncludeRequested = includeRequested,
+                Sessions = await _uagenda.GetUserSessionsForCalendarAsync(uid.Value, yy, mm, includeRequested)
+            };
+
+            ViewData["NavSection"] = "User";
+            return View("~/Views/User/UAgendaCalendar.cshtml", vm);
+        }
+
+        // Read-only details partial: /User/USessionDetails?id=123
+        [HttpGet]
+        public async Task<IActionResult> USessionDetails(int id)
+        {
+            var uid = await ResolveUserIdAsync();
+            if (uid is null) return Unauthorized();
+
+            var vm = await _uagenda.GetUserSessionDetailsAsync(uid.Value, id);
+            if (vm is null) return NotFound();
+
+            return PartialView("UAgendaSessionDetails", vm);
         }
     }
 }

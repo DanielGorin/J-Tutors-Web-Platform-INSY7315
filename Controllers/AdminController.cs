@@ -1,61 +1,72 @@
 ﻿#nullable enable
+
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-//using Microsoft.AspNetCore.Authorization; // ← enable if you gate admin with roles
 using J_Tutors_Web_Platform.Services;
 using J_Tutors_Web_Platform.ViewModels;
 using J_Tutors_Web_Platform.Models.Scheduling;
 
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Globalization;
-using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
-    /// <summary>
-    /// CONTROLLER: AdminController (with LEGACY Sessions Calendar kept for now)
-    /// PURPOSE: All *non-Agenda* admin features, plus the old Sessions Calendar endpoints.
-    ///
-    /// Current areas:
-    ///   - Dashboard, Users, Pricing/Subjects
-    ///   - (Placeholders) Events, Files, Leaderboard, Analytics, Account
-    ///   - LEGACY: ASessionCalender + CreateAvailabilitySlot (to be removed later)
-    ///
-    /// NOTE: The new tabbed Agenda lives in AdminAgendaController.
-    /// </summary>
-    // [Authorize(Roles = "Admin")] // optional hardening
+    // ============================================================================
+    // CONTROLLER: AdminController
+    // PURPOSE:
+    //   - All the "normal" admin features (dashboard, pricing, subjects, pages)
+    //   - PLUS: the older/legacy Sessions Calendar endpoints that existed
+    //     before the new AdminAgendaController was created.
+    //
+    // IMPORTANT:
+    //   - The new /AdminAgenda/... stuff lives in AdminAgendaController
+    //   - This file should slowly lose the legacy calendar once everyone moves
+    //     to the new agenda
+    // ============================================================================
+    // [Authorize(Roles = "Admin")] // ← turn this on when you want hard admin gating
     public class AdminController : Controller
     {
-        // ─────────────────────────────────────────────────────────────────────────────
-        // Dependencies
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------------------
+        // DEPENDENCIES
+        // _adminService → main admin/business logic (subjects, pricing, sessions)
+        // _authService  → for actions that need to check/change admin credentials
+        // ------------------------------------------------------------------------
         private readonly AdminService _adminService;
         private readonly AuthService _authService;
 
-
+        // ------------------------------------------------------------------------
+        // CONSTRUCTOR
+        // DI: controller needs the 2 services above
+        // ------------------------------------------------------------------------
         public AdminController(AdminService adminService, AuthService authService)
         {
             _adminService = adminService;
             _authService = authService;
         }
-            [HttpGet]
-            public IActionResult ADashboard()
-            {
-                ViewData["NavSection"] = "Admin";
-                // TODO: Populate dashboard metrics/widgets here if desired
-                return View("~/Views/Admin/ADashboard.cshtml");
-            }
-        
 
- 
+        // ========================================================================
+        // ======================== ADMIN DASHBOARD ===============================
+        // GET: /Admin/ADashboard
+        // Simple landing page for admins
+        // ========================================================================
+        [HttpGet]
+        public IActionResult ADashboard()
+        {
+            ViewData["NavSection"] = "Admin";
+            // TODO: Add dashboard cards, metrics, charts, etc.
+            return View("~/Views/Admin/ADashboard.cshtml");
+        }
 
-
-        // ============================================================================
-        // PRICING & SUBJECTS
-        // ============================================================================
+        // ========================================================================
+        // ======================= PRICING & SUBJECTS ============================
+        // Area for managing Subjects AND their pricing rules
+        // Includes:
+        //   - listing subjects
+        //   - creating/deleting/toggling subjects
+        //   - saving pricing for a subject
+        // ========================================================================
 
         /// <summary>
         /// GET: /Admin/APricing?subjectId=#
@@ -66,12 +77,14 @@ namespace J_Tutors_Web_Platform.Controllers
         {
             ViewData["NavSection"] = "Admin";
 
+            // build VM with list of subjects
             var vm = new APricingViewModel
             {
                 Subjects = _adminService.GetAllSubjects(),
                 SelectedSubjectID = subjectId
             };
 
+            // if user picked a subject → load its pricing
             if (subjectId.HasValue)
             {
                 var pr = _adminService.GetPricingForSubject(subjectId.Value);
@@ -85,7 +98,9 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/Admin/APricing.cshtml", vm);
         }
 
-        /// <summary>POST: Create a new subject.</summary>
+        // ------------------------------------------------------------------------
+        // POST: create subject
+        // ------------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CreateSubject(string subjectName)
@@ -97,12 +112,17 @@ namespace J_Tutors_Web_Platform.Controllers
             }
             catch (Exception ex)
             {
+                // bubble error to UI
                 TempData["APricingError"] = ex.Message;
             }
+
+            // always go back to pricing
             return RedirectToAction(nameof(APricing));
         }
 
-        /// <summary>POST: Delete a subject (and its PricingRule if needed).</summary>
+        // ------------------------------------------------------------------------
+        // POST: delete subject
+        // ------------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteSubject(int subjectId)
@@ -115,10 +135,15 @@ namespace J_Tutors_Web_Platform.Controllers
             {
                 TempData["APricingError"] = ex.Message;
             }
+
             return RedirectToAction(nameof(APricing));
         }
 
-        /// <summary>POST: Toggle subject active flag.</summary>
+        // ------------------------------------------------------------------------
+        // POST: toggle subject active/inactive
+        // NOTE: we redirect WITHOUT the subjectId so the right pane does not open
+        // again automatically
+        // ------------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleSubject(int subjectId)
@@ -132,11 +157,17 @@ namespace J_Tutors_Web_Platform.Controllers
                 TempData["APricingError"] = ex.Message;
             }
 
-            // Redirect WITHOUT subjectId so the right pane does not auto-open
             return RedirectToAction(nameof(APricing));
         }
 
-        /// <summary>POST: Upsert pricing for a subject.</summary>
+        // ------------------------------------------------------------------------
+        // POST: save / upsert pricing
+        // Steps:
+        //   1. validate subject
+        //   2. parse all numbers
+        //   3. validate business rules
+        //   4. call service to save
+        // ------------------------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SavePricing(
@@ -148,12 +179,14 @@ namespace J_Tutors_Web_Platform.Controllers
         {
             ViewData["NavSection"] = "Admin";
 
+            // must have a subject
             if (subjectId <= 0)
             {
                 TempData["APricingError"] = "Choose a subject first.";
                 return RedirectToAction(nameof(APricing));
             }
 
+            // parse numbers (invariant culture to avoid comma/dot mixups)
             var inv = CultureInfo.InvariantCulture;
             if (!decimal.TryParse(hourlyRate, NumberStyles.Number, inv, out var hr) ||
                 !decimal.TryParse(minHours, NumberStyles.Number, inv, out var minh) ||
@@ -164,6 +197,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return RedirectToAction(nameof(APricing), new { subjectId });
             }
 
+            // validate business rules
             if (minh <= 0 || maxh <= 0 || maxh < minh)
             {
                 TempData["APricingError"] = "Min/Max hours are invalid.";
@@ -180,6 +214,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return RedirectToAction(nameof(APricing), new { subjectId });
             }
 
+            // Capture WHO is setting the price (will be our only admin at this time int he future multiple admins are possible)
             var adminUsername = User.Identity?.Name ?? "";
             var adminId = _adminService.GetAdminID(adminUsername);
 
@@ -196,14 +231,21 @@ namespace J_Tutors_Web_Platform.Controllers
             return RedirectToAction(nameof(APricing), new { subjectId });
         }
 
-        // ============================================================================
-        // LEGACY SESSIONS CALENDAR (KEEP FOR NOW — DELETE AFTER AGENDA IS FULLY LIVE)
-        // ============================================================================
+        // ========================================================================
+        // ========================= LEGACY CALENDAR ==============================
+        // KEEP FOR NOW
+        // This is the older version of the admin sessions calendar.
+        // It uses the older AdminService calls directly:
+        //   - GetTutoringSessions()
+        //   - GetAvailabilityBlocks()
+        //
+        // The new version (better structured, tabbed, calendar + inbox) lives in
+        // AdminAgendaController.
+        // ========================================================================
 
         /// <summary>
         /// LEGACY: GET /Admin/ASessionCalender
-        /// Older calendar/sessions page you had before the new Agenda.
-        /// Uses AdminService.GetTutoringSessions() and GetAvailabilityBlocks().
+        /// Older calendar/sessions page.
         /// </summary>
         [HttpGet]
         public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
@@ -211,34 +253,36 @@ namespace J_Tutors_Web_Platform.Controllers
             ViewData["NavSection"] = "Admin";
             Console.WriteLine("LEGACY: Inside ASessionCalender GET method");
 
-            // (Optional) current admin username
+            // current admin
             var username = User.Identity?.Name ?? string.Empty;
 
-            // Load sessions + availability (legacy service calls)
+            // load data the old way
             var tutoringSessions = _adminService.GetTutoringSessions();
             var availabilitySlots = _adminService.GetAvailabilityBlocks();
 
-            // Build the legacy VM you already used
+            // build old VM
             var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
             {
                 TutoringSessions = tutoringSessions,
                 AvailabilityBlock = availabilitySlots
             };
 
-            // ----- DEBUG: Keep this while legacy is in use; remove later -----
+            // -----------------------------
+            // DEBUG: leave for now
+            // -----------------------------
             foreach (var slot in availabilitySlots)
             {
-                Console.WriteLine($"[LEGACY] Availability ID: {slot.AvailabilityBlockID}, Date: {slot.BlockDate:yyyy-MM-dd}, " +
-                                  $"Start: {slot.StartTime}, End: {slot.EndTime}");
+                Console.WriteLine(
+                    $"[LEGACY] Availability ID: {slot.AvailabilityBlockID}, " +
+                    $"Date: {slot.BlockDate:yyyy-MM-dd}, Start: {slot.StartTime}, End: {slot.EndTime}");
             }
-            // -----------------------------------------------------------------
 
             return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
         }
 
         /// <summary>
         /// LEGACY: POST /Admin/CreateAvailabilitySlot
-        /// Insert a single availability block (date + start + duration minutes).
+        /// Creates a slot via the legacy AdminService.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -248,10 +292,10 @@ namespace J_Tutors_Web_Platform.Controllers
 
             var username = User.Identity?.Name ?? string.Empty;
 
-            // Service creates the block (legacy method)
+            // create via legacy service
             _adminService.CreateAvailabilitySlot(username, BlockDate, StartTime, Duration);
 
-            // Re-load data for the legacy view
+            // reload legacy data
             var tutoringSessions = _adminService.GetTutoringSessions();
             var availabilitySlots = _adminService.GetAvailabilityBlocks();
 
@@ -264,37 +308,58 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
         }
 
+        // ========================================================================
+        // ===================== ACCOUNT / PROFILE STUFF ==========================
+        // Change password, theme preference, etc.
+        // ========================================================================
+
+        // ------------------------------------------------------------------------
+        // POST: Change admin password
+        // Steps:
+        //   1. verify current password
+        //   2. compare new + confirm
+        //   3. if OK → change
+        // ------------------------------------------------------------------------
         [HttpPost]
         public IActionResult ChangePassword(string currentPassword, string NewPassword, string ConfirmPassword)
         {
             var adminUsername = User.FindFirst(ClaimTypes.Name)?.Value;
             var result = _authService.AdminLogin(adminUsername, currentPassword);
 
+            // check if new passwords match
             if (NewPassword != ConfirmPassword)
             {
                 Console.WriteLine("password dont match");
                 return View("AAccount");
             }
-            
+
+            // check if current is correct
             if (result != "Login Successful")
             {
                 Console.WriteLine("current password incorrect");
                 return View("AAccount");
             }
 
+            // do change
             _authService.ChangeAdminPassword(adminUsername, NewPassword);
 
             Console.WriteLine("password changed to " + NewPassword);
             return View("AAccount");
         }
 
+        // ------------------------------------------------------------------------
+        // POST: SetTheme
+        // Stores theme in cookie + persists to DB for this admin
+        // ------------------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> SetTheme(string theme)
         {
+            // normalise theme to Light/Dark/""
             var pref = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "Light"
                     : string.Equals(theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark"
                     : "";
 
+            // write to cookie
             Response.Cookies.Append("ThemePreference", pref, new CookieOptions
             {
                 Expires = DateTimeOffset.UtcNow.AddYears(1),
@@ -303,20 +368,53 @@ namespace J_Tutors_Web_Platform.Controllers
                 HttpOnly = false
             });
 
+            // also persist to DB if we know the user
             var username = User?.Identity?.Name;
             if (!string.IsNullOrWhiteSpace(username))
                 await _adminService.ChangeTheme(username, pref);
 
             return Ok(new { ok = true, pref });
         }
-        // ============================================================================
-        // PLACEHOLDERS for other Admin areas (views you already have)
-        // ============================================================================
 
-        [HttpGet] public IActionResult AEventList() { ViewData["NavSection"] = "Admin"; return View("~/Views/Admin/AEventList.cshtml"); }
-        [HttpGet] public IActionResult AFiles() { ViewData["NavSection"] = "Admin"; return View("~/Views/Admin/AFiles.cshtml"); }
-        [HttpGet] public IActionResult ALeaderboard() { ViewData["NavSection"] = "Admin"; return View("~/Views/Admin/ALeaderboard.cshtml"); }
-        [HttpGet] public IActionResult AAnalytics() { ViewData["NavSection"] = "Admin"; return View("~/Views/Admin/AAnalytics.cshtml"); }
-        [HttpGet] public IActionResult AAccount() { ViewData["NavSection"] = "Admin"; return View("~/Views/Admin/AAccount.cshtml"); }
+        // ========================================================================
+        // ========================== OTHER ADMIN VIEWS ===========================
+        // These are the "static" admin pages you already have.
+        // They all just set NavSection and return the view.
+        // ========================================================================
+
+        [HttpGet]
+        public IActionResult AEventList()
+        {
+            ViewData["NavSection"] = "Admin";
+            return View("~/Views/Admin/AEventList.cshtml");
+        }
+
+        [HttpGet]
+        public IActionResult AFiles()
+        {
+            ViewData["NavSection"] = "Admin";
+            return View("~/Views/Admin/AFiles.cshtml");
+        }
+
+        [HttpGet]
+        public IActionResult ALeaderboard()
+        {
+            ViewData["NavSection"] = "Admin";
+            return View("~/Views/Admin/ALeaderboard.cshtml");
+        }
+
+        [HttpGet]
+        public IActionResult AAnalytics()
+        {
+            ViewData["NavSection"] = "Admin";
+            return View("~/Views/Admin/AAnalytics.cshtml");
+        }
+
+        [HttpGet]
+        public IActionResult AAccount()
+        {
+            ViewData["NavSection"] = "Admin";
+            return View("~/Views/Admin/AAccount.cshtml");
+        }
     }
 }

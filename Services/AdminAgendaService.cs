@@ -302,21 +302,7 @@ ORDER BY SessionDate ASC;";
         private async Task<IReadOnlyList<AgendaInboxRowVM>> QueryInboxRowsByStatusAsync(int? adminId, string status)
         {
             // NOTE: Status is stored as a string in DB (per your confirmation).
-            const string sql = @"
-SELECT 
-    ts.TutoringSessionID,
-    s.SubjectName,
-    ts.DurationHours,
-    (u.FirstName + ' ' + u.Surname) AS RequestingFullName,
-    ts.BaseCost,
-    ts.PointsSpent,
-    ts.Status
-FROM TutoringSession ts
-JOIN Users u     ON ts.UserID   = u.UserID
-JOIN Subjects s  ON ts.SubjectID = s.SubjectID
-WHERE ts.Status = @status
-  AND (@adminId IS NULL OR ts.AdminID = @adminId)
-ORDER BY ts.SessionDate ASC, ts.StartTime ASC;";
+            const string sql = @"SELECT ts.TutoringSessionID, s.SubjectName, ts.DurationHours, (u.FirstName + ' ' + u.Surname) AS RequestingFullName, ts.BaseCost, ts.PointsSpent, ts.Status FROM TutoringSession ts JOIN Users u ON ts.UserID   = u.UserID JOIN Subjects s  ON ts.SubjectID = s.SubjectID WHERE ts.Status = @status AND (@adminId IS NULL OR ts.AdminID = @adminId) ORDER BY ts.SessionDate ASC, ts.StartTime ASC;";
 
             var p = new Dictionary<string, object?>
             {
@@ -359,24 +345,7 @@ ORDER BY ts.SessionDate ASC, ts.StartTime ASC;";
 
         public async Task<SessionDetailsVM?> GetSessionDetailsAsync(int sessionId)
         {
-            const string sql = @"
-SELECT TOP 1
-    ts.TutoringSessionID,
-    ts.Status,
-    s.SubjectName,
-    ts.SessionDate,
-    ts.StartTime,
-    ts.DurationHours,
-    u.UserID,
-    u.FirstName,
-    u.Surname,
-    u.Email,
-    ts.BaseCost,
-    ts.PointsSpent
-FROM TutoringSession ts
-JOIN Users u     ON ts.UserID = u.UserID
-JOIN Subjects s  ON ts.SubjectID = s.SubjectID
-WHERE ts.TutoringSessionID = @id;";
+            const string sql = @"SELECT TOP 1 ts.TutoringSessionID, ts.Status, s.SubjectName, ts.SessionDate, ts.StartTime, ts.DurationHours, u.UserID, u.FirstName, u.Surname, u.Email, ts.BaseCost, ts.PointsSpent FROM TutoringSession ts JOIN Users u ON ts.UserID = u.UserID JOIN Subjects s  ON ts.SubjectID = s.SubjectID WHERE ts.TutoringSessionID = @id;";
 
             var p = new Dictionary<string, object?> { ["@id"] = sessionId };
 
@@ -409,15 +378,7 @@ WHERE ts.TutoringSessionID = @id;";
 
         public async Task<decimal> GetUnpaidRandForUserAsync(int userId)
         {
-            const string sql = @"
-SELECT COALESCE(SUM(CASE 
-    WHEN (BaseCost - PointsSpent) < 0 THEN 0 
-    ELSE (BaseCost - PointsSpent) 
-END), 0)
-FROM TutoringSession
-WHERE UserID = @uid
-  AND Status = 'Accepted'
-  AND PaidDate IS NULL;";
+            const string sql = @"SELECT COALESCE(SUM(CASE WHEN (BaseCost - PointsSpent) < 0 THEN 0 ELSE (BaseCost - PointsSpent) END), 0) FROM TutoringSession WHERE UserID = @uid AND Status = 'Accepted' AND PaidDate IS NULL;";
 
             var p = new Dictionary<string, object?> { ["@uid"] = userId };
             return await ExecuteScalarAsync<decimal>(sql, p);
@@ -425,10 +386,7 @@ WHERE UserID = @uid
 
         public async Task<(bool Ok, string Message)> UpdateSessionStatusAsync(int sessionId, string newStatus)
         {
-            const string getSql = @"
-SELECT TutoringSessionID, Status, PaidDate, CancellationDate
-FROM TutoringSession
-WHERE TutoringSessionID = @id";
+            const string getSql = @"SELECT TutoringSessionID, Status, PaidDate, CancellationDate FROM TutoringSession WHERE TutoringSessionID = @id";
 
             await using var con = await OpenAsync();
 
@@ -453,21 +411,15 @@ WHERE TutoringSessionID = @id";
             string updateSql;
             if (newStatus == "Paid")
             {
-                updateSql = @"UPDATE TutoringSession
-                      SET Status = @status, PaidDate = SYSUTCDATETIME()
-                      WHERE TutoringSessionID = @id;";
+                updateSql = @"UPDATE TutoringSession SET Status = @status, PaidDate = SYSUTCDATETIME() WHERE TutoringSessionID = @id;";
             }
             else if (newStatus == "Cancelled")
             {
-                updateSql = @"UPDATE TutoringSession
-                      SET Status = @status, CancellationDate = SYSUTCDATETIME()
-                      WHERE TutoringSessionID = @id;";
+                updateSql = @"UPDATE TutoringSession SET Status = @status, CancellationDate = SYSUTCDATETIME() WHERE TutoringSessionID = @id;";
             }
             else
             {
-                updateSql = @"UPDATE TutoringSession
-                      SET Status = @status, PaidDate = NULL, CancellationDate = NULL
-                      WHERE TutoringSessionID = @id;";
+                updateSql = @"UPDATE TutoringSession SET Status = @status, PaidDate = NULL, CancellationDate = NULL WHERE TutoringSessionID = @id;";
             }
 
             await using var tx = await con.BeginTransactionAsync();

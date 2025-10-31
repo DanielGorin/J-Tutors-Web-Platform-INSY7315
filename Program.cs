@@ -33,7 +33,9 @@ namespace J_Tutors_Web_Platform
             builder.Services.AddScoped<AdminAgendaService>();
             builder.Services.AddScoped<AdminUserDirectoryService>();
             builder.Services.AddScoped<PointsService>();
-            
+            builder.Services.AddScoped<UserAgendaService>();
+
+
 
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json

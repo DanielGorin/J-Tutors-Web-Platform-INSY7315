@@ -3,7 +3,6 @@
 @using System.Linq
 
 @{
-    // Safe defaults (your baseline)
     var vm = Model ?? new J_Tutors_Web_Platform.ViewModels.AgendaCalendarVM
             {
                 Year = DateTime.UtcNow.Year,
@@ -24,12 +23,12 @@
 
     var sessions = vm.Sessions ?? Array.Empty<TutoringSession>();
 
-    // Slots supplied by controller (ensure controller sets ViewBag.Slots)
+    // Slots supplied by controller ensure controller sets ViewBag.Slots
     var slots = (ViewBag.Slots as IReadOnlyList<AvailabilityBlock>) ?? Array.Empty<AvailabilityBlock>();
 
     string MonthName(int y, int m) => new DateTime(y, m, 1).ToString("MMMM yyyy");
 
-    // Status as lower string (avoids nullable enum operators)
+    // Status as lower string avoids nullable enum operators
     Func<TutoringSession, string> statusOf = s =>
         s is null ? "" : s.Status.ToString().Trim().ToLowerInvariant();
 

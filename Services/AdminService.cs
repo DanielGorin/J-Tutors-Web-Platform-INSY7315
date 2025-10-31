@@ -14,21 +14,21 @@ namespace J_Tutors_Web_Platform.Services
         private readonly string _connectionString;
         public AdminService(string connectionString)
         {
-            _connectionString = connectionString;
+            _connectionString = connectionString; //initializing connection string
         }
         //============================== Universal ========================================
 
         public int GetAdminID(string Username)
         {
-            const string sql = "select AdminId from Admins where Username = @Username";
+            const string sql = "select AdminId from Admins where Username = @Username"; //gets admin id from admin table where username matches param
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@Username", Username);
+            cmd.Parameters.AddWithValue("@Username", Username); //adding parameter to prevent sql injection
 
             constring.Open();
 
-            var id = (int)cmd.ExecuteScalar();
+            var id = (int)cmd.ExecuteScalar(); //ExecuteScalar returns first column of first row in result
 
             constring.Close();
             return id;
@@ -36,11 +36,11 @@ namespace J_Tutors_Web_Platform.Services
 
         public int GetUserID(string Username)
         {
-            const string sql = "select UserId from Users where Username = @Username";
+            const string sql = "select UserId from Users where Username = @Username"; //gets user id from admin table where username matches param
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@Username", Username);
+            cmd.Parameters.AddWithValue("@Username", Username); //adding parameter to prevent sql injection
 
             constring.Open();
 
@@ -52,11 +52,11 @@ namespace J_Tutors_Web_Platform.Services
 
         public bool IsLeaderboardVisible(string Username)
         {
-            const string sql = "select LeaderboardVisible from Users where Username = @Username";
+            const string sql = "select LeaderboardVisible from Users where Username = @Username"; // checks to see if a specific user has a leaderboard visibility enabled or disabled
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@Username", Username);
+            cmd.Parameters.AddWithValue("@Username", Username); //adding parameter to prevent sql injection
 
             constring.Open();
 
@@ -70,20 +70,20 @@ namespace J_Tutors_Web_Platform.Services
         {
             int id = GetUserID(Username);
 
-            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Earned'";
+            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Earned'"; //adds all points earned by a specific user
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@UserID", id);
+            cmd.Parameters.AddWithValue("@UserID", id); //adding parameter to prevent sql injection
 
             constring.Open();
 
             var totalPoints = cmd.ExecuteScalar();
 
-            if (totalPoints == null)
+            if (totalPoints == null) //checks if result from sql query is null
                 totalPoints = 0;
 
-            if (totalPoints == DBNull.Value)
+            if (totalPoints == DBNull.Value) //checks if result from sql query is db null which is different from c# null and causes a bunch of issues if not handled (stops page from loading)
                 totalPoints = 0;
 
             constring.Close();
@@ -95,20 +95,20 @@ namespace J_Tutors_Web_Platform.Services
         {
             int id = GetUserID(Username);
 
-            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Spent'";
+            const string sql = "select SUM(Amount) from PointsReceipt where UserID = @UserID and Type = 'Spent'"; //adds all receipts from specific user where points were spent, so total points spent
             using var constring = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(sql, constring);
 
-            cmd.Parameters.AddWithValue("@UserID", id);
+            cmd.Parameters.AddWithValue("@UserID", id); //params to prevent sql injection
 
             constring.Open();
 
             var totalPoints = cmd.ExecuteScalar();
 
-            if (totalPoints == null)
+            if (totalPoints == null) //checks if result from Executescalar was null
                 totalPoints = 0;
 
-            if (totalPoints == DBNull.Value)
+            if (totalPoints == DBNull.Value) //checks if result from Executescalar was db null which is not a regular null
                 totalPoints = 0;
 
             constring.Close();

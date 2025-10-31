@@ -111,7 +111,7 @@
     </div>
 
     <div class="row g-3">
-            <div class="card shadow p-24">
+        <div class="card shadow p-24 col-lg-8">
                 <div class="table-responsive">
                     <table class="table align-middle">
                         <thead>
@@ -123,7 +123,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var file in Model.FSR) //not completed
+                            @foreach (var file in Model.FSR)
                             {
                                 <tr>
                                     <td>
@@ -158,10 +158,8 @@
                         <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- RIGHT: Upload + Tips -->
+        </div>
         <div class="col-lg-4">
             <div class="card shadow p-24 mb-16">
                 <form asp-action="FileShareUpload" method="post" enctype="multipart/form-data" class="mb-3">
@@ -181,8 +179,9 @@
                 </ul>
             </div>
         </div>
-    </div>
+    </div>  
 </div>
+
 
 @* --------------------------------------------------------------------
    TODO: Wire Up Admin Files

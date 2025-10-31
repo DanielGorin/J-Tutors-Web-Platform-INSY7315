@@ -1,9 +1,4 @@
 ﻿#nullable enable
-
-// ===============================================
-// USING STATEMENTS
-// Core framework, security, MVC, and project types
-// ===============================================
 using System;
 using System.Globalization;
 using System.Security.Claims;
@@ -22,15 +17,14 @@ namespace J_Tutors_Web_Platform.Controllers
     // =========================================================
     // CONTROLLER: AdminAgendaController
     // Purpose: admin-facing agenda screen (slots, inbox, calendar)
-    // NOTE: roles must already be wired for this to work properly
     // =========================================================
     [Authorize(Roles = "Admin")]
     public sealed class AdminAgendaController : Controller
     {
         // -----------------------------------------
         // DEPENDENCIES
-        // _agenda       → handles agenda logic (slots, sessions)
-        // _adminService → used here mainly to resolve AdminID from username
+        // _agenda       - handles agenda logic (slots, sessions)
+        // _adminService - used here mainly to resolve adminID from  username
         // -----------------------------------------
         private readonly AdminAgendaService _agenda;
         private readonly AdminService _adminService;
@@ -45,14 +39,14 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // =========================================================
-        // =============== HELPER / UTILITY METHODS =================
-        // These are small, single-purpose helpers used by many actions
+        // =============== HELPEr / UTILITY METHODS =================
+        // These are small single-purpose helpers used by many actions.
         // =========================================================
 
         // ---------------------------------------------------------
         // ResolveAdminId()
-        // Goal: turn the logged-in user's name/claim into adminId
-        // If we cannot find / cannot map → return null
+        // Goal to  turn the logged-in user's name/claim into adminId
+        //  ff it cannot find then return null
         // ---------------------------------------------------------
         private int? ResolveAdminId()
         {
@@ -85,7 +79,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // ---------------------------------------------------------
         // NormalizeRange()
         // Goal: when we have optional from/to, make sure we get a valid window
-        // Currently: defaults to "today → +14 days"
+        // Currently: defaults to "today - +14 days"
         // NOTE: Not heavily used for "all slots" mode, but kept for future
         // ---------------------------------------------------------
         private static (DateTime from, DateTime to) NormalizeRange(DateTime? from, DateTime? to)

@@ -37,44 +37,37 @@
                 @if (navSection == "public")
                 {
                     <li class="nav-item"><a class="nav-link @Active("Info")" asp-controller="Home" asp-action="Info">Info</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Register")" asp-controller="Home" asp-action="Register">Register</a></li>
                     <li class="nav-item"><a class="nav-link @Active("Login")" asp-controller="Home" asp-action="Login">Login</a></li>
                     <li class="nav-item"><a class="nav-link @Active("Login")" asp-controller="Home" asp-action="AdminLogin">Admin Login</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Register")" asp-controller="Home" asp-action="Register">Register</a></li>
                 }
 
                 @* ---------------- USER ----------------- *@
                 else if (navSection == "user")
                 {
-                    @* ---- OLD ---- *@
                     <li class="nav-item"><a class="nav-link @Active("UDashboard")" asp-controller="Home" asp-action="UDashboard">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("UProfile")" asp-controller="User" asp-action="UProfile">Profile</a></li>
                     <li class="nav-item"><a class="nav-link @Active("GetUEventList")" asp-controller="Event" asp-action="GetUEventList">New Events</a></li>
                     <li class="nav-item"><a class="nav-link @Active("GetUEventHistory")" asp-controller="Event" asp-action="GetUEventHistory">Events History</a></li>
-                    <li class="nav-item"><a class="nav-link" href="@Url.Action("USessions","User")">My Sessions</a></li>
-
-                    <li class="nav-item"><a class="nav-link @Active("GetUserFiles")" asp-controller="Test" asp-action="GetUserFiles">File Library</a></li>
-                    @* ---- NEW ---- *@
                     <li class="nav-item"><a class="nav-link @Active("UPointsLedger")" asp-controller="User" asp-action="UPointsLedger">Points</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UPointsLeaderboard")" asp-controller="User" asp-action="UPointsLeaderboard">Leaderboard</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("UProfile")" asp-controller="User" asp-action="UProfile">Profile</a></li>
                     <li class="nav-item"><a class="nav-link @Active("UBooking")" asp-controller="User" asp-action="UBooking">Book</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("GetUEventList")" asp-controller="Event" asp-action="GetUEventList">New Events</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("UEventHistory")" asp-controller="Event" asp-action="GetUEventHistory">Events History</a></li>
+                    <li class="nav-item"><a class="nav-link" href="@Url.Action("USessions","User")">My Sessions</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("GetUserFiles")" asp-controller="Test" asp-action="GetUserFiles">File Library</a></li>
                 
                 }
 
                 @* ---------------- ADMIN --------------- *@
                 else if (navSection == "admin")
                 {
-                    @* ---- OLD ---- *@
                     <li class="nav-item"><a class="nav-link @Active("ADashboard")" asp-controller="Admin" asp-action="ADashboard">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link @Active("GetAEventList")" asp-controller="Event" asp-action="GetAEventList">Events</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Agenda")" asp-controller="AdminAgenda" asp-action="Agenda">Agenda</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("AQuotations")" asp-controller="Admin" asp-action="APricing">Subject Pricing</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("AFiles")" asp-controller="Test" asp-action="GetFileShareRows">Files</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Index")" asp-controller="AdminUserDirectory" asp-action="Index">User Directory</a></li>
                     <li class="nav-item"><a class="nav-link @Active("AnalyticsPage")" asp-controller="Analytics" asp-action="AnalyticsPage">Analytics</a></li>
                     <li class="nav-item"><a class="nav-link @Active("AAccount")" asp-controller="Home" asp-action="AAccount">Account</a></li>
-                    @* ---- NEW ---- *@
-                    <li class="nav-item"><a class="nav-link @Active("AFiles")" asp-controller="Test" asp-action="GetFileShareRows">Files</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("AQuotations")" asp-controller="Admin" asp-action="APricing">Subject Pricing</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Agenda")" asp-controller="AdminAgenda" asp-action="Agenda">Agenda</a></li>
-                    <li class="nav-item"><a class="nav-link @Active("Index")" asp-controller="AdminUserDirectory" asp-action="Index">User Directory</a></li>
                 }
             </ul>
 

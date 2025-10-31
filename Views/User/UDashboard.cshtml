@@ -1,12 +1,9 @@
 ﻿@{
     ViewData["Title"] = "User Dashboard";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
     ViewData["NavSection"] = "User";
 }
 
-<!-- Scoped style just for the split buttons -->
 <style>
     .split-btns .btn {
         width: 100%;
@@ -16,28 +13,30 @@
 <h1 class="mb-4">Welcome to Your Dashboard</h1>
 
 <div class="row mb-4">
-    <!-- Points Overview Card -->
+    <!-- Points Overview -->
     <div class="col-md-6">
         <div class="card shadow p-3">
             <h3>Points Overview</h3>
-            <p><strong>Current Points:</strong> [ ... ]</p>
-            <p><strong>All-Time Points:</strong> [ ... ]</p>
-            <a asp-controller="User" asp-action="UPointsLedger" class="btn btn-sm btn-outline-primary">View Full Ledger</a>
+            <a asp-controller="User" asp-action="UPointsLedger" class="btn btn-sm btn-outline-primary">
+                View Full Ledger
+            </a>
         </div>
     </div>
 
-    <!-- Upcoming Events Card -->
+    <!-- Events -->
     <div class="col-md-6">
         <div class="card shadow p-3">
-            <h3>Upcoming Events</h3>
-            <p>[ List of upcoming events the user is signed up for ]</p>
-            <!-- Split buttons 50/50, “My” on the left -->
+            <h3>Events</h3>
             <div class="row g-2 split-btns">
                 <div class="col-6">
-                    <a asp-controller="Home" asp-action="Events" class="btn btn-sm btn-outline-primary">Event History</a>
+                    <a asp-controller="Event" asp-action="GetUEventHistory" class="btn btn-sm btn-outline-primary">
+                        Event History
+                    </a>
                 </div>
                 <div class="col-6">
-                    <a asp-controller="Home" asp-action="Events" class="btn btn-sm btn-outline-primary">New Events</a>
+                    <a asp-controller="Event" asp-action="GetUEventList" class="btn btn-sm btn-outline-primary">
+                        New Events
+                    </a>
                 </div>
             </div>
         </div>
@@ -45,28 +44,29 @@
 </div>
 
 <div class="row mb-4">
-    <!-- Tutoring Sessions Card -->
+    <!-- Tutoring Sessions -->
     <div class="col-md-6">
         <div class="card shadow p-3">
-            <h3>My Tutoring Sessions</h3>
-            <p>[ List of upcoming or past sessions ]</p>
-            <!-- Split buttons 50/50, “My” on the left -->
+            <h3>Tutoring</h3>
             <div class="row g-2 split-btns">
                 <div class="col-6">
-                    <a asp-controller="Home" asp-action="MyTutoring" class="btn btn-sm btn-outline-primary">My Sessions</a>
+                    <a asp-controller="User" asp-action="USessions" class="btn btn-sm btn-outline-primary">
+                        My Sessions
+                    </a>
                 </div>
                 <div class="col-6">
-                    <a asp-controller="Home" asp-action="MyTutoring" class="btn btn-sm btn-outline-primary">Book</a>
+                    <a asp-controller="User" asp-action="UBooking" class="btn btn-sm btn-outline-primary">
+                        Book
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Leaderboard Preview -->
+    <!-- Leaderboard -->
     <div class="col-md-6">
         <div class="card shadow p-3">
-            <h3>Leaderboard Snapshot</h3>
-            <p>[ Top 3 current rankings (Username, Points, Δ Rank) ]</p>
+            <h3>Leaderboard</h3>
             <a asp-controller="User"
                asp-action="UPointsLeaderboard"
                asp-route-mode="Current"
@@ -74,24 +74,16 @@
                class="btn btn-sm btn-outline-primary">
                 See Full Leaderboard
             </a>
-
         </div>
     </div>
 </div>
 
-<!-- Quick Links Section -->
+<!-- Quick Links -->
 <div class="card shadow p-3 mb-4">
     <h3>Quick Links</h3>
     <ul class="list-unstyled mt-2">
-        <a asp-controller="User" asp-action="UProfile">Profile</a>
-        <li><a asp-controller="Home" asp-action="UFileLibrary">→ File Library</a></li>
-        @* Removed: About J Tutors / Points System info *@
+        <li><a asp-controller="User" asp-action="UProfile">Profile</a></li>
+        <li><a asp-controller="Test" asp-action="GetUserFiles">File Library</a></li>
+        <li><a asp-controller="User" asp-action="UPointsLedger">Points</a></li>
     </ul>
 </div>
-
-@* --------------------------------------------------------------------
-   TODO: Enable Functionality for User Dashboard
-   - Bind points, upcoming events, tutoring sessions, leaderboard snapshot
-   - Wire My Events / New Events / My Sessions / Book to final destinations
-   - Auth guard + real navigation
---------------------------------------------------------------------- *@

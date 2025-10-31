@@ -5,23 +5,21 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
 
-    // convenience
-    var mode = Model.Filters.Mode;            // Current | Total
-    var time = Model.Filters.Time;            // ThisMonth | Last30Days | LastMonth | AllTime
+    var mode = Model.Filters.Mode;            
+    var time = Model.Filters.Time;            
 
     bool isThisMonth = time == LeaderboardTimeFilter.ThisMonth;
     bool isLast30 = time == LeaderboardTimeFilter.Last30Days;
     bool isLastMonth = time == LeaderboardTimeFilter.LastMonth;
     bool isAllTime = time == LeaderboardTimeFilter.AllTime;
 
-    // description line
+
     var desc = mode == LeaderboardViewMode.Current
         ? "Current points = points that affect your balance (earns minus spends) within the selected time frame."
         : "Total points = all points earned (only positive amounts) within the selected time frame.";
 }
 
 <style>
-    /* Minimal tweaks; uses your CSS variables from site.css */
     .lb .table thead th {
         color: var(--text-color);
         border-color: var(--border-color);
@@ -74,7 +72,6 @@
                 </div>
             </div>
 
-            <!-- Time (no C# inside attribute areas) -->
             <div class="col-md-6">
                 <label for="time" class="form-label">Time</label>
                 <select id="time" name="time" class="form-select" onchange="this.form.submit()">
@@ -158,7 +155,7 @@
             </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Pages -->
         <div class="d-flex justify-content-between align-items-center mt-16">
             <div class="caption">
                 Showing @Model.ShowingFrom–@Model.ShowingTo of @Model.TotalRows

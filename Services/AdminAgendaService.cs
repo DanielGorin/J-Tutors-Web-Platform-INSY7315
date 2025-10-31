@@ -24,11 +24,14 @@ namespace J_Tutors_Web_Platform.Services
     {
         private readonly IConfiguration _config;
         private const string ConnName = "AzureSql"; // matches your appsettings.json
+        private readonly PointsService _points;     // <-- add
 
-        public AdminAgendaService(IConfiguration config)
+        public AdminAgendaService(IConfiguration config, PointsService points) // <-- add param
         {
             _config = config;
+            _points = points;                       // <-- add
         }
+
 
         // --------------------------------------------------------------------
         // SLOTS / AVAILABILITY
@@ -427,10 +430,9 @@ SELECT TutoringSessionID, Status, PaidDate, CancellationDate
 FROM TutoringSession
 WHERE TutoringSessionID = @id";
 
-            using var con = await OpenAsync();
+            await using var con = await OpenAsync();
 
             string currentStatus;
-            // ⬇️ Reader is fully disposed before we go on to the UPDATE
             using (var getCmd = BuildCommand(con, getSql, new Dictionary<string, object?> { ["@id"] = sessionId }))
             using (var r = await getCmd.ExecuteReaderAsync())
             {
@@ -440,7 +442,6 @@ WHERE TutoringSessionID = @id";
                 currentStatus = r["Status"] as string ?? "";
             }
 
-            // Legal transitions:
             bool legal = currentStatus switch
             {
                 "Requested" => newStatus is "Accepted" or "Denied",
@@ -450,8 +451,6 @@ WHERE TutoringSessionID = @id";
             if (!legal) return (false, $"Illegal transition: {currentStatus} → {newStatus}");
 
             string updateSql;
-            var p = new Dictionary<string, object?> { ["@id"] = sessionId, ["@status"] = newStatus };
-
             if (newStatus == "Paid")
             {
                 updateSql = @"UPDATE TutoringSession
@@ -471,10 +470,37 @@ WHERE TutoringSessionID = @id";
                       WHERE TutoringSessionID = @id;";
             }
 
-            using var updCmd = BuildCommand(con, updateSql, p);
-            var rows = await updCmd.ExecuteNonQueryAsync();
-            return rows > 0 ? (true, "Status updated.") : (false, "No changes applied.");
+            await using var tx = await con.BeginTransactionAsync();
+            try
+            {
+                using (var updCmd = new SqlCommand(updateSql, con, (SqlTransaction)tx))
+                {
+                    updCmd.Parameters.AddWithValue("@status", newStatus);
+                    updCmd.Parameters.AddWithValue("@id", sessionId);
+                    var rows = await updCmd.ExecuteNonQueryAsync();
+                    if (rows <= 0)
+                    {
+                        await tx.RollbackAsync();
+                        return (false, "No changes applied.");
+                    }
+                }
+
+                if (newStatus == "Denied" || newStatus == "Cancelled")
+                {
+                    var reference = $"TS-{sessionId}";
+                    await _points.DeleteByReference(reference, con, (SqlTransaction)tx);
+                }
+
+                await tx.CommitAsync();
+                return (true, "Status updated.");
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
+
 
 
 

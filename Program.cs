@@ -11,6 +11,19 @@ namespace J_Tutors_Web_Platform
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Points + related services
+            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.PointsService>();
+            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.UserLedgerService>();
+
+            // AdminService requires explicit factory with connection string
+            builder.Services.AddScoped<J_Tutors_Web_Platform.Services.AdminService>(sp =>
+            {
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var cs = cfg.GetConnectionString("AzureSql")!;
+                return new J_Tutors_Web_Platform.Services.AdminService(cs);
+            });
+
+
             builder.Services.AddSingleton<BlobStorageService>();
 
             builder.Services.AddScoped<UserProfileService>();
@@ -18,6 +31,8 @@ namespace J_Tutors_Web_Platform
             builder.Services.AddScoped<UserLedgerService>();
             builder.Services.AddScoped<UserBookingService>();
             builder.Services.AddScoped<AdminAgendaService>();
+            builder.Services.AddScoped<AdminUserDirectoryService>();
+            builder.Services.AddScoped<PointsService>();
 
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json

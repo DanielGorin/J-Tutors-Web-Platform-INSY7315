@@ -24,13 +24,16 @@ namespace J_Tutors_Web_Platform.Services
     {
         private readonly IConfiguration _config;
         private readonly AdminAgendaService _agenda;
+        private readonly PointsService _points;        
         private const string ConnName = "AzureSql";
 
-        public UserBookingService(IConfiguration config, AdminAgendaService agenda)
+        public UserBookingService(IConfiguration config, AdminAgendaService agenda, PointsService points) 
         {
             _config = config;
             _agenda = agenda;
+            _points = points;                          
         }
+
 
         // ─────────────────────────────────────────────────────────────────────────────
         // Connection helpers
@@ -340,7 +343,12 @@ WHERE SessionDate = @date
             var quote = CalculateQuote(dto.SubjectId, duration, pct);
             var durationHours = (decimal)duration / 60m;
 
-            // 4) Insert session
+            // 3.5) Gate by CURRENT points balance
+            var currentPoints = _points.GetCurrent(userId).GetAwaiter().GetResult();
+            if (currentPoints < quote.PointsToCharge)
+                return new BookingResult { Ok = false, Message = "Insufficient points for this booking's discount." };
+
+            // 4) Insert session + create points receipt in ONE transaction
             const string insertSql = @"
 INSERT INTO TutoringSession
 (UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status)
@@ -350,21 +358,43 @@ VALUES
 
             int newId;
             using (var con = OpenAsync().GetAwaiter().GetResult())
-            using (var cmd = Cmd(con, insertSql, new Dictionary<string, object?>
+            using (var tx = con.BeginTransaction())
             {
-                ["@userId"] = userId,
-                ["@adminId"] = blockAdminId!,
-                ["@sid"] = dto.SubjectId,
-                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
-                ["@start"] = startTs,
-                ["@durHours"] = durationHours,
-                ["@base"] = quote.BaseCost,
-                ["@pts"] = quote.PointsToCharge,
-                ["@status"] = "Requested"
-            }))
-            {
-                var scalar = cmd.ExecuteScalar();
-                newId = scalar is null || scalar is DBNull ? 0 : Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
+                // 4a) Insert session
+                using (var cmd = new SqlCommand(insertSql, con, tx))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@adminId", blockAdminId!);
+                    cmd.Parameters.AddWithValue("@sid", dto.SubjectId);
+                    cmd.Parameters.AddWithValue("@date", dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date);
+                    cmd.Parameters.AddWithValue("@start", startTs);
+                    cmd.Parameters.AddWithValue("@durHours", durationHours);
+                    cmd.Parameters.AddWithValue("@base", quote.BaseCost);
+                    cmd.Parameters.AddWithValue("@pts", quote.PointsToCharge);
+                    cmd.Parameters.AddWithValue("@status", "Requested");
+
+                    var scalar = cmd.ExecuteScalar();
+                    newId = scalar is null || scalar is DBNull ? 0 : Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
+                    if (newId <= 0)
+                    {
+                        tx.Rollback();
+                        return new BookingResult { Ok = false, Message = "Could not create booking." };
+                    }
+                }
+
+                // 4b) Create Spent receipt (negative amount) linked to this session
+                var receiptId = _points
+                    .CreateSpentForSession(userId, blockAdminId!.Value, newId, quote.PointsToCharge, con, tx)
+                    .GetAwaiter().GetResult();
+
+                if (receiptId is null)
+                {
+                    tx.Rollback();
+                    return new BookingResult { Ok = false, Message = "Could not charge points for booking." };
+                }
+
+                // 4c) Commit both
+                tx.Commit();
             }
 
             return new BookingResult
@@ -373,6 +403,7 @@ VALUES
                 BookingId = newId,
                 Message = newId > 0 ? "Request sent to admin for approval." : "Could not create booking."
             };
+
         }
 
         // ─────────────────────────────────────────────────────────────────────────────

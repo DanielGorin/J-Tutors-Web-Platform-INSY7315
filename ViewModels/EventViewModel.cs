@@ -25,10 +25,22 @@ namespace J_Tutors_Web_Platform.ViewModels
         public int CurrentParticipants { get; set; }
 
     }
+
+    public class UserParticipationRow
+    {
+        public int ParticipationID { get; set; }
+        public int EventID { get; set; }
+        public int UserID { get; set; }
+        public string Username { get; set; }
+        public DateOnly JoinDate { get; set; }
+        public bool Attended { get; set; }
+    }
+
     public class EventViewModel
     {
         public List<Event> Events { get; set; } = new List<Event>();
         public List<EventParticipation> EventParticipations { get; set; } = new List<EventParticipation>();
         public List<DetailedEventRow> DetailedEventRows { get; set; } = new List<DetailedEventRow>();
+        public List<UserParticipationRow> UserParticipations { get; set; } = new List<UserParticipationRow>();
     }
 }

@@ -70,7 +70,8 @@ namespace J_Tutors_Web_Platform.Controllers
             string username = User.FindFirst(ClaimTypes.Name)?.Value;
             var eventViewModel = new EventViewModel()
             {
-                Events = _as.GetEventDetails(EventID, username)
+                Events = _as.GetEventDetails(EventID, username),
+                UserParticipations = _as.GetEventUsers(EventID)
             };
 
             return View("~/Views/Admin/AEventDetails.cshtml", eventViewModel);
@@ -104,6 +105,17 @@ namespace J_Tutors_Web_Platform.Controllers
             };
 
             return View("~Views/Admin/UEventHistory.cshtml", eventViewModel);
+        }
+
+        public IActionResult DeleteUserFromEvent(int EventID, int UserID) 
+        {
+            Console.WriteLine("entered delete user from event with: " + EventID + " " + UserID);
+
+            _as.DeleteUserFromEvent(EventID, UserID);
+
+            Console.WriteLine("deleted user from event");
+
+            return RedirectToAction("AEventDetails");
         }
     }
 }

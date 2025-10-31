@@ -3,9 +3,12 @@ using J_Tutors_Web_Platform.Models.Events;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Subjects;
+using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.Data.SqlClient;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using Newtonsoft.Json.Bson;
+using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Services
 {
@@ -49,6 +52,27 @@ namespace J_Tutors_Web_Platform.Services
             constring.Close();
             return id;
         }
+
+        public string GetUsername(int UserID)
+        {
+            Console.WriteLine("inside get username with " + UserID);
+
+            const string sql = "select Username from Users where UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+
+            string username = (string)cmd.ExecuteScalar();
+
+            constring.Close();
+
+            Console.WriteLine("retrieved username: " + username);
+            return username;
+        }
+
         //======================INNER METHODS======================//
 
         public int GetCurrentParticipants(int EventID)
@@ -108,6 +132,38 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         //======================EVENT METHODS======================//
+
+        public List<UserParticipationRow> GetEventUsers(int EventID) 
+        {
+            var UserParticipationRow = new List<UserParticipationRow>();
+            string username;
+
+            const string sql = "select * from EventParticipation where EventID = @EventID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@EventID", EventID);
+
+            constring.Open();
+
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                username = GetUsername(reader.GetInt32(2));
+
+                UserParticipationRow.Add(new UserParticipationRow
+                {
+                    EventID = reader.GetInt32(1),
+                    UserID = reader.GetInt32(2),
+                    Username = username,
+                    JoinDate = DateOnly.FromDateTime(reader.GetDateTime(3)),
+                    Attended = reader.GetBoolean(4)
+                });
+            }
+
+            return UserParticipationRow;
+        }
 
         public List<DetailedEventRow> GetEvents() 
         {
@@ -369,6 +425,20 @@ namespace J_Tutors_Web_Platform.Services
             constring.Close();
 
             Console.WriteLine("reached end of join event");
+        }
+
+        public void DeleteUserFromEvent(int EventID, int UserID) 
+        {
+            const string sql = "delete from EventParticipation where EventID = @EventID and UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@EventID", EventID);
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
         }
 
 

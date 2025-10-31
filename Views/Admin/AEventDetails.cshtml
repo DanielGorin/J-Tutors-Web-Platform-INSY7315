@@ -212,68 +212,15 @@
                 @* ===== /DEMO DATA =========================== *@
             </div>
         </div>
-    <!-- PARTICIPANTS: Applied vs Enrolled -->
-    <div class="row g-3 mb-16">
-        <div class="col-lg-6">
-            <div class="card shadow p-24 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-8">
-                    <h3 class="mb-0">Applied</h3>
-                    <span class="chip">3</span>
-                </div>
 
-                @* ===== DEMO DATA (Applied) ===== *@
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Requested</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Student 11</strong></td>
-                                <td class="caption">2025-10-01 10:05</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="11" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-primary" disabled>Enroll</button>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Student 12</strong></td>
-                                <td class="caption">2025-10-01 11:40</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="12" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-primary" disabled>Enroll</button>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Student 13</strong></td>
-                                <td class="caption">2025-10-02 08:22</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="13" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-primary" disabled>Enroll</button>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Deny</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                @* ===== /DEMO DATA ===== *@
-            </div>
-        </div>
-
-        <div class="col-lg-6">
+        <div class="col-lg-12">
             <div class="card shadow p-24 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-8">
                     <h3 class="mb-0">Enrolled</h3>
                     <span class="chip">12</span>
                 </div>
 
-                @* ===== DEMO DATA (Enrolled) ===== *@
+                @* ===== (Enrolled) ===== *@
                 <div class="table-responsive">
                     <table class="table align-middle">
                         <thead>
@@ -284,143 +231,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><strong>Student 1</strong></td>
-                                <td class="caption">2025-09-28 09:11</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="1" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Student 2</strong></td>
-                                <td class="caption">2025-09-28 09:30</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="2" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Student 3</strong></td>
-                                <td class="caption">2025-09-28 10:02</td>
-                                <td class="text-end">
-                                    <a asp-controller="Admin" asp-action="AUserDetails" asp-route-id="3" class="btn btn-sm btn-outline-secondary">View</a>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Remove</button>
-                                </td>
-                            </tr>
-                            @* ... replicate to Student 12 for demo if needed *@
+                            @foreach (var user in Model.UserParticipations)
+                            {
+                                <tr>
+                                    <td><strong>@user.Username</strong></td>
+                                    <td class="caption">@user.JoinDate</td>
+                                    <td class="text-end">
+                                        <form asp-controller="Event" asp-action="GenerateReceipt" method="post">
+                                            <input type="hidden" class="caption" value="@user.UserID"></input>
+                                            <input type="hidden" class="caption" name="EventID" value="@user.EventID"></input>
+                                            <button class="btn btn-sm btn-outline-secondary">Confirm Attendance</button>
+                                        </form>
+                                        <form asp-controller="Event" asp-action="DeleteUserFromEvent" method="post">
+                                            <input type="hidden" class="caption" name="UserID" value="@user.UserID"></input>
+                                            <input type="hidden" class="caption" name="EventID" value="@user.EventID"></input>
+                                            <button class="btn btn-sm btn-outline-warning">Remove</button>                         
+                                        </form>
+                                    </td>
+                                    
+                                </tr>
+                            }    
                         </tbody>
                     </table>
                 </div>
-                @* ===== /DEMO DATA ===== *@
-            </div>
-        </div>
-    </div>
-
-    <!-- CLOSE EVENT: Semi-Automated Points Flow -->
-    <div class="card shadow p-24">
-        <div class="d-flex justify-content-between align-items-center mb-12">
-            <h3 class="mb-0">Close Event</h3>
-            <div class="caption">Semi-automated points allocation</div>
-        </div>
-
-
-        <!-- Step 1: Review Roster -->
-        <div class="mb-16">
-            <h4 class="mb-8">Step 1 — Review Roster</h4>
-            <div class="caption mb-8">All enrolled participants are pre-checked as “Attended”. Uncheck any no-shows.</div>
-
-            @* ===== DEMO DATA: Enrolled roster with attendance toggles ===== *@
-            <div class="roster-list">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="att1" checked disabled>
-                    <label class="form-check-label" for="att1"><strong>Student 1</strong> — Attended</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="att2" checked disabled>
-                    <label class="form-check-label" for="att2"><strong>Student 2</strong> — Attended</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="att3" disabled>
-                    <label class="form-check-label" for="att3"><strong>Student 3</strong> — No-show</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="att4" checked disabled>
-                    <label class="form-check-label" for="att4"><strong>Student 4</strong> — Attended</label>
-                </div>
-            </div>
-            @* ===== /DEMO DATA ============================================ *@
-
-            <div class="mt-12 d-flex gap-2">
-                <button class="btn btn-primary" disabled>Next: Preview Allocation</button>
-                <button class="btn btn-outline-secondary" disabled>Cancel</button>
-            </div>
-        </div>
-
-        <hr />
-
-        <!-- Step 2: Preview Allocation (UI preview only) -->
-        <div class="mb-16">
-            <h4 class="mb-8">Step 2 — Preview Allocation</h4>
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th class="text-end">Points (default 25)</th>
-                            <th class="text-end">Adjust</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @* ===== DEMO DATA: Only attended students listed ===== *@
-                        <tr>
-                            <td><strong>Student 1</strong></td>
-                            <td class="text-end">25</td>
-                            <td class="text-end"><input type="number" class="form-control" style="max-width:96px; display:inline-block" value="25" disabled /></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Student 2</strong></td>
-                            <td class="text-end">25</td>
-                            <td class="text-end"><input type="number" class="form-control" style="max-width:96px; display:inline-block" value="25" disabled /></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Student 4</strong></td>
-                            <td class="text-end">25</td>
-                            <td class="text-end"><input type="number" class="form-control" style="max-width:96px; display:inline-block" value="25" disabled /></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="d-flex justify-content-between mt-8">
-                <div class="caption">Attendees: 3</div>
-                <div><strong>Total to Allocate:</strong> 75</div>
-            </div>
-
-
-        </div>
-
-        <hr />
-
-        <!-- Step 3: Generate Receipts -->
-        <div class="mb-16">
-            <h4 class="mb-8">Step 3 — Generate Receipts</h4>
-            <p class="caption">This will create a receipt per attendee and queue notifications.</p>
-            <div class="mt-12 d-flex gap-2">
-                <button class="btn btn-primary" disabled>Confirm Receipt Generation</button>
-                <button class="btn btn-outline-secondary" disabled>Back</button>
-            </div>
-        </div>
-
-        <hr />
-
-        <!-- Step 4: Confirm & Notify -->
-        <div>
-            <h4 class="mb-8">Step 4 — Confirm &amp; Notify</h4>
-            <p class="caption">Finalize the event and notify attendees. You’ll be able to view entries in the Points Ledger.</p>
-            <div class="mt-12 d-flex gap-2">
-                <button class="btn btn-primary" disabled>Finish</button>
-                <a asp-controller="Admin" asp-action="AEvents" class="btn btn-outline-secondary">Close</a>
             </div>
         </div>
     </div>

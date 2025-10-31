@@ -33,6 +33,7 @@ namespace J_Tutors_Web_Platform
             builder.Services.AddScoped<AdminAgendaService>();
             builder.Services.AddScoped<AdminUserDirectoryService>();
             builder.Services.AddScoped<PointsService>();
+            
 
 
             //Adding AuthService as a singleton service, and configuring it with the Azure SQL connection string from appsettings.json
@@ -68,6 +69,12 @@ namespace J_Tutors_Web_Platform
                 var configuration = sp.GetRequiredService<IConfiguration>();
                 var connectionString = configuration.GetConnectionString("AzureSql");
                 return new FileShareService(configuration, connectionString);
+            });
+            builder.Services.AddSingleton<AnalyticsService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var connectionString = configuration.GetConnectionString("AzureSql");
+                return new AnalyticsService(connectionString);
             });
 
             // Add services to the container.

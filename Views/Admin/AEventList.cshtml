@@ -121,76 +121,16 @@
     <!-- Tabs + Create button -->
     <div class="card shadow p-24 mb-16">
         <div class="d-flex flex-wrap align-items-center justify-content-between">
-            <div class="tabs d-flex gap-2">
-                <!-- UI-only tabs. Mark one as active for demo -->
-                <button class="btn btn-outline-primary btn-tab-active" disabled>Upcoming (3)</button>
-                <button class="btn btn-outline-primary" disabled>Past (2)</button>
-                <button class="btn btn-outline-primary" disabled>Completed (2)</button>
-            </div>
             <div>
                 <a class="btn btn-primary" href="#createForm">Create Event</a>
             </div>
         </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card shadow p-24 mb-16">
-        <div class="row g-3">
-            <div class="col-lg-4">
-                <label class="form-label" for="evSearch">Search</label>
-                <input id="evSearch" class="form-control" placeholder="Search by name, description, or location" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="dateFrom">From</label>
-                <input id="dateFrom" type="date" class="form-control" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="dateTo">To</label>
-                <input id="dateTo" type="date" class="form-control" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="locationFilter">Location</label>
-                <input id="locationFilter" class="form-control" placeholder="e.g., Greenfield Park" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="capacityStatus">Capacity</label>
-                <select id="capacityStatus" class="form-select">
-                    <option value="all">All</option>
-                    <option value="open">Open</option>
-                    <option value="full">Full</option>
-                </select>
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="pointsMin">Min Points</label>
-                <input id="pointsMin" type="number" class="form-control" placeholder="0" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="pointsMax">Max Points</label>
-                <input id="pointsMax" type="number" class="form-control" placeholder="100" />
-            </div>
-            <div class="col-6 col-lg-2">
-                <label class="form-label" for="sortBy">Sort by</label>
-                <select id="sortBy" class="form-select">
-                    <option value="date">Date</option>
-                    <option value="points">Points</option>
-                    <option value="name">Name</option>
-                </select>
-            </div>
-            <div class="col-6 col-lg-2 d-flex align-items-end">
-                <button class="btn btn-outline-primary w-100" disabled>Apply</button>
-            </div>
-        </div>
-    </div>
+    </div> 
 
     <!-- ======= UPCOMING TAB (Demo static as active) ======= -->
     <div class="card shadow p-24 mb-16">
         <div class="d-flex justify-content-between align-items-center mb-8">
             <h3 class="mb-0">Upcoming</h3>
-            <div class="d-flex gap-2">
-                <span class="chip">Total: 3</span>
-                <span class="chip chip-open">Open: 2</span>
-                <span class="chip chip-full">Full: 1</span>
-            </div>
         </div>
 
         <div class="table-responsive">
@@ -242,6 +182,7 @@
                                         <input type="hidden" name="EventID" value="@evnt.EventID" />
                                         <button class="btn btn-sm btn-outline-primary">Edit</button>
                                     </form>
+                                    <button class="btn btn-sm btn-outline-danger" disabled>Delete</button> @*= non functional =*@
                                 </td>
                             </tr>
                         }
@@ -258,10 +199,6 @@
     <div class="card shadow p-24 mb-16">
         <div class="d-flex justify-content-between align-items-center mb-8">
             <h3 class="mb-0">Past</h3>
-            <div class="d-flex gap-2">
-                <span class="chip">Total: 2</span>
-                <span class="chip chip-ended">Ended: 2</span>
-            </div>
         </div>
 
         <div class="table-responsive">
@@ -311,7 +248,7 @@
                                         <input type="hidden" name="EventID" value="@evnt.EventID" />
                                         <button class="btn btn-sm btn-outline-primary">Edit</button>
                                     </form>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Delete</button> @*= non functional =*@
+                                    <button class="btn btn-sm btn-outline-danger" disabled>Delete</button> @*= non functional =*@
                                 </td>
                             </tr>
                         }

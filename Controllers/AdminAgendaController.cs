@@ -14,10 +14,13 @@ using J_Tutors_Web_Platform.Models.Scheduling;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
-    // =========================================================
+    //------------------------------------------------------------------------- 
+    //
     // CONTROLLER: AdminAgendaController
-    // Purpose: admin-facing agenda screen (slots, inbox, calendar)
-    // =========================================================
+    // Purpose: Handles Admin Agenda, including slots, sessions and inbox
+    //
+    //------------------------------------------------------------------------- 
+
     [Authorize(Roles = "Admin")]
     public sealed class AdminAgendaController : Controller
     {
@@ -26,6 +29,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // _agenda       - handles agenda logic (slots, sessions)
         // _adminService - used here mainly to resolve adminID from  username
         // -----------------------------------------
+
         private readonly AdminAgendaService _agenda;
         private readonly AdminService _adminService;
 
@@ -38,15 +42,15 @@ namespace J_Tutors_Web_Platform.Controllers
             _adminService = adminService;
         }
 
-        // =========================================================
-        // =============== HELPEr / UTILITY METHODS =================
-        // These are small single-purpose helpers used by many actions.
-        // =========================================================
+        //--------------------------------------------------------------------
+        //                  HELPER / UTILITY METHODS 
+        //    These are small single-purpose helpers used by many actions
+        // --------------------------------------------------------------------
 
         // ---------------------------------------------------------
         // ResolveAdminId()
         // Goal to  turn the logged-in user's name/claim into adminId
-        //  ff it cannot find then return null
+        // if it cannot find then return null
         // ---------------------------------------------------------
         private int? ResolveAdminId()
         {
@@ -68,7 +72,8 @@ namespace J_Tutors_Web_Platform.Controllers
         //   - "HH:mm"  (e.g. "09:30")
         //   - "H:mm"   (e.g. "9:30")
         //   - and if all else fails, a generic TimeSpan parse
-        // ---------------------------------------------------------
+        // --------------------------------------------------------
+        // -
         private static bool TryParseHHmm(string value, out TimeSpan ts)
         {
             return TimeSpan.TryParseExact(value, "HH\\:mm", CultureInfo.InvariantCulture, out ts)
@@ -464,6 +469,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // -------------------------
         // POST: MarkPaid
         // -------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPaid(int id)
@@ -486,6 +492,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // GET /AdminAgenda/InboxLists
         // Allows refreshing just the inbox lists without reloading page
         // =========================================================
+
         [HttpGet]
         public async Task<IActionResult> InboxLists()
         {

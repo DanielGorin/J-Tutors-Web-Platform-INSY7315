@@ -17,6 +17,10 @@ namespace J_Tutors_Web_Platform.Controllers
             _as = eventService;
         }
 
+        //
+        // Get event of lists for admin, that dispays 
+        //
+
         [HttpGet]
         public IActionResult GetAEventList()
         {
@@ -93,7 +97,7 @@ namespace J_Tutors_Web_Platform.Controllers
 
         public IActionResult JoinEvent(int EventID)
         {
-            Console.WriteLine("in controller with " + EventID);
+            //Console.WriteLine("in controller with " + EventID);
 
             string username = User.FindFirst(ClaimTypes.Name)?.Value;
 
@@ -109,7 +113,7 @@ namespace J_Tutors_Web_Platform.Controllers
 
         public IActionResult DeleteUserFromEvent(int EventID, int UserID) 
         {
-            Console.WriteLine("entered delete user from event with: " + EventID + " " + UserID);
+            //Console.WriteLine("entered delete user from event with: " + EventID + " " + UserID);
 
             _as.DeleteUserFromEvent(EventID, UserID);
 
@@ -121,7 +125,7 @@ namespace J_Tutors_Web_Platform.Controllers
         [HttpPost]
         public IActionResult GenerateReceipt(int EventID, int UserID)
         {
-            Console.WriteLine("entered GenerateReceipt with: " + EventID + " " + UserID);
+            //Console.WriteLine("entered GenerateReceipt with: " + EventID + " " + UserID);
 
             _as.GenerateReceiptFromEvent(EventID, UserID);
 

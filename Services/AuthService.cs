@@ -87,7 +87,7 @@ namespace J_Tutors_Web_Platform.Services
             string salt = GetSalt(Username);
             string hashedPassword = HashPassword(NewPassword, salt);
 
-            const string sql = "update Admins set PasswordHash = @PasswordHash where Username = @Username";
+            const string sql = "update Admins set PasswordHash = @PasswordHash where Username = @Username"; //replacing password hash in database
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -148,8 +148,7 @@ namespace J_Tutors_Web_Platform.Services
             DateOnly RegistrationDate = DateOnly.FromDateTime(DateTime.Now);
 
             //inserting new user into database using sqlddddd
-            const string sql = "insert into Users (Email, Username, PasswordHash, PasswordSalt, Phone, BirthDate, RegistrationDate, ThemePreference, LeaderboardVisible, SubjectInterest, FirstName, Surname) " +
-                               "values (@Email, @Username, @PasswordHash, @PasswordSalt, @Phone, @BirthDate, @RegistrationDate, @ThemePreference, @LeaderboardVisible, @SubjectInterest, @FirstName, @Surname)";
+            const string sql = "insert into Users (Email, Username, PasswordHash, PasswordSalt, Phone, BirthDate, RegistrationDate, ThemePreference, LeaderboardVisible, SubjectInterest, FirstName, Surname) values (@Email, @Username, @PasswordHash, @PasswordSalt, @Phone, @BirthDate, @RegistrationDate, @ThemePreference, @LeaderboardVisible, @SubjectInterest, @FirstName, @Surname)";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -241,7 +240,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             //generating a random array of bytes which will be used as a salt for hashing passwords
             byte[] saltBytes = new byte[size];
-            using (var rng = RandomNumberGenerator.Create()) 
+            using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(saltBytes);
             }

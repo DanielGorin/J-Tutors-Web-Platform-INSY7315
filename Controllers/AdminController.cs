@@ -51,6 +51,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // GET: /Admin/ADashboard
         // Simple landing page for admins
         // ========================================================================
+
         [HttpGet]
         public IActionResult ADashboard()
         {
@@ -101,6 +102,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // ------------------------------------------------------------------------
         // POST: create subject
         // ------------------------------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CreateSubject(string subjectName)
@@ -123,6 +125,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // ------------------------------------------------------------------------
         // POST: delete subject
         // ------------------------------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteSubject(int subjectId)
@@ -144,6 +147,7 @@ namespace J_Tutors_Web_Platform.Controllers
         // NOTE: we redirect WITHOUT the subjectId so the right pane does not open
         // again automatically
         // ------------------------------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleSubject(int subjectId)
@@ -168,6 +172,7 @@ namespace J_Tutors_Web_Platform.Controllers
         //   3. validate business rules
         //   4. call service to save
         // ------------------------------------------------------------------------
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SavePricing(

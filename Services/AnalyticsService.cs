@@ -34,11 +34,15 @@ namespace J_Tutors_Web_Platform.Services
             return globalPoints;
         }
 
+        //
+        // -------------------------  methods for calculations of average attendance -----------------------------------------
+        //
+
         public int GetTotalSessions()
         {
             int totalSessions;
 
-            const string sql = "select isnull(count(*), 0) from TutoringSession where Status = 'Paid' and Status = 'Accepted'";
+            const string sql = "select isnull(count(*), 0) from TutoringSession where Status = 'Paid' and Status = 'Accepted'"; //pulling total number of sessions that were paid or accepted
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -52,7 +56,7 @@ namespace J_Tutors_Web_Platform.Services
         {
             int totalSessions;
 
-            const string sql = "select isnull(count(*), 0) from TutoringSession where Status = 'Cancelled'";
+            const string sql = "select isnull(count(*), 0) from TutoringSession where Status = 'Cancelled'"; // pulling sessions that were cancelled
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -65,11 +69,19 @@ namespace J_Tutors_Web_Platform.Services
 
         public double CalculateAverageAttendance()
         {
+            // (part/whole)*100 = percentage
             double divided = GetTotalSessions() - GetTotalMissed();
             double averageAttendance = (divided / GetTotalSessions()) * 100;
 
             return averageAttendance;
         }
+
+        //----------------------------------------------------------------------------------------------------------------------
+
+
+        //
+        // method that pulls all unpaid amounts from accepted sessions
+        //
 
         public double CalculateAmountUnpaid()
         {
@@ -87,6 +99,10 @@ namespace J_Tutors_Web_Platform.Services
 
             return amountUnpaid;
         }
+
+        //
+        // method for calculating total monthly revenue, basicly tallying up all paid sessions in the current month and yearr
+        //
 
         public double MonthlyRevenue() 
         {

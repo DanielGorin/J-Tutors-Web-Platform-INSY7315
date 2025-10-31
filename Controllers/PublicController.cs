@@ -45,8 +45,8 @@ namespace J_Tutors_Web_Platform.Controllers
                 );
 
                 //testing that claims are working
-                Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
-                Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
+                //Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
+                //Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
 
 
                 return RedirectToAction("UDashboard", "Home");
@@ -100,8 +100,8 @@ namespace J_Tutors_Web_Platform.Controllers
                 );
 
                 //testing that claims are working
-                Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
-                Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
+               // Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
+                //Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
 
                 return RedirectToAction("ADashboard", "Admin");
                 //return View("~/Views/Admin/ASessionsCalendar.cshtml");

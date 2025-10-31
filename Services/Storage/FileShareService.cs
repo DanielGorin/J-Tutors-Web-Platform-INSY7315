@@ -52,23 +52,6 @@ namespace J_Tutors_Web_Platform.Services.Storage
             return id;
         }
 
-        public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config, string connectionString)
-        {
-            var cs = config["AzureStorage:ConnectionString"]
-                  ?? config.GetConnectionString("StorageAccount");
-            var shareName = config["AzureStorage:FileShareName"] ?? "jtutors-fileshare";
-            if (string.IsNullOrWhiteSpace(cs)) throw new InvalidOperationException("Missing storage connection string.");
-            if (string.IsNullOrWhiteSpace(shareName)) throw new InvalidOperationException("Missing file share name.");
-
-            // Pin to a stable API version to avoid odd 405s from future versions
-            var opts = new ShareClientOptions(ShareClientOptions.ServiceVersion.V2023_11_03);
-
-            _share = new ShareClient(cs.Trim(), shareName.Trim(), opts);
-            _share.CreateIfNotExists(); // idempotent
-
-            _connectionString = connectionString;
-        }
-
         public string GetUsername(int UserID)
         {
             const string sql = "select Username from Users where UserID = @UserID";
@@ -84,6 +67,42 @@ namespace J_Tutors_Web_Platform.Services.Storage
             constring.Close();
             return username;
         }
+
+        public int GetUserCount(int FileID)
+        {
+            const string sql = "select count(*) from FileAccess where FileID = @FileID";
+            using var constring = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@FileID", FileID);
+
+            constring.Open();
+
+            var count = (int)cmd.ExecuteScalar();
+
+            constring.Close();
+            return count;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------------
+
+
+        public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config, string connectionString)
+        {
+            var cs = config["AzureStorage:ConnectionString"]
+                  ?? config.GetConnectionString("StorageAccount");
+            var shareName = config["AzureStorage:FileShareName"] ?? "jtutors-fileshare";
+            if (string.IsNullOrWhiteSpace(cs)) throw new InvalidOperationException("Missing storage connection string.");
+            if (string.IsNullOrWhiteSpace(shareName)) throw new InvalidOperationException("Missing file share name.");
+
+            // Pin to a stable API version to avoid odd 405s from future versions
+            var opts = new ShareClientOptions(ShareClientOptions.ServiceVersion.V2023_11_03);
+
+            _share = new ShareClient(cs.Trim(), shareName.Trim(), opts);
+            _share.CreateIfNotExists(); // idempotent
+
+            _connectionString = connectionString;
+        } 
 
         // ROOT ONLY
         public async Task<string> UploadAsync(string Username, Stream content, long length, string fileName, CancellationToken ct = default)
@@ -125,22 +144,6 @@ namespace J_Tutors_Web_Platform.Services.Storage
             Console.WriteLine("Inserting file record into database: " + fileName + AdminID);
 
             return file.Name;
-        }
-
-        public int GetUserCount(int FileID) 
-        {
-            const string sql = "select count(*) from FileAccess where FileID = @FileID";
-            using var constring = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand(sql, constring);
-
-            cmd.Parameters.AddWithValue("@FileID", FileID);
-
-            constring.Open();
-
-            var count = (int)cmd.ExecuteScalar();
-
-            constring.Close();
-            return count;
         }
 
         public List<FileShareRow> GetFileShareRows(string Username) 

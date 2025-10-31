@@ -108,7 +108,7 @@ namespace J_Tutors_Web_Platform.Services
         public bool IsUserParticipating(int EventID, int UserID)
         {
             bool isParticipating;
-            const string sql = "select count(*) from EventParticipation where EventID = @EventID and UserID = @UserID";
+            const string sql = "select count(*) from EventParticipation where EventID = @EventID and UserID = @UserID"; //getting count of 
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -148,7 +148,7 @@ namespace J_Tutors_Web_Platform.Services
 
             constring.Open();
 
-            using SqlDataReader reader = cmd.ExecuteReader();
+            using SqlDataReader reader = cmd.ExecuteReader(); // 
 
             while (reader.Read())
             {
@@ -184,7 +184,7 @@ namespace J_Tutors_Web_Platform.Services
             {
                 currentParticpants = GetCurrentParticipants(reader.GetInt32(0));
 
-                eventsList.Add(new DetailedEventRow
+                eventsList.Add(new DetailedEventRow // filling list with event data from database
                 {
                     EventID = reader.GetInt32(0),
                     AdminID = reader.GetInt32(1),
@@ -194,7 +194,6 @@ namespace J_Tutors_Web_Platform.Services
                     Location = reader.IsDBNull(5) ? null : reader.GetString(5),
                     EventDate = DateOnly.FromDateTime(reader.GetDateTime(6)),
                     StartTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(7)),
-                    //StartTime = reader.GetTimeOnly(7),
                     DurationMinutes = reader.GetInt32(8),
                     PointsReward = reader.GetInt32(10),
                     GoalParticipants = reader.GetInt32(9),
@@ -228,7 +227,7 @@ namespace J_Tutors_Web_Platform.Services
                 isUserParticipating = IsUserParticipating(reader.GetInt32(0), GetUserID(Username));
                 currentParticpants = GetCurrentParticipants(reader.GetInt32(0));
 
-                if (!isUserParticipating) 
+                if (!isUserParticipating) //filling list with only "new" / unjoined events, so that  it is not displayed on new event page
                 {
                     eventsList.Add(new DetailedEventRow
                     {
@@ -275,7 +274,7 @@ namespace J_Tutors_Web_Platform.Services
                 isUserParticipating = IsUserParticipating(reader.GetInt32(0), GetUserID(Username));
                 currentParticpants = GetCurrentParticipants(reader.GetInt32(0));
 
-                if (isUserParticipating)
+                if (isUserParticipating) // checks if user is participating in event,, and only fills list if they are, allows tracking on page that this populates, so that the user sees what events they have done/ have signed up for 
                 {
                     eventsList.Add(new DetailedEventRow
                     {
@@ -381,8 +380,8 @@ namespace J_Tutors_Web_Platform.Services
 
         public void UpdateEvent(int EventID, int AdminID, string Title, string Description, string ImageURL, string Location, DateOnly EventDate, TimeOnly StartTime, int DurationMinutes, int PointsReward, int GoalParticipants, string WhatsappGroupURL, string Status, DateOnly updateDate)
         {
-            const string sql = "update Events set Title = @Title, Description = @Description, ImageURL = @ImageURL, Location = @Location, EventDate = @EventDate, StartTime = @StartTime, DurationMinutes = @DurationMinutes, PointsReward = @PointsReward, GoalParticipants = @GoalParticipants, WhatsappGroupURL = @WhatsappGroupURL, Status = @Status, UpdateDate = @UpdateDate " +
-                               "where EventID = @EventID";
+            //updateing entire event in case admin changes a detail, all this is populated in AEventDetails
+            const string sql = "update Events set Title = @Title, Description = @Description, ImageURL = @ImageURL, Location = @Location, EventDate = @EventDate, StartTime = @StartTime, DurationMinutes = @DurationMinutes, PointsReward = @PointsReward, GoalParticipants = @GoalParticipants, WhatsappGroupURL = @WhatsappGroupURL, Status = @Status, UpdateDate = @UpdateDate where EventID = @EventID";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
             cmd.Parameters.AddWithValue("@EventID", EventID);
@@ -403,17 +402,16 @@ namespace J_Tutors_Web_Platform.Services
             cmd.ExecuteNonQuery();
             constring.Close();
 
-            Console.WriteLine("reached end of Update in service");
+            //Console.WriteLine("reached end of Update in service"); // console write lines for debugging, you may see a bunch of them, they can be removed in actual deployment however they are nice to uncomment if there are issues in the future
         }
 
         public void JoinEvent(int EventID, string username) 
         {
             int userID = GetUserID(username);
 
-            Console.WriteLine("inside join event with " + EventID);
+            //Console.WriteLine("inside join event with " + EventID);
 
-            const string sql = "insert into EventParticipation (EventID, UserID, JoinDate, Attendance) " +
-                               "values (@EventID, @UserID, @JoinDate, @Attendance)";
+            const string sql = "insert into EventParticipation (EventID, UserID, JoinDate, Attendance) values (@EventID, @UserID, @JoinDate, @Attendance)";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
             using var cmd = new SqlCommand(sql, constring);
 
@@ -426,7 +424,7 @@ namespace J_Tutors_Web_Platform.Services
             cmd.ExecuteNonQuery();
             constring.Close();
 
-            Console.WriteLine("reached end of join event");
+            //Console.WriteLine("reached end of join event");
         }
 
         public void DeleteUserFromEvent(int EventID, int UserID) 
@@ -445,7 +443,7 @@ namespace J_Tutors_Web_Platform.Services
 
         public int GetPointsReward(int EventID) 
         {
-            Console.WriteLine("inside get participation id with EventID: " + EventID);
+            //Console.WriteLine("inside get participation id with EventID: " + EventID);
 
             const string sql = "select PointsReward from Events where EventID = @EventID";
             using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
@@ -507,7 +505,7 @@ namespace J_Tutors_Web_Platform.Services
             }
         }
 
-        public void GenerateReceiptFromEvent(int EventID, int UserID) 
+        public void GenerateReceiptFromEvent(int EventID, int UserID) //broken up into lots of individual methods to keep it smaller and simpler
         {
             int amount = GetPointsReward(EventID);
             int adminID = GetAdminIDFromEvent(EventID);

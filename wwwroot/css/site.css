@@ -283,3 +283,40 @@ a:focus, button:focus, input:focus {
     outline: 2px dashed var(--accent-color);
     outline-offset: 2px;
 }
+/* ============================================================
+   TABLE COLOR FIX — Theme aware
+   Ensures table text contrasts properly in dark mode
+============================================================ */
+body.dark-theme .table {
+    color: var(--text-color) !important;
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+    body.dark-theme .table th,
+    body.dark-theme .table td {
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+    }
+
+body.dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+body.dark-theme .table-hover > tbody > tr:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* optional, improves visibility of links in dark tables */
+body.dark-theme .table a {
+    color: var(--primary-color) !important;
+}
+
+    body.dark-theme .table a:hover {
+        color: var(--accent-color) !important;
+    }
+body.dark-theme .card {
+    box-shadow: 0 2px 8px rgba(255,255,255,0.05);
+}
+
+

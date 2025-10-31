@@ -1,217 +1,292 @@
-﻿@model J_Tutors_Web_Platform.ViewModels.UserDirectoryViewModel
-
+﻿@model J_Tutors_Web_Platform.ViewModels.AdminUserDirectoryPageViewModel
 @{
-    ViewData["Title"] = "Users Directory";
+    ViewData["Title"] = "User Directory";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["NavSection"] = "Admin"; // so the navbar shows Admin links
+    ViewData["NavSection"] = "Admin";
+
+    var tf = Model.Timeframe;
+    string dir = Model.SortDirection.ToUpperInvariant() == "DESC" ? "DESC" : "ASC";
+    string ToggleDir(string col) => (Model.SortColumn == col && dir == "ASC") ? "DESC" : "ASC";
+    string SortIcon(string col) => Model.SortColumn == col ? (dir == "ASC" ? "↑" : "↓") : "";
 }
 
-<!-- Scoped styles for Admin Users List -->
-<style>
-    .ausers, .ausers .card {
-        color: var(--text-color) !important;
-    }
+<div class="card shadow p-3">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <h2 class="mb-0">User Directory</h2>
 
-        .ausers .caption, .ausers .text-muted {
-            color: var(--muted-text-color) !important;
-        }
+        <div class="text-muted small">
+            Showing timeframe: <strong>@Model.Timeframe</strong>
+        </div>
 
-        .ausers .form-control, .ausers select {
-            background-color: var(--surface-color) !important;
-            color: var(--text-color) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 8px !important;
-            padding: 10px 12px !important;
-            width: 100%;
-        }
 
-            .ausers .form-control::placeholder {
-                color: var(--muted-text-color) !important;
-            }
-
-            .ausers .form-control:focus, .ausers select:focus {
-                outline: none !important;
-                border-color: var(--primary-color) !important;
-                box-shadow: 0 0 0 0.15rem var(--accent-color) !important;
-            }
-
-        /* Table theming */
-        .ausers .table, .ausers .table th, .ausers .table td {
-            color: var(--text-color) !important;
-            background: transparent !important;
-            border-color: var(--border-color) !important;
-            vertical-align: middle;
-        }
-
-            .ausers .table thead th {
-                border-bottom: 1px solid var(--border-color) !important;
-            }
-
-            .ausers .table tbody tr + tr {
-                border-top: 1px solid var(--border-color) !important;
-            }
-
-            .ausers .table tbody tr:hover {
-                background: rgba(0,0,0,0.03);
-            }
-
-        /* Chips */
-        .ausers .chip {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            border: 1px solid var(--border-color);
-            margin: 0 0 0 8px;
-            white-space: nowrap;
-        }
-
-        .ausers .chip-visible {
-            color: var(--success-color);
-            border-color: var(--success-color);
-        }
-
-        .ausers .chip-hidden {
-            color: var(--warning-color);
-            border-color: var(--warning-color);
-        }
-
-        .ausers .chip-unpaid {
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        /* Slim secondary line under username */
-        .ausers .subline {
-            font-size: 14px;
-            color: var(--muted-text-color);
-        }
-
-        /* Compact utility */
-        .ausers .w-120 {
-            width: 120px;
-        }
-</style>
-
-<div class="ausers">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-16">
-        <h1 class="mb-0">Users Directory</h1>
-        <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
-    </div>
-
-    <!-- Controls: Search / Filters / Sort -->
-    <div class="card shadow p-24 mb-16">
-        <form class="row g-3" asp-controller="Admin" asp-action="FilterSearch">
-            <div class="col-lg-6">
-                <label for="searchUsers" class="form-label">Search students</label>
-                <input name="searchUsers" id="searchUsers" type="text" class="form-control" placeholder="Search by username, name, subject…" />
+        <form method="get" class="row g-2">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search (username / first / surname)</label>
+                <input id="search" name="search" value="@Model.Search" class="form-control" />
             </div>
-            <div class="col-6 col-lg-2">
-                <label for="visFilter" class="form-label">Leaderboard</label>
-                <select name="visFilter" id="visFilter" class="form-select">
-                    <option value="all">All</option>
-                    <option value="visible">Visible</option>
-                    <option value="hidden">Hidden</option>
+            <div class="col-md-4">
+                <label for="timeframe" class="form-label">Timeframe (affects points only)</label>
+                <select id="timeframe" name="timeframe" class="form-select">
+                    @if (tf == AdminDirectoryTimeframe.ThisMonth)
+                    {
+                        <option value="ThisMonth" selected="selected">This Month</option>
+                    }
+                    else
+                    {
+                        <option value="ThisMonth">This Month</option>
+                    }
+
+                    @if (tf == AdminDirectoryTimeframe.Last30Days)
+                    {
+                        <option value="Last30Days" selected="selected">Last 30 Days</option>
+                    }
+                    else
+                    {
+                        <option value="Last30Days">Last 30 Days</option>
+                    }
+
+                    @if (tf == AdminDirectoryTimeframe.LastMonth)
+                    {
+                        <option value="LastMonth" selected="selected">Last Month</option>
+                    }
+                    else
+                    {
+                        <option value="LastMonth">Last Month</option>
+                    }
+
+                    @if (tf == AdminDirectoryTimeframe.Last4Months)
+                    {
+                        <option value="Last4Months" selected="selected">Last 4 Months</option>
+                    }
+                    else
+                    {
+                        <option value="Last4Months">Last 4 Months</option>
+                    }
+
+                    @if (tf == AdminDirectoryTimeframe.AllTime)
+                    {
+                        <option value="AllTime" selected="selected">All-Time</option>
+                    }
+                    else
+                    {
+                        <option value="AllTime">All-Time</option>
+                    }
+
                 </select>
             </div>
-            <div class="col-6 col-lg-2">
-                <label for="unpaidFilter" class="form-label">Unpaid Sessions</label>
-                <select name="unpaidFilter" id="unpaidFilter" class="form-select">
-                    <option value="all">All</option>
-                    <option value="has">Has Unpaid</option>
-                    <option value="none">None</option>
+            <div class="col-md-2">
+                <label for="pageSize" class="form-label">
+                    Page<br />Size
+                </label>
+
+                <select id="pageSize" name="pageSize" class="form-select">
+                    @if (Model.PageSize == 10)
+                    {
+                        <option value="10" selected="selected">10</option>
+                    }
+                    else
+                    {
+                        <option value="10">10</option>
+                    }
+
+                    @if (Model.PageSize == 25)
+                    {
+                        <option value="25" selected="selected">25</option>
+                    }
+                    else
+                    {
+                        <option value="25">25</option>
+                    }
+
+                    @if (Model.PageSize == 50)
+                    {
+                        <option value="50" selected="selected">50</option>
+                    }
+                    else
+                    {
+                        <option value="50">50</option>
+                    }
+
+                    @if (Model.PageSize == 100)
+                    {
+                        <option value="100" selected="selected">100</option>
+                    }
+                    else
+                    {
+                        <option value="100">100</option>
+                    }
+
                 </select>
             </div>
-            <div class="col-lg-2 d-flex align-items-end">
-                <button class="btn btn-outline-primary w-100" disabled>Apply Filters</button>
+            <div class="col-md-2 d-flex">
+                <button type="submit" class="btn btn-primary ms-auto">Apply</button>
             </div>
         </form>
-        <div class="row g-3 mt-8">
-            <div class="col-6 col-lg-2">
-                <label for="sortBy" class="form-label">Sort by</label>
-                <select id="sortBy" class="form-select">
-                    <option value="recent">Last Activity</option>
-                    <option value="points">Current Points</option>
-                    <option value="alltime">All-time Points</option>
-                    <option value="unpaid">Unpaid Amount</option>
-                    <option value="name">Name</option>
-                </select>
-            </div>
-            <div class="col-6 col-lg-2 d-flex align-items-end">
-                <button class="btn btn-outline-secondary w-100" disabled>Apply Sort</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="card shadow p-24">
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @* Clicking headers toggles sort; we preserve current state via query *@
+                    <th>
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="Username"
+                           asp-route-sortDirection="@ToggleDir("Username")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Username @SortIcon("Username")
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="FirstName"
+                           asp-route-sortDirection="@ToggleDir("FirstName")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            First Name @SortIcon("FirstName")
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="Surname"
+                           asp-route-sortDirection="@ToggleDir("Surname")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Surname @SortIcon("Surname")
+                        </a>
+                    </th>
+                    <th class="text-end">
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="PointsTotal"
+                           asp-route-sortDirection="@ToggleDir("PointsTotal")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Total Points @SortIcon("PointsTotal")
+                        </a>
+                    </th>
+                    <th class="text-end">
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="PointsCurrent"
+                           asp-route-sortDirection="@ToggleDir("PointsCurrent")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Current Points @SortIcon("PointsCurrent")
+                        </a>
+                    </th>
+                    <th class="text-end">
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="UnpaidRandTotal"
+                           asp-route-sortDirection="@ToggleDir("UnpaidRandTotal")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Unpaid (R) @SortIcon("UnpaidRandTotal")
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="BirthDate"
+                           asp-route-sortDirection="@ToggleDir("BirthDate")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Date of Birth @SortIcon("BirthDate")
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-action="Index" asp-controller="AdminUserDirectory"
+                           asp-route-search="@Model.Search"
+                           asp-route-timeframe="@Model.Timeframe"
+                           asp-route-sortColumn="LeaderboardVisible"
+                           asp-route-sortDirection="@ToggleDir("LeaderboardVisible")"
+                           asp-route-page="@Model.Page"
+                           asp-route-pageSize="@Model.PageSize">
+                            Visible @SortIcon("LeaderboardVisible")
+                        </a>
+                    </th>
+                    <th style="width: 1%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Rows.Any())
+                {
                     <tr>
-                        <th>Student</th>
-                        <th>Points (Current / All-time)</th>
-                        <th>Unpaid Sessions</th>
-                        <th>Last Activity</th>
-                        <th>Leaderboard</th>
-                        <th class="text-end">Actions</th>
+                        <td colspan="10">
+                            <div class="text-center text-muted p-4">
+                                No users to display (Step 1 skeleton).
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @* ========================= DEMO DATA — remove/replace when wired ========================= *@
-
-                    @foreach (var user in Model.UDR)
+                }
+                else
+                {
+                    foreach (var r in Model.Rows)
                     {
                         <tr>
+                            <td>@r.Username</td>
+                            <td>@r.FirstName</td>
+                            <td>@r.Surname</td>
+                            <td class="text-end">@r.PointsTotal</td>
+                            <td class="text-end">@r.PointsCurrent</td>
+                            <td class="text-end">@r.UnpaidRandTotal.ToString("0.00")</td>
+                            <td>@r.BirthDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(r.LeaderboardVisible ? "Visible" : "Hidden")</td>
                             <td>
-                                <div><strong>@user.Username</strong></div>
-                            </td>
-
-                            <td>
-                                <div><strong>@user.CurrentPoints</strong> / @user.TotalPoints</div>
-                            </td>
-
-                            <td>
-                                <div>@user.UnpaidSessions · R @user.UnpaidAmount</div>
-                            </td>
-
-                            <td>
-                                <div>@user.LastActivity</div>
-                            </td>
-
-                            <td>
-                                Visible <span class="chip chip-visible">@user.LeaderboardVisible</span>
-                            </td>
-
-                            <td class="text-end">
-                                <a asp-controller="Admin" asp-action="AUsersDetail" asp-route-id="1" class="btn btn-sm btn-outline-primary">Manage</a>
+                                <a class="btn btn-sm btn-outline-primary"
+                                   asp-action="Details"
+                                   asp-controller="AdminUserDirectory"
+                                   asp-route-id="@r.UserID">
+                                    View Details
+                                </a>
                             </td>
                         </tr>
                     }
+                }
+            </tbody>
+        </table>
+    </div>
 
-                    @* ========================= /DEMO DATA =================================================== *@
-                </tbody>
-            </table>
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+            Showing @Model.ShowingFrom–@Model.ShowingTo of @Model.TotalRows
         </div>
+        <div class="btn-group">
+            @{
+                int prev = Model.Page > 1 ? Model.Page - 1 : 1;
+                int next = Model.Page + 1; // Enable/disable when we have real totals in later steps
+                bool hasPrev = Model.Page > 1;
+                bool hasNext = Model.ShowingTo < Model.TotalRows;
+                var commonRoute = new Dictionary<string, string>
+            {
+                ["search"] = Model.Search ?? "",
+                ["timeframe"] = Model.Timeframe.ToString(),   // enum -> string
+                ["sortColumn"] = Model.SortColumn,
+                ["sortDirection"] = Model.SortDirection,
+                ["pageSize"] = Model.PageSize.ToString()
+            };
+            }
+            <a class="btn btn-outline-secondary @(hasPrev ? "" : "disabled")"
+               asp-action="Index" asp-controller="AdminUserDirectory"
+               asp-route-page="@prev"
+               asp-all-route-data="commonRoute">Previous</a>
 
-        <!-- Pagination Placeholder -->
-        <div class="d-flex justify-content-between align-items-center mt-16">
-            <div class="caption text-muted">Showing 5 of 5</div>
-            <div>
-                <button class="btn btn-outline-secondary btn-sm" disabled>Previous</button>
-                <button class="btn btn-outline-secondary btn-sm" disabled>Next</button>
-            </div>
+            <a class="btn btn-outline-secondary @(hasNext ? "" : "disabled")"
+               asp-action="Index" asp-controller="AdminUserDirectory"
+               asp-route-page="@next"
+               asp-all-route-data="commonRoute">Next</a>
         </div>
     </div>
 </div>
-
-@* --------------------------------------------------------------------
-   TODO: Wire Up Users Directory
-   - Fetch paged list of users with { id, username, name, pointsCurrent, pointsAllTime,
-     unpaidCount, unpaidAmount, lastActivityAt, leaderboardVisible }
-   - Implement search (username/name/subject), filters (visibility/unpaid), sort (activity/points/unpaid/name)
-   - Row click or "Manage" opens AUsersDetail(id) with full profile (events, points, receipts, sessions, notes)
-   - Consider server-driven pagination; keep page size small (e.g., 25–50)
-   - Admin-only auth guard
---------------------------------------------------------------------- *@

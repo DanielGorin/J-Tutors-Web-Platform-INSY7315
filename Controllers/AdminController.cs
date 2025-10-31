@@ -50,24 +50,8 @@ namespace J_Tutors_Web_Platform.Controllers
             }
         
 
-        // ============================================================================
-        // USERS: Directory
-        // ============================================================================
+ 
 
-        [HttpGet]
-        public IActionResult AUserList()
-        {
-            ViewData["NavSection"] = "Admin";
-
-            var username = User.Identity?.Name ?? string.Empty;
-
-            var vm = new UserDirectoryViewModel
-            {
-                UDR = _adminService.GetAllUsers(username)
-            };
-
-            return View("~/Views/Admin/AUserList.cshtml", vm);
-        }
 
         // ============================================================================
         // PRICING & SUBJECTS

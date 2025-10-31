@@ -19,6 +19,7 @@ namespace J_Tutors_Web_Platform.ViewModels
         public AgendaSlotsVM? Slots { get; set; }
         public AgendaInboxVM? Inbox { get; set; }
         public AgendaCalendarVM? Calendar { get; set; }
+        public AgendaInboxDisplayVM? InboxDisplay { get; set; }
     }
 
     public sealed class AgendaSlotsVM

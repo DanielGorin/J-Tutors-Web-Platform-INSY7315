@@ -1,95 +1,132 @@
-﻿@model J_Tutors_Web_Platform.ViewModels.AgendaInboxVM
+﻿@model J_Tutors_Web_Platform.ViewModels.AgendaInboxDisplayVM
 @{
     Layout = null;
 }
+
 <style>
-    .inbox-table td, .inbox-table th {
-        color: var(--bs-body-color) !important;
+    /* Theme-aware list items and borders */
+    .list-group-item {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+        cursor: pointer;
     }
+
+        .list-group-item:hover {
+            filter: brightness(1.03);
+        }
 
     .badge {
         font-weight: 600;
+    }
+
+    /* Chips follow theme vars */
+    .chip {
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        padding: .15rem .6rem;
+        background-color: transparent;
+        color: var(--text-color);
+    }
+
+    .price {
+        min-width: 9rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Details host card also uses theme vars */
+    #details-host.card {
+        background-color: var(--surface-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
     }
 </style>
 
 <h3 class="mb-3">Inbox</h3>
 
-<div class="mb-3">
-    <h6 class="mb-2">Requested (@(Model?.Requested?.Count ?? 0))</h6>
-    @if (Model?.Requested == null || !Model.Requested.Any())
-    {
-        <div class="text-muted">none</div>
-    }
-    else
-    {
-        <ul class="list-group">
-            @foreach (var s in Model.Requested.OrderBy(x => x.SessionDate).ThenBy(x => x.StartTime))
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
-                    <span class="badge bg-warning text-dark">Requested</span>
-                </li>
-            }
-        </ul>
-    }
+<div class="row g-3">
+    <!-- LEFT: grouped lists -->
+    <div class="col-12 col-lg-7">
+        <div id="inbox-lists-host">
+            @await Html.PartialAsync("~/Views/Admin/AAgendaInboxLists.cshtml", Model)
+        </div>
+    </div>
+
+    <!-- RIGHT: details card -->
+    <div class="col-12 col-lg-5">
+        <div id="details-host" class="card p-16">
+            <div class="text-muted">Select a session to see details.</div>
+        </div>
+    </div>
 </div>
 
-<div class="mb-3">
-    <h6 class="mb-2">Accepted (@(Model?.Accepted?.Count ?? 0))</h6>
-    @if (Model?.Accepted == null || !Model.Accepted.Any())
-    {
-        <div class="text-muted">none</div>
-    }
-    else
-    {
-        <ul class="list-group">
-            @foreach (var s in Model.Accepted.OrderBy(x => x.SessionDate).ThenBy(x => x.StartTime))
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
-                    <span class="badge bg-success">Accepted</span>
-                </li>
-            }
-        </ul>
-    }
-</div>
+<!-- Hidden anti-forgery token for AJAX POSTs -->
+<form id="af-token-form" method="post">@Html.AntiForgeryToken()</form>
 
-<div class="mb-3">
-    <h6 class="mb-2">Paid (@(Model?.Paid?.Count ?? 0))</h6>
-    @if (Model?.Paid == null || !Model.Paid.Any())
-    {
-        <div class="text-muted">none</div>
-    }
-    else
-    {
-        <ul class="list-group">
-            @foreach (var s in Model.Paid.OrderByDescending(x => x.PaidDate ?? DateTime.MinValue))
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
-                    <span class="badge bg-primary">Paid</span>
-                </li>
-            }
-        </ul>
-    }
-</div>
+<script>
+    (function () {
+        // Helper: get antiforgery token from hidden form
+        function getToken() {
+            const f = document.getElementById('af-token-form');
+            if (!f) return '';
+            const inp = f.querySelector('input[name="__RequestVerificationToken"]');
+            return inp ? inp.value : '';
+        }
 
-<div class="mb-3">
-    <h6 class="mb-2">Cancelled (@(Model?.Cancelled?.Count ?? 0))</h6>
-    @if (Model?.Cancelled == null || !Model.Cancelled.Any())
-    {
-        <div class="text-muted">none</div>
-    }
-    else
-    {
-        <ul class="list-group">
-            @foreach (var s in Model.Cancelled.OrderByDescending(x => x.CancellationDate ?? DateTime.MinValue))
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>#@s.TutoringSessionID · @s.SessionDate.ToString("yyyy-MM-dd") @s.StartTime.ToString(@"hh\:mm") — User @s.UserID</span>
-                    <span class="badge bg-secondary">Cancelled</span>
-                </li>
+        // Click on list item -> load details
+        document.addEventListener('click', function (ev) {
+            const li = ev.target.closest('li.list-group-item');
+            if (li && li.hasAttribute('data-session-id')) {
+                const sid = li.getAttribute('data-session-id');
+                const host = document.getElementById('details-host');
+                host.innerHTML = '<div class="text-muted p-2">Loading...</div>';
+
+                fetch('/AdminAgenda/SessionDetails?id=' + encodeURIComponent(sid))
+                    .then(r => { if (!r.ok) throw new Error('Failed'); return r.text(); })
+                    .then(html => host.innerHTML = html)
+                    .catch(_ => host.innerHTML = '<div class="text-danger p-2">Unable to load details.</div>');
             }
-        </ul>
-    }
-</div>
+        });
+
+        // Delegate action button clicks inside the details card
+        document.addEventListener('click', function (ev) {
+            const btn = ev.target.closest('[data-action][data-session-id]');
+            if (!btn) return;
+
+            const action = btn.getAttribute('data-action'); // Accept | Deny | Cancel | MarkPaid
+            const id = btn.getAttribute('data-session-id');
+
+            // Optional confirms
+            if (action === 'Deny' && !confirm('Deny this request?')) return;
+            if (action === 'Cancel' && !confirm('Cancel this accepted session?')) return;
+            if (action === 'MarkPaid' && !confirm('Mark this session as PAID?')) return;
+
+            const host = document.getElementById('details-host');
+            host.innerHTML = '<div class="text-muted p-2">Saving...</div>';
+
+            fetch('/AdminAgenda/' + action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: '__RequestVerificationToken=' + encodeURIComponent(getToken()) +
+                    '&id=' + encodeURIComponent(id)
+            })
+                .then(async r => {
+                    const html = await r.text();
+                    // Refresh details card
+                    host.innerHTML = html;
+
+                    // Also refresh the left lists
+                    const lists = document.getElementById('inbox-lists-host');
+                    fetch('/AdminAgenda/InboxLists')
+                        .then(rr => rr.text())
+                        .then(hh => lists.innerHTML = hh);
+                })
+                .catch(_ => {
+                    host.innerHTML = '<div class="text-danger p-2">Action failed.</div>';
+                });
+        });
+    })();
+</script>

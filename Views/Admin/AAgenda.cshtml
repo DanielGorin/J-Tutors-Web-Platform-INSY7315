@@ -79,9 +79,10 @@
              aria-labelledby="tab-inbox-tab">
             @await Html.PartialAsync(
                      "~/Views/Admin/AAgendaInbox.cshtml",
-                     Model?.Inbox ?? new J_Tutors_Web_Platform.ViewModels.AgendaInboxVM()
+                     Model?.InboxDisplay ?? new J_Tutors_Web_Platform.ViewModels.AgendaInboxDisplayVM()
                      )
         </div>
+
 
         <!-- CALENDAR -->
         <div class="tab-pane fade @(active == "Calendar" ? "show active" : "")"

@@ -90,6 +90,8 @@ namespace J_Tutors_Web_Platform.Controllers
             var paid = inbox?.Paid?.Count ?? 0;
             var cancelled = inbox?.Cancelled?.Count ?? 0;
 
+
+            var inboxDisplay = await _agenda.GetInboxDisplayAsync(aid.Value);
             // Defaults per tab
             var yy = year ?? DateTime.Now.Year;      // local time semantics
             var mm = month ?? DateTime.Now.Month;
@@ -107,6 +109,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 CancelledCount = cancelled,
 
                 Inbox = inbox,
+                InboxDisplay = inboxDisplay,
 
                 // SLOTS TAB: show ALL slots for the admin
                 Slots = new AgendaSlotsVM
@@ -245,7 +248,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 return RedirectToAction(nameof(Agenda), new { tab = "Inbox" });
             }
 
-            var vm = await _agenda.GetInboxAsync(aid.Value);
+            var vm = await _agenda.GetInboxDisplayAsync(aid.Value);
             ViewBag.AdminId = aid.Value;
             return View("~/Views/Admin/AAgendaInbox.cshtml", vm);
         }
@@ -286,5 +289,100 @@ namespace J_Tutors_Web_Platform.Controllers
             ViewBag.AdminId = aid.Value;
             return View("~/Views/Admin/AAgendaCalendar.cshtml", vm);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> SessionDetails(int id)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0)
+                return Unauthorized();
+
+            var vm = await _agenda.GetSessionDetailsAsync(id);
+            if (vm is null) return NotFound();
+
+            // Optional safety: ensure the session belongs to this admin
+            // (uncomment if you want to enforce)
+            // var belongs = await _agenda.SessionBelongsToAdminAsync(id, aid.Value);
+            // if (!belongs) return Forbid();
+
+            return PartialView("~/Views/Admin/AAgendaSessionDetails.cshtml", vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Accept(int id)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0) return Unauthorized();
+
+            var res = await _agenda.UpdateSessionStatusAsync(id, "Accepted");
+            var vm = await _agenda.GetSessionDetailsAsync(id);
+            if (vm is null) return NotFound();
+
+            Response.Headers["X-Action-Result"] = res.Ok ? "ok" : "error";
+            Response.Headers["X-Action-Message"] = res.Message;
+            return PartialView("~/Views/Admin/AAgendaSessionDetails.cshtml", vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Deny(int id)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0) return Unauthorized();
+
+            var res = await _agenda.UpdateSessionStatusAsync(id, "Denied");
+            var vm = await _agenda.GetSessionDetailsAsync(id);
+            if (vm is null) return NotFound();
+
+            Response.Headers["X-Action-Result"] = res.Ok ? "ok" : "error";
+            Response.Headers["X-Action-Message"] = res.Message;
+            return PartialView("~/Views/Admin/AAgendaSessionDetails.cshtml", vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0) return Unauthorized();
+
+            var res = await _agenda.UpdateSessionStatusAsync(id, "Cancelled");
+            var vm = await _agenda.GetSessionDetailsAsync(id);
+            if (vm is null) return NotFound();
+
+            Response.Headers["X-Action-Result"] = res.Ok ? "ok" : "error";
+            Response.Headers["X-Action-Message"] = res.Message;
+            return PartialView("~/Views/Admin/AAgendaSessionDetails.cshtml", vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkPaid(int id)
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0) return Unauthorized();
+
+            var res = await _agenda.UpdateSessionStatusAsync(id, "Paid");
+            var vm = await _agenda.GetSessionDetailsAsync(id);
+            if (vm is null) return NotFound();
+
+            Response.Headers["X-Action-Result"] = res.Ok ? "ok" : "error";
+            Response.Headers["X-Action-Message"] = res.Message;
+            return PartialView("~/Views/Admin/AAgendaSessionDetails.cshtml", vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> InboxLists()
+        {
+            var aid = ResolveAdminId();
+            if (aid is null || aid <= 0) return Unauthorized();
+
+            var vm = await _agenda.GetInboxDisplayAsync(aid.Value);
+            return PartialView("~/Views/Admin/AAgendaInboxLists.cshtml", vm);
+        }
+
+
+
     }
 }

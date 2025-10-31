@@ -56,129 +56,86 @@
         var date = new DateTime(year, month, d).Date;
         return slots.Where(b => b.BlockDate.Date == date);
     };
+
+    string HHmm(TimeSpan t) => new DateTime(t.Ticks).ToString("HH:mm");
 }
 
-<!-- Header with month and arrows -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <a class="btn btn-sm btn-outline-secondary"
-       href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = prev.Year, month = prev.Month, includeRequested = vm.IncludeRequested })"
-       aria-label="Previous month">
-        &laquo;
-    </a>
+<div class="row g-3">
+    <!-- LEFT: calendar -->
+    <div class="col-12 col-lg-7">
+        <!-- Header with month and arrows -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <a class="btn btn-sm btn-outline-secondary"
+               href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = prev.Year, month = prev.Month, includeRequested = vm.IncludeRequested })"
+               aria-label="Previous month">
+                &laquo;
+            </a>
 
-    <h3 class="mb-0">@MonthName(year, month)</h3>
+            <h3 class="mb-0">@MonthName(year, month)</h3>
 
-    <a class="btn btn-sm btn-outline-secondary"
-       href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = next.Year, month = next.Month, includeRequested = vm.IncludeRequested })"
-       aria-label="Next month">
-        &raquo;
-    </a>
-</div>
+            <a class="btn btn-sm btn-outline-secondary"
+               href="@Url.Action("Agenda","AdminAgenda", new { tab = "Calendar", year = next.Year, month = next.Month, includeRequested = vm.IncludeRequested })"
+               aria-label="Next month">
+                &raquo;
+            </a>
+        </div>
 
-<!-- Top counts + toggles -->
-<div class="card p-2 mb-3">
-    <div class="d-flex flex-wrap align-items-center gap-3">
-        <div class="me-2 fw-semibold">Show:</div>
+        <!-- Top counts + toggles -->
+        <div class="card p-2 mb-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="me-2 fw-semibold">Show:</div>
 
-        <label class="form-check-label d-flex align-items-center gap-2">
-            <input class="form-check-input cal-toggle" type="checkbox" data-type="requested" checked />
-            <span class="badge rounded-pill cal-pill cal-pill-requested">Requested: @requestedCount</span>
-        </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                    <input class="form-check-input cal-toggle" type="checkbox" data-type="requested" checked />
+                    <span class="badge rounded-pill cal-pill cal-pill-requested">Requested: @requestedCount</span>
+                </label>
 
-        <label class="form-check-label d-flex align-items-center gap-2">
-            <input class="form-check-input cal-toggle" type="checkbox" data-type="accepted" checked />
-            <span class="badge rounded-pill cal-pill cal-pill-accepted">Accepted: @acceptedCount</span>
-        </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                    <input class="form-check-input cal-toggle" type="checkbox" data-type="accepted" checked />
+                    <span class="badge rounded-pill cal-pill cal-pill-accepted">Accepted: @acceptedCount</span>
+                </label>
 
-        <label class="form-check-label d-flex align-items-center gap-2">
-            <input class="form-check-input cal-toggle" type="checkbox" data-type="paid" checked />
-            <span class="badge rounded-pill cal-pill cal-pill-paid">Paid: @paidCount</span>
-        </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                    <input class="form-check-input cal-toggle" type="checkbox" data-type="paid" checked />
+                    <span class="badge rounded-pill cal-pill cal-pill-paid">Paid: @paidCount</span>
+                </label>
 
-        <label class="form-check-label d-flex align-items-center gap-2">
-            <input class="form-check-input cal-toggle" type="checkbox" data-type="cancelled" checked />
-            <span class="badge rounded-pill cal-pill cal-pill-cancelled">Cancelled: @cancelledCount</span>
-        </label>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                    <input class="form-check-input cal-toggle" type="checkbox" data-type="cancelled" checked />
+                    <span class="badge rounded-pill cal-pill cal-pill-cancelled">Cancelled: @cancelledCount</span>
+                </label>
 
-        <label class="form-check-label d-flex align-items-center gap-2">
-            <input class="form-check-input cal-toggle" type="checkbox" data-type="slot" checked />
-            <span class="badge rounded-pill cal-pill cal-pill-slot">Slots: @slotsCount</span>
-        </label>
-    </div>
-</div>
+                <label class="form-check-label d-flex align-items-center gap-2">
+                    <input class="form-check-input cal-toggle" type="checkbox" data-type="slot" checked />
+                    <span class="badge rounded-pill cal-pill cal-pill-slot">Slots: @slotsCount</span>
+                </label>
+            </div>
+        </div>
 
-<div class="table-responsive">
-    <table class="table table-bordered align-middle mb-0">
-        <thead class="table-dark">
-            <tr class="text-center">
-                <th scope="col">Sun</th>
-                <th scope="col">Mon</th>
-                <th scope="col">Tue</th>
-                <th scope="col">Wed</th>
-                <th scope="col">Thu</th>
-                <th scope="col">Fri</th>
-                <th scope="col">Sat</th>
-            </tr>
-        </thead>
-        <tbody>
-            @{
-                var day = 1;
-                var col = 0;
-            }
-            <tr>
-                @for (col = 0; col < firstDow; col++)
-                {
-                    <td class="bg-transparent" style="height: 7rem;"></td>
-                }
-                @for (; col < 7 && day <= daysInMonth; col++, day++)
-                {
-                    var todays = sessionsOn(day).ToList();
-                    var todaysSlots = slotsOn(day).ToList();
-                    <td style="height: 7rem;">
-                        <div class="d-flex justify-content-between">
-                            <strong class="cal-day-number">@day</strong>
-                        </div>
-
-                        <!-- Slots -->
-                        @foreach (var b in todaysSlots.OrderBy(x => x.StartTime))
-                        {
-                            <div class="small mt-1 cal-item" data-type="slot">
-                                <span class="cal-dot cal-dot-slot"></span>
-                                Slot @b.StartTime.ToString(@"hh\:mm")–@b.EndTime.ToString(@"hh\:mm")
-                            </div>
-                        }
-
-                        <!-- Sessions -->
-                        @if (todays.Count == 0 && todaysSlots.Count == 0)
-                        {
-                            <div class="text-muted small mt-1">No items</div>
-                        }
-                        else
-                        {
-                            foreach (var s in todays.OrderBy(s => s.StartTime))
-                            {
-                                var st = statusOf(s); // requested/accepted/paid/cancelled
-                                var label = char.ToUpperInvariant(st.FirstOrDefault()) + (st.Length > 1 ? st.Substring(1) : "");
-                                <div class="small mt-1 cal-item" data-type="@st">
-                                    <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
-                                    @s.StartTime.ToString(@"hh\:mm") @label (#@s.TutoringSessionID)
-                                </div>
-                            }
-                        }
-                    </td>
-                }
-            </tr>
-
-            @while (day <= daysInMonth)
-            {
-                <tr>
-                    @for (col = 0; col < 7; col++)
-                    {
-                        if (day > daysInMonth)
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-dark">
+                    <tr class="text-center">
+                        <th scope="col">Sun</th>
+                        <th scope="col">Mon</th>
+                        <th scope="col">Tue</th>
+                        <th scope="col">Wed</th>
+                        <th scope="col">Thu</th>
+                        <th scope="col">Fri</th>
+                        <th scope="col">Sat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var day = 1;
+                        var col = 0;
+                    }
+                    <tr>
+                        @for (col = 0; col < firstDow; col++)
                         {
                             <td class="bg-transparent" style="height: 7rem;"></td>
                         }
-                        else
+                        @for (; col < 7 && day <= daysInMonth; col++, day++)
                         {
                             var todays = sessionsOn(day).ToList();
                             var todaysSlots = slotsOn(day).ToList();
@@ -192,35 +149,84 @@
                                 {
                                     <div class="small mt-1 cal-item" data-type="slot">
                                         <span class="cal-dot cal-dot-slot"></span>
-                                        Slot @b.StartTime.ToString(@"hh\:mm")–@b.EndTime.ToString(@"hh\:mm")
+                                        @HHmm(b.StartTime)–@HHmm(b.EndTime)
                                     </div>
                                 }
 
-                                <!-- Sessions -->
-                                @if (todays.Count == 0 && todaysSlots.Count == 0)
+                                <!-- Sessions (clickable) -->
+                                @foreach (var s in todays.OrderBy(s => s.StartTime))
                                 {
-                                    <div class="text-muted small mt-1">No items</div>
+                                    var st = statusOf(s); // requested/accepted/paid/cancelled
+                                    var endTs = s.StartTime + TimeSpan.FromMinutes((double)(s.DurationHours * 60m));
+                                    <div class="small mt-1 cal-item session"
+                                         data-type="@st"
+                                         data-session-id="@s.TutoringSessionID"
+                                         title="Click to view details">
+                                        <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
+                                        @HHmm(s.StartTime)–@HHmm(endTs)
+                                    </div>
+                                }
+                            </td>
+                        }
+                    </tr>
+
+                    @while (day <= daysInMonth)
+                    {
+                        <tr>
+                            @for (col = 0; col < 7; col++)
+                            {
+                                if (day > daysInMonth)
+                                {
+                                    <td class="bg-transparent" style="height: 7rem;"></td>
                                 }
                                 else
                                 {
-                                    foreach (var s in todays.OrderBy(s => s.StartTime))
-                                    {
-                                        var st = statusOf(s);
-                                        var label = char.ToUpperInvariant(st.FirstOrDefault()) + (st.Length > 1 ? st.Substring(1) : "");
-                                        <div class="small mt-1 cal-item" data-type="@st">
-                                            <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
-                                            @s.StartTime.ToString(@"hh\:mm") @label (#@s.TutoringSessionID)
+                                    var todays = sessionsOn(day).ToList();
+                                    var todaysSlots = slotsOn(day).ToList();
+                                    <td style="height: 7rem;">
+                                        <div class="d-flex justify-content-between">
+                                            <strong class="cal-day-number">@day</strong>
                                         </div>
-                                    }
+
+                                        <!-- Slots -->
+                                        @foreach (var b in todaysSlots.OrderBy(x => x.StartTime))
+                                        {
+                                            <div class="small mt-1 cal-item" data-type="slot">
+                                                <span class="cal-dot cal-dot-slot"></span>
+                                                @HHmm(b.StartTime)–@HHmm(b.EndTime)
+                                            </div>
+                                        }
+
+                                        <!-- Sessions (clickable) -->
+                                        @foreach (var s in todays.OrderBy(s => s.StartTime))
+                                        {
+                                            var st = statusOf(s);
+                                            var endTs = s.StartTime + TimeSpan.FromMinutes((double)(s.DurationHours * 60m));
+                                            <div class="small mt-1 cal-item session"
+                                                 data-type="@st"
+                                                 data-session-id="@s.TutoringSessionID"
+                                                 title="Click to view details">
+                                                <span class="cal-dot @(st switch { "requested" => "cal-dot-requested", "accepted" => "cal-dot-accepted", "paid" => "cal-dot-paid", "cancelled" => "cal-dot-cancelled", _ => "" })"></span>
+                                                @HHmm(s.StartTime)–@HHmm(endTs)
+                                            </div>
+                                        }
+                                    </td>
+                                    day++;
                                 }
-                            </td>
-                            day++;
-                        }
+                            }
+                        </tr>
                     }
-                </tr>
-            }
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RIGHT: details card (unique id for Calendar tab) -->
+    <div class="col-12 col-lg-5">
+        <div id="cal-details-host" class="card p-16" style="background-color: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color);">
+            <div class="text-muted">Click a session on the calendar to view details.</div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -241,6 +247,15 @@
     .text-muted {
         color: var(--muted-text-color) !important;
     }
+
+    /* Make items readable like "No items" */
+    .cal-item {
+        color: var(--muted-text-color) !important;
+    }
+
+        .cal-item.session {
+            cursor: pointer;
+        }
 
     .cal-pill {
         font-weight: 600;
@@ -321,5 +336,20 @@
         }
         toggles.forEach(chk => chk.addEventListener('change', apply));
         apply(); // initial
+
+        // Click a session -> load the same details card used in Inbox
+        document.addEventListener('click', function (ev) {
+            const item = ev.target.closest('.cal-item.session[data-session-id]');
+            if (!item) return;
+
+            const sid = item.getAttribute('data-session-id');
+            const host = document.getElementById('cal-details-host'); // unique to Calendar tab
+            if (host) host.innerHTML = '<div class="text-muted p-2">Loading...</div>';
+
+            fetch('/AdminAgenda/SessionDetails?id=' + encodeURIComponent(sid))
+                .then(r => { if (!r.ok) throw new Error('Failed'); return r.text(); })
+                .then(html => { if (host) host.innerHTML = html; })
+                .catch(_ => { if (host) host.innerHTML = '<div class="text-danger p-2">Unable to load details.</div>'; });
+        });
     })();
 </script>

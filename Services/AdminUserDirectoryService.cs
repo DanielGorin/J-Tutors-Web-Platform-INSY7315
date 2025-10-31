@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using J_Tutors_Web_Platform.ViewModels;
+using System.Data.SqlTypes;
+
 
 namespace J_Tutors_Web_Platform.Services
 {
@@ -40,8 +42,9 @@ namespace J_Tutors_Web_Platform.Services
 
                 case AdminDirectoryTimeframe.AllTime:
                 default:
-                    fromUtc = DateTime.MinValue;
+                    fromUtc = SqlDateTime.MinValue.Value;
                     break;
+
             }
 
             return (fromUtc, nowUtc);
@@ -49,7 +52,7 @@ namespace J_Tutors_Web_Platform.Services
     }
 
     // ======================================================
-    // Admin User Directory Service (Step 3 - full version)
+    // Admin User Directory Service
     // ======================================================
     public sealed class AdminUserDirectoryService
     {
@@ -99,9 +102,9 @@ namespace J_Tutors_Web_Platform.Services
                     u.LeaderboardVisible,
                     -- Points earned or adjusted in timeframe
                     COALESCE(SUM(CASE 
-                        WHEN pr.Amount > 0 THEN pr.Amount
-                        WHEN pr.Amount < 0 AND pr.Type = 0 THEN pr.Amount -- adjustment
-                        ELSE 0 END), 0) AS PointsTotal,
+                    WHEN pr.Type IN (0, 2) THEN pr.Amount   -- Earned + all Adjustments (±), same as PointsService
+                    ELSE 0 
+                    END), 0) AS PointsTotal,
                     -- Points spent (negative) in timeframe
                     COALESCE(SUM(CASE 
                         WHEN pr.Amount < 0 AND pr.Type = 1 THEN pr.Amount
@@ -183,6 +186,53 @@ namespace J_Tutors_Web_Platform.Services
                 PageSize = pageSize,
                 TotalRows = totalRows,
                 Rows = rows
+            };
+        }
+
+        // NOTE: If Adjustments are Type=2 in your schema (as per PointsService),
+        // you may want to update the CASE above accordingly. That’s a data logic tweak,
+        // not related to this compile fix.
+
+        public async Task<AdminUserDetailsViewModel?> GetUserBasicsAsync(int userId)
+        {
+            const string sql = @"
+SELECT TOP 1
+    u.UserID,
+    u.Username,
+    u.FirstName,
+    u.Surname,
+    u.Email,
+    u.Phone,
+    u.SubjectInterest,
+    u.LeaderboardVisible,
+    u.ThemePreference,
+    u.BirthDate,
+    u.RegistrationDate
+FROM Users u
+WHERE u.UserID = @id;";
+
+            await using var con = new SqlConnection(_connStr);
+            await con.OpenAsync();
+
+            await using var cmd = new SqlCommand(sql, con);
+            cmd.Parameters.AddWithValue("@id", userId);
+
+            await using var r = await cmd.ExecuteReaderAsync();
+            if (!await r.ReadAsync()) return null;
+
+            return new AdminUserDetailsViewModel
+            {
+                UserID = r.GetInt32(r.GetOrdinal("UserID")),
+                Username = r.GetString(r.GetOrdinal("Username")),
+                FirstName = r.GetString(r.GetOrdinal("FirstName")),
+                Surname = r.GetString(r.GetOrdinal("Surname")),
+                Email = r["Email"] as string,
+                Phone = r["Phone"] as string,
+                SubjectInterest = r["SubjectInterest"] as string,
+                LeaderboardVisible = r.GetBoolean(r.GetOrdinal("LeaderboardVisible")),
+                ThemePreference = r["ThemePreference"] as string,
+                BirthDate = r.IsDBNull(r.GetOrdinal("BirthDate")) ? (DateTime?)null : r.GetDateTime(r.GetOrdinal("BirthDate")),
+                RegistrationDate = r.IsDBNull(r.GetOrdinal("RegistrationDate")) ? (DateTime?)null : r.GetDateTime(r.GetOrdinal("RegistrationDate"))
             };
         }
     }

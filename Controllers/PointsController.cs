@@ -189,15 +189,7 @@ namespace J_Tutors_Web_Platform.Controllers
             // Create the ADJUSTMENT via PointsService
             // -------------------------------------
             // This stores one new receipt with Type=Adjustment (your PointsService does the details).
-            var id = await _points.CreateAdjustment(
-                dto.UserId,
-                adminId,
-                dto.Amount,
-                dto.Reason,
-                dto.Reference,
-                dto.AffectsAllTime,
-                dto.Notes
-            );
+            var id = await _points.CreateAdjustment(dto.UserId, adminId, dto.Amount, dto.Reason, dto.Reference, dto.Notes);
 
             if (id is null)
             {

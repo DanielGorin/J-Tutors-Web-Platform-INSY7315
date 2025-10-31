@@ -307,34 +307,38 @@ namespace J_Tutors_Web_Platform.Services
         /// Create a single Adjustment receipt.
         /// Returns the new PointsReceiptID, or null if insert fails.
         /// </summary>
+        // PointsService.cs
         public async Task<int?> CreateAdjustment(
             int userId,
             int adminId,
             int amount,
             string? reason,
             string? reference,
-            bool affectsAllTime = true,
             string? notes = null)
         {
-            const string sql = @"INSERT INTO dbo.PointsReceipt (UserID, EventParticipationID, SessionID, AdminID, ReceiptDate, Type, Amount, Reason, Reference, AffectsAllTime, Notes) OUTPUT INSERTED.PointsReceiptID VALUES (@uid, NULL, NULL, @aid, SYSUTCDATETIME(), @type, @amt, @reason, @ref, @all, @notes);";
+            // Type=2 = Adjustment
+            const string sql = @"
+INSERT INTO dbo.PointsReceipt
+    (UserID, AdminID, ReceiptDate, Type, Amount, Reason, Reference, Notes)
+OUTPUT INSERTED.PointsReceiptID
+VALUES
+    (@uid,  @aid,  SYSUTCDATETIME(), 2,   @amt,   @reason, @ref,     @notes);";
 
             await using var con = await OpenAsync();
-            await using var cmd = new SqlCommand(sql, con)
-            {
-                CommandType = CommandType.Text
-            };
+            await using var cmd = new SqlCommand(sql, con) { CommandType = CommandType.Text };
+
             cmd.Parameters.AddWithValue("@uid", userId);
             cmd.Parameters.AddWithValue("@aid", adminId);
-            cmd.Parameters.AddWithValue("@type", 2); // Adjustment
             cmd.Parameters.AddWithValue("@amt", amount);
             cmd.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@ref", (object?)reference ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@all", affectsAllTime ? 1 : 0);
             cmd.Parameters.AddWithValue("@notes", (object?)notes ?? DBNull.Value);
 
             var obj = await cmd.ExecuteScalarAsync();
             if (obj == null || obj is DBNull) return null;
-            return Convert.ToInt32(obj, CultureInfo.InvariantCulture);
+            return Convert.ToInt32(obj, System.Globalization.CultureInfo.InvariantCulture);
         }
+
+
     }
 }

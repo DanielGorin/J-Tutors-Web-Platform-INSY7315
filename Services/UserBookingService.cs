@@ -24,16 +24,15 @@ namespace J_Tutors_Web_Platform.Services
     {
         private readonly IConfiguration _config;
         private readonly AdminAgendaService _agenda;
-        private readonly PointsService _points;        
+        private readonly PointsService _points;
         private const string ConnName = "AzureSql";
 
-        public UserBookingService(IConfiguration config, AdminAgendaService agenda, PointsService points) 
+        public UserBookingService(IConfiguration config, AdminAgendaService agenda, PointsService points)
         {
             _config = config;
             _agenda = agenda;
-            _points = points;                          
+            _points = points;
         }
-
 
         // ─────────────────────────────────────────────────────────────────────────────
         // Connection helpers
@@ -49,9 +48,9 @@ namespace J_Tutors_Web_Platform.Services
             return con;
         }
 
-        private static SqlCommand Cmd(SqlConnection con, string sql, IDictionary<string, object?>? p = null)
+        private static SqlCommand Cmd(SqlConnection con, string sql, IDictionary<string, object?>? p = null, SqlTransaction? tx = null)
         {
-            var cmd = new SqlCommand(sql, con) { CommandType = CommandType.Text };
+            var cmd = new SqlCommand(sql, con, tx) { CommandType = CommandType.Text };
             if (p != null)
                 foreach (var kv in p)
                     cmd.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
@@ -145,13 +144,17 @@ ORDER BY pr.PricingRuleID DESC;";
             var baseCost = cfg.HourlyRate * durationHours;
 
             var moneyDiscount = Math.Round(baseCost * pct / 100m, 2, MidpointRounding.AwayFromZero);
+
+            // Points equal to the Rand discount (1 point = R1), rounded to nearest whole Rand
+            var pointsToCharge = (int)Math.Round(moneyDiscount, MidpointRounding.AwayFromZero);
+
             var final = baseCost - moneyDiscount;
 
             return new QuoteVM
             {
                 BaseCost = baseCost,
                 DiscountPercentApplied = pct,
-                PointsToCharge = pct, // 1 point per 1%
+                PointsToCharge = pointsToCharge,   // Rands, not percent
                 MoneyDiscount = moneyDiscount,
                 FinalCost = final
             };
@@ -174,21 +177,18 @@ ORDER BY pr.PricingRuleID DESC;";
             // A) Availability blocks (re-use AdminAgendaService)
             var blocks = await _agenda.GetAvailabilityBlocksAsync(first, next, adminId);
 
-            // B) Sessions that *block* time: Requested/Accepted/Paid
+            // B) Sessions that block time: Requested/Accepted/Paid — ACROSS ALL SUBJECTS
             const string sql = @"
-SELECT SessionDate, StartTime, DurationHours
+SELECT SessionDate, StartTime, DurationHours, AdminID
 FROM TutoringSession
-WHERE SubjectID = @sid
-  AND (@aid IS NULL OR AdminID = @aid)
-  AND SessionDate >= @from AND SessionDate < @to
+WHERE SessionDate >= @from AND SessionDate < @to
   AND Status IN ('Requested','Accepted','Paid');";
 
-            var sessions = new List<(DateOnly Date, TimeSpan Start, decimal DurHours)>();
+            var sessions = new List<(DateOnly Date, TimeSpan Start, decimal DurHours, int AdminId)>();
+
             using (var con = await OpenAsync())
             using (var cmd = Cmd(con, sql, new Dictionary<string, object?>
             {
-                ["@sid"] = subjectId,
-                ["@aid"] = (object?)adminId ?? DBNull.Value,
                 ["@from"] = first.Date,
                 ["@to"] = next.Date
             }))
@@ -197,9 +197,10 @@ WHERE SubjectID = @sid
                 while (await r.ReadAsync())
                 {
                     var date = DateOnly.FromDateTime(r.GetDateTime(0));
-                    var start = (TimeSpan)r["StartTime"];
-                    var dur = r.GetDecimal(2);
-                    sessions.Add((date, start, dur));
+                    var sessionStart = (TimeSpan)r["StartTime"];
+                    var durHours = r.GetDecimal(2);
+                    var adminIdForSession = r.GetInt32(3);
+                    sessions.Add((date, sessionStart, durHours, adminIdForSession));
                 }
             }
 
@@ -211,32 +212,40 @@ WHERE SubjectID = @sid
             {
                 var day = grp.Key;
                 var slotVms = new List<SlotVM>();
-                var daySessions = sessions.Where(s => s.Date == day).ToList();
 
                 foreach (var b in grp.OrderBy(b => b.StartTime))
                 {
+                    // Filter clashes to THIS block's admin
+                    var daySessionsForAdmin = sessions
+                        .Where(s => s.Date == day && s.AdminId == b.AdminID)
+                        .ToList();
+
                     var blockStart = b.StartTime;
                     var blockEnd = b.EndTime;
 
                     if (blockEnd - blockStart < durationTs) continue;
 
                     var options = new List<TimeOptionVM>();
-                    for (var start = blockStart; start + durationTs <= blockEnd; start = start.Add(TimeSpan.FromMinutes(30)))
-                    {
-                        var end = start + durationTs;
 
-                        bool clash = daySessions.Any(s =>
+                    for (var candidateStart = blockStart;
+                         candidateStart + durationTs <= blockEnd;
+                         candidateStart = candidateStart.Add(TimeSpan.FromMinutes(30)))
+                    {
+                        var candidateEnd = candidateStart + durationTs;
+
+                        bool clash = daySessionsForAdmin.Any(s =>
                         {
-                            var sEnd = s.Start + TimeSpan.FromHours((double)s.DurHours);
-                            return start < sEnd && end > s.Start;
+                            var sessionEnd = s.Start + TimeSpan.FromHours((double)s.DurHours);
+                            // overlap if start < existing end AND end > existing start
+                            return candidateStart < sessionEnd && candidateEnd > s.Start;
                         });
                         if (clash) continue;
 
                         options.Add(new TimeOptionVM
                         {
                             SessionDate = day,
-                            StartTime = start,
-                            EndTime = end
+                            StartTime = candidateStart,
+                            EndTime = candidateEnd
                         });
                     }
 
@@ -262,9 +271,9 @@ WHERE SubjectID = @sid
         }
 
         // ─────────────────────────────────────────────────────────────────────────────
-        // Create booking request (validates range + conflicts in SQL)
+        // Create booking request (validates range + conflicts) + points charge (atomic)
         // ─────────────────────────────────────────────────────────────────────────────
-        public BookingResult RequestBooking(int userId, BookingRequestVM dto, int? adminIdForSlotOwner = null)
+        public async Task<BookingResult> RequestBooking(int userId, BookingRequestVM dto, int? adminIdForSlotOwner = null)
         {
             var cfg = GetSubjectConfig(dto.SubjectId) ?? throw new InvalidOperationException("Subject not found.");
 
@@ -287,8 +296,17 @@ WHERE SubjectID = @sid
             if (dto.SessionDate < cutoff)
                 return new BookingResult { Ok = false, Message = "Selected date must be at least 2 days in the future." };
 
-            // 1) Find containing availability block
-            const string findBlockSql = @"
+            // Compute price (authoritative)
+            var quote = CalculateQuote(dto.SubjectId, duration, pct);
+            var durationHours = (decimal)duration / 60m;
+
+            using var con = await OpenAsync();
+            await using var tx = await con.BeginTransactionAsync();
+
+            try
+            {
+                // 1) Find containing availability block (in tx scope)
+                const string findBlockSql = @"
 SELECT TOP 1 AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime
 FROM AvailabilityBlock
 WHERE CAST(BlockDate AS date) = @date
@@ -296,24 +314,26 @@ WHERE CAST(BlockDate AS date) = @date
   AND StartTime <= @start AND EndTime >= @end
 ORDER BY StartTime;";
 
-            int? blockAdminId = null;
-            using (var con = OpenAsync().GetAwaiter().GetResult())
-            using (var cmd = Cmd(con, findBlockSql, new Dictionary<string, object?>
-            {
-                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
-                ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
-                ["@start"] = startTs,
-                ["@end"] = endTs
-            }))
-            using (var r = cmd.ExecuteReader())
-            {
-                if (!r.Read())
-                    return new BookingResult { Ok = false, Message = "Selected time is not within an availability block." };
-                blockAdminId = r.GetInt32(r.GetOrdinal("AdminID"));
-            }
+                int? blockAdminId = null;
+                using (var cmd = Cmd(con, findBlockSql, new Dictionary<string, object?>
+                {
+                    ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
+                    ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
+                    ["@start"] = startTs,
+                    ["@end"] = endTs
+                }, (SqlTransaction)tx))
+                using (var r = await cmd.ExecuteReaderAsync())
+                {
+                    if (!await r.ReadAsync())
+                    {
+                        await tx.RollbackAsync();
+                        return new BookingResult { Ok = false, Message = "Selected time is not within an availability block." };
+                    }
+                    blockAdminId = r.GetInt32(r.GetOrdinal("AdminID"));
+                }
 
-            // 2) Check conflict in SQL
-            const string conflictSql = @"
+                // 2) Check conflict in SQL (left as-is per your preference)
+                const string conflictSql = @"
 SELECT COUNT(*) 
 FROM TutoringSession
 WHERE SessionDate = @date
@@ -323,45 +343,42 @@ WHERE SessionDate = @date
   AND StartTime < @end
   AND DATEADD(minute, CAST(DurationHours * 60 as int), StartTime) > @start;";
 
-            int conflicts;
-            using (var con = OpenAsync().GetAwaiter().GetResult())
-            using (var cmd = Cmd(con, conflictSql, new Dictionary<string, object?>
-            {
-                ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
-                ["@sid"] = dto.SubjectId,
-                ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
-                ["@start"] = startTs,
-                ["@end"] = endTs
-            }))
-            {
-                conflicts = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
-            }
-            if (conflicts > 0)
-                return new BookingResult { Ok = false, Message = "That time is no longer available." };
+                int conflicts;
+                using (var cmd = Cmd(con, conflictSql, new Dictionary<string, object?>
+                {
+                    ["@date"] = dto.SessionDate.ToDateTime(TimeOnly.MinValue).Date,
+                    ["@sid"] = dto.SubjectId,
+                    ["@aid"] = (object?)adminIdForSlotOwner ?? DBNull.Value,
+                    ["@start"] = startTs,
+                    ["@end"] = endTs
+                }, (SqlTransaction)tx))
+                {
+                    conflicts = Convert.ToInt32(await cmd.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
+                }
+                if (conflicts > 0)
+                {
+                    await tx.RollbackAsync();
+                    return new BookingResult { Ok = false, Message = "That time is no longer available." };
+                }
 
-            // 3) Compute price (authoritative)
-            var quote = CalculateQuote(dto.SubjectId, duration, pct);
-            var durationHours = (decimal)duration / 60m;
+                // 3) Gate by CURRENT points balance — computed inside the SAME tx/connection
+                var currentPoints = await _points.GetCurrentAsync(userId, con, (SqlTransaction)tx);
+                if (currentPoints < quote.PointsToCharge)
+                {
+                    await tx.RollbackAsync();
+                    return new BookingResult { Ok = false, Message = "Insufficient points for this booking's discount." };
+                }
 
-            // 3.5) Gate by CURRENT points balance
-            var currentPoints = _points.GetCurrent(userId).GetAwaiter().GetResult();
-            if (currentPoints < quote.PointsToCharge)
-                return new BookingResult { Ok = false, Message = "Insufficient points for this booking's discount." };
-
-            // 4) Insert session + create points receipt in ONE transaction
-            const string insertSql = @"
+                // 4) Insert session
+                const string insertSql = @"
 INSERT INTO TutoringSession
 (UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status)
 OUTPUT INSERTED.TutoringSessionID
 VALUES
 (@userId, @adminId, @sid, @date, @start, @durHours, @base, @pts, @status);";
 
-            int newId;
-            using (var con = OpenAsync().GetAwaiter().GetResult())
-            using (var tx = con.BeginTransaction())
-            {
-                // 4a) Insert session
-                using (var cmd = new SqlCommand(insertSql, con, tx))
+                int newSessionId;
+                using (var cmd = new SqlCommand(insertSql, con, (SqlTransaction)tx))
                 {
                     cmd.Parameters.AddWithValue("@userId", userId);
                     cmd.Parameters.AddWithValue("@adminId", blockAdminId!);
@@ -370,40 +387,53 @@ VALUES
                     cmd.Parameters.AddWithValue("@start", startTs);
                     cmd.Parameters.AddWithValue("@durHours", durationHours);
                     cmd.Parameters.AddWithValue("@base", quote.BaseCost);
-                    cmd.Parameters.AddWithValue("@pts", quote.PointsToCharge);
+                    cmd.Parameters.AddWithValue("@pts", quote.PointsToCharge); // may be 0
                     cmd.Parameters.AddWithValue("@status", "Requested");
 
-                    var scalar = cmd.ExecuteScalar();
-                    newId = scalar is null || scalar is DBNull ? 0 : Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
-                    if (newId <= 0)
+                    var scalar = await cmd.ExecuteScalarAsync();
+                    newSessionId = (scalar is null || scalar is DBNull)
+                        ? 0
+                        : Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
+                    if (newSessionId <= 0)
                     {
-                        tx.Rollback();
+                        await tx.RollbackAsync();
                         return new BookingResult { Ok = false, Message = "Could not create booking." };
                     }
                 }
 
-                // 4b) Create Spent receipt (negative amount) linked to this session
-                var receiptId = _points
-                    .CreateSpentForSession(userId, blockAdminId!.Value, newId, quote.PointsToCharge, con, tx)
-                    .GetAwaiter().GetResult();
-
-                if (receiptId is null)
+                // 5) Create Spent receipt only if points > 0
+                if (quote.PointsToCharge > 0)
                 {
-                    tx.Rollback();
-                    return new BookingResult { Ok = false, Message = "Could not charge points for booking." };
+                    var spentReceiptId = await _points.CreateSpentForSessionIdempotentAsync(
+                        userId,
+                        blockAdminId!.Value,
+                        newSessionId,
+                        quote.PointsToCharge,
+                        con,
+                        (SqlTransaction)tx);
+
+                    if (spentReceiptId is null)
+                    {
+                        await tx.RollbackAsync();
+                        return new BookingResult { Ok = false, Message = "Could not charge points for booking." };
+                    }
                 }
 
-                // 4c) Commit both
-                tx.Commit();
+                // 6) Commit everything
+                await tx.CommitAsync();
+
+                return new BookingResult
+                {
+                    Ok = true,
+                    BookingId = newSessionId,
+                    Message = "Request sent to admin for approval."
+                };
             }
-
-            return new BookingResult
+            catch (Exception ex)
             {
-                Ok = newId > 0,
-                BookingId = newId,
-                Message = newId > 0 ? "Request sent to admin for approval." : "Could not create booking."
-            };
-
+                await tx.RollbackAsync();
+                return new BookingResult { Ok = false, Message = $"Booking failed: {ex.Message}" };
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────────────────

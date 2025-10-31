@@ -116,10 +116,10 @@ namespace J_Tutors_Web_Platform.Controllers
         [HttpGet("receipts")]
         public async Task<IActionResult> GetReceipts([FromQuery] int userId)
         {
-            // Delegate to the read-only ledger service to fetch items.
-            var items = await _ledger.GetReceiptsForUserAsync(userId);
-            return Ok(items);
+            var rows = await _ledger.GetReceiptRowsAsync(userId);
+            return Ok(rows); // returns List<UserLedgerRowViewModel>
         }
+
 
         // ====================================================================================
         // SECTION 3: MANUAL ADJUSTMENT (+ / -)  — Admin use only

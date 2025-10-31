@@ -14,10 +14,10 @@ namespace J_Tutors_Web_Platform.Controllers
 
         public AdminUserDirectoryController(
             AdminUserDirectoryService service,
-            PointsService points)   // <-- add this
+            PointsService points) 
         {
             _service = service;
-            _points = points;       // <-- add this
+            _points = points;
         }
 
         // GET: /AdminUserDirectory/Index

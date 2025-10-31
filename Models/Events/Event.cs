@@ -10,7 +10,7 @@ namespace J_Tutors_Web_Platform.Models.Events
     public class Event
     {
         // Primary key
-        [Key]
+        [Key] 
         public int EventID { get; set; }
 
         // Linked admin who created the event

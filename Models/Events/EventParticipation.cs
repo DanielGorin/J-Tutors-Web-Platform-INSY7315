@@ -7,7 +7,7 @@ namespace J_Tutors_Web_Platform.Models.Events
     // Represents a user's participation in an event
     public class EventParticipation
     {
-        // Primary key
+        // Primary key 
         [Key]
         public int EventParticipationID { get; set; }
 

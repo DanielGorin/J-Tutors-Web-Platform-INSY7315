@@ -19,10 +19,10 @@ namespace J_Tutors_Web_Platform.Models.AppFiles
         public int UserID { get; set; }
         public Users.User User { get; set; } = default!;
 
-        // Access start date
+        // Access start date.
         public DateTime StartDate { get; set; }
 
-        // Access end date 
+        // Access end date.
         public DateTime? EndDate { get; set; }
     }
 }

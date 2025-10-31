@@ -14,7 +14,7 @@ namespace J_Tutors_Web_Platform.Models.Admins
         [Key]
         public int AdminID { get; set; }
 
-        // Login username
+        // Login username 
         [Required, MaxLength(50)]
         public string Username { get; set; } = default!;
 

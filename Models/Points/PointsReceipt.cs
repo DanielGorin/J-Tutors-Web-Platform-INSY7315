@@ -6,18 +6,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace J_Tutors_Web_Platform.Models.Points
 {
-    // Represents a record of points earned or awarded
+    // Represents a record of points earned or awarded  
     public class PointsReceipt
     {
-        // Primary key
+        // Primary key  
         [Key]
         public int PointsReceiptID { get; set; }
-
+          
         // FK: User
         public int UserID { get; set; }
-        public Users.User User { get; set; } = default!;
+        public Users.User User { get; set; } = default!;    
 
-        // FK: Event participation (optional)
+        // FK: Event participation (optional)  
         public int? EventParticipationID { get; set; }
         public Events.EventParticipation? EventParticipation { get; set; }
 

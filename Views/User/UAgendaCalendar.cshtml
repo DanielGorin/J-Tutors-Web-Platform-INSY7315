@@ -1,0 +1,305 @@
+﻿@model J_Tutors_Web_Platform.ViewModels.UserAgendaViewModel
+@using J_Tutors_Web_Platform.Models.Scheduling
+@using System.Linq
+
+@{
+    var vm = Model ?? new J_Tutors_Web_Platform.ViewModels.UserAgendaViewModel
+            {
+                Year = DateTime.UtcNow.Year,
+                Month = DateTime.UtcNow.Month,
+                IncludeRequested = true,
+                Sessions = Array.Empty<TutoringSession>()
+            };
+
+    var year = vm.Year > 0 ? vm.Year : DateTime.UtcNow.Year;
+    var month = vm.Month is >= 1 and <= 12 ? vm.Month : DateTime.UtcNow.Month;
+
+    var first = new DateTime(year, month, 1);
+    var daysInMonth = DateTime.DaysInMonth(year, month);
+    var firstDow = (int)first.DayOfWeek;
+
+    var prev = first.AddMonths(-1);
+    var next = first.AddMonths(1);
+
+    var sessions = vm.Sessions ?? Array.Empty<TutoringSession>();
+
+    string MonthName(int y, int m) => new DateTime(y, m, 1).ToString("MMMM yyyy");
+    Func<TutoringSession, string> statusOf = s => s is null ? "" : s.Status.ToString().Trim().ToLowerInvariant();
+
+    var requestedCount = sessions.Count(s => statusOf(s) == "requested");
+    var acceptedCount = sessions.Count(s => statusOf(s) == "accepted");
+    var paidCount = sessions.Count(s => statusOf(s) == "paid");
+    var cancelledCount = sessions.Count(s => statusOf(s) == "cancelled");
+
+    Func<int, IEnumerable<TutoringSession>> sessionsOn = d =>
+    {
+        var target = new DateOnly(year, month, d);
+        return sessions.Where(s =>
+        {
+            try { return s.SessionDate == target; } catch { return false; }
+        });
+    };
+
+    string HHmm(TimeSpan t) => new DateTime(t.Ticks).ToString("HH:mm");
+}
+
+<div class="card shadow p-24">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <a class="btn btn-sm btn-outline-secondary"
+           href="@Url.Action("USessions", "User", new { year = prev.Year, month = prev.Month, includeRequested = vm.IncludeRequested })"
+           aria-label="Previous month">&laquo;</a>
+
+        <h2 class="mb-0">My Sessions — @MonthName(year, month)</h2>
+
+        <a class="btn btn-sm btn-outline-secondary"
+           href="@Url.Action("USessions", "User", new { year = next.Year, month = next.Month, includeRequested = vm.IncludeRequested })"
+           aria-label="Next month">&raquo;</a>
+    </div>
+
+    <!-- Status toggles -->
+    <div class="card p-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div class="me-2 fw-semibold">Show:</div>
+
+            <label class="form-check-label d-flex align-items-center gap-2">
+                <input class="form-check-input cal-toggle" type="checkbox" data-type="requested" checked />
+                <span class="badge rounded-pill cal-pill cal-pill-requested">Requested: @requestedCount</span>
+            </label>
+
+            <label class="form-check-label d-flex align-items-center gap-2">
+                <input class="form-check-input cal-toggle" type="checkbox" data-type="accepted" checked />
+                <span class="badge rounded-pill cal-pill cal-pill-accepted">Accepted: @acceptedCount</span>
+            </label>
+
+            <label class="form-check-label d-flex align-items-center gap-2">
+                <input class="form-check-input cal-toggle" type="checkbox" data-type="paid" checked />
+                <span class="badge rounded-pill cal-pill cal-pill-paid">Paid: @paidCount</span>
+            </label>
+
+            <label class="form-check-label d-flex align-items-center gap-2">
+                <input class="form-check-input cal-toggle" type="checkbox" data-type="cancelled" checked />
+                <span class="badge rounded-pill cal-pill cal-pill-cancelled">Cancelled: @cancelledCount</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Calendar -->
+        <div class="col-12 col-lg-7">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr class="text-center">
+                            <th>Sun</th>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var day = 1;
+                            var col = 0;
+                        }
+                        <tr>
+                            @for (col = 0; col < firstDow; col++)
+                            {
+                                <td class="bg-transparent" style="height: 7rem;"></td>
+                            }
+                            @for (; col < 7 && day <= daysInMonth; col++, day++)
+                            {
+                                var todays = sessionsOn(day).OrderBy(s => s.StartTime).ToList();
+                                <td style="height: 7rem;">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="cal-day-number">@day</strong>
+                                    </div>
+
+                                    @foreach (var s in todays)
+                                    {
+                                        var st = statusOf(s);
+                                        var endTs = s.StartTime + TimeSpan.FromMinutes((double)(s.DurationHours * 60m));
+                                        <div class="small mt-1 cal-item session"
+                                             data-type="@st"
+                                             data-session-id="@s.TutoringSessionID"
+                                             title="Click to view details">
+                                            <span class="cal-dot @(st switch {
+                                                "requested" => "cal-dot-requested",
+                                                "accepted"  => "cal-dot-accepted",
+                                                "paid"      => "cal-dot-paid",
+                                                "cancelled" => "cal-dot-cancelled",
+                                                _ => "" })"></span>
+                                            @HHmm(s.StartTime)–@HHmm(endTs)
+                                        </div>
+                                    }
+                                </td>
+                            }
+                        </tr>
+
+                        @while (day <= daysInMonth)
+                        {
+                            <tr>
+                                @for (col = 0; col < 7; col++)
+                                {
+                                    if (day > daysInMonth)
+                                    {
+                                        <td class="bg-transparent" style="height: 7rem;"></td>
+                                    }
+                                    else
+                                    {
+                                        var todays = sessionsOn(day).OrderBy(s => s.StartTime).ToList();
+                                        <td style="height: 7rem;">
+                                            <div class="d-flex justify-content-between">
+                                                <strong class="cal-day-number">@day</strong>
+                                            </div>
+
+                                            @foreach (var s in todays)
+                                            {
+                                                var st = statusOf(s);
+                                                var endTs = s.StartTime + TimeSpan.FromMinutes((double)(s.DurationHours * 60m));
+                                                <div class="small mt-1 cal-item session"
+                                                     data-type="@st"
+                                                     data-session-id="@s.TutoringSessionID"
+                                                     title="Click to view details">
+                                                    <span class="cal-dot @(st switch {
+                                                        "requested" => "cal-dot-requested",
+                                                        "accepted"  => "cal-dot-accepted",
+                                                        "paid"      => "cal-dot-paid",
+                                                        "cancelled" => "cal-dot-cancelled",
+                                                        _ => "" })"></span>
+                                                    @HHmm(s.StartTime)–@HHmm(endTs)
+                                                </div>
+                                            }
+                                        </td>
+                                        day++;
+                                    }
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="col-12 col-lg-5">
+            <div id="cal-details-host" class="card p-16" style="background-color: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color);">
+                <div class="text-muted">Click a session on the calendar to view details.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td {
+        vertical-align: top;
+        padding: .5rem;
+    }
+
+    .cal-day-number {
+        color: var(--text-color);
+        font-weight: 700;
+    }
+
+    body.dark-theme .cal-day-number {
+        color: var(--info-color);
+    }
+
+    .text-muted {
+        color: var(--muted-text-color) !important;
+    }
+
+    .cal-item {
+        color: var(--muted-text-color) !important;
+    }
+
+        .cal-item.session {
+            cursor: pointer;
+        }
+
+    .cal-pill {
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+    }
+
+    .cal-pill-requested {
+        background-color: rgba(217,119,6, .18);
+        color: var(--warning-color);
+    }
+
+    .cal-pill-accepted {
+        background-color: rgba(52,211,153,.18);
+        color: var(--success-color);
+    }
+
+    .cal-pill-paid {
+        background-color: rgba(15,45,74, .18);
+        color: var(--primary-color);
+    }
+
+    .cal-pill-cancelled {
+        background-color: rgba(179,185,194,.18);
+        color: var(--muted-text-color);
+    }
+
+    .cal-dot {
+        display: inline-block;
+        width: .6rem;
+        height: .6rem;
+        border-radius: 50%;
+        margin-right: .4rem;
+        transform: translateY(1px);
+    }
+
+    .cal-dot-requested {
+        background-color: var(--warning-color);
+    }
+
+    .cal-dot-accepted {
+        background-color: var(--success-color);
+    }
+
+    .cal-dot-paid {
+        background-color: var(--primary-color);
+    }
+
+    .cal-dot-cancelled {
+        background-color: var(--muted-text-color);
+    }
+
+    .cal-item.hidden {
+        display: none !important;
+    }
+</style>
+
+<script>
+    (function () {
+        const toggles = document.querySelectorAll('.cal-toggle');
+        function apply() {
+            toggles.forEach(chk => {
+                const type = chk.getAttribute('data-type');
+                const on = chk.checked;
+                document.querySelectorAll('.cal-item[data-type="' + type + '"]').forEach(el => {
+                    el.classList.toggle('hidden', !on);
+                });
+            });
+        }
+        toggles.forEach(chk => chk.addEventListener('change', apply));
+        apply();
+
+        document.addEventListener('click', function (ev) {
+            const item = ev.target.closest('.cal-item.session[data-session-id]');
+            if (!item) return;
+            const sid = item.getAttribute('data-session-id');
+            const host = document.getElementById('cal-details-host');
+            if (host) host.innerHTML = '<div class="text-muted p-2">Loading...</div>';
+
+            fetch('@Url.Action("USessionDetails", "User")?id=' + encodeURIComponent(sid))
+                .then(r => { if (!r.ok) throw new Error('Failed'); return r.text(); })
+                .then(html => { if (host) host.innerHTML = html; })
+                .catch(_ => { if (host) host.innerHTML = '<div class="text-danger p-2">Unable to load details.</div>'; });
+        });
+    })();
+</script>

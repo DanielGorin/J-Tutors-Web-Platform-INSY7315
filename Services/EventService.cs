@@ -5,9 +5,11 @@ using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Subjects;
 using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
+using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.Data.SqlClient;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 using Newtonsoft.Json.Bson;
+using System.Data;
 using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Services
@@ -435,6 +437,108 @@ namespace J_Tutors_Web_Platform.Services
 
             cmd.Parameters.AddWithValue("@EventID", EventID);
             cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+            cmd.ExecuteNonQuery();
+            constring.Close();
+        }
+
+        public int GetPointsReward(int EventID) 
+        {
+            Console.WriteLine("inside get participation id with EventID: " + EventID);
+
+            const string sql = "select PointsReward from Events where EventID = @EventID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@EventID", EventID);
+
+            constring.Open();
+            int points = (int)cmd.ExecuteScalar();
+            constring.Close();
+
+            return points;
+        }
+
+        public int GetAdminIDFromEvent(int EventID)
+        {
+            Console.WriteLine("inside get participation id with EventID: " + EventID);
+
+            const string sql = "select AdminID from Events where EventID = @EventID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@EventID", EventID);
+
+            constring.Open();
+            int id = (int)cmd.ExecuteScalar();
+            constring.Close();
+
+            return id;
+        }
+
+        public int GetParticipationID(int EventID, int UserID)
+        {
+            Console.WriteLine("inside get participation id with EventID: " + EventID + " and UserID: " + UserID);
+
+            const string sql = "select EventParticipationID from EventParticipation where EventID = @EventID and UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@EventID", EventID);
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+
+            constring.Open();
+            var result = cmd.ExecuteScalar();
+            constring.Close();
+
+            if (result == null)
+            {
+                return 0;
+            }
+            else if (result == DBNull.Value)
+            {
+                return 0;
+            }
+            else
+            {
+                int id = (int)result;
+                return id;
+            }
+        }
+
+        public void GenerateReceiptFromEvent(int EventID, int UserID) 
+        {
+            int amount = GetPointsReward(EventID);
+            int adminID = GetAdminIDFromEvent(EventID);
+            int eventParticipationID = GetParticipationID(EventID, UserID);
+            
+            bool affectsAllTime = true;
+
+            DateTime receiptDate = DateTime.Now;
+
+            PointsReceiptType pointsReceiptType = PointsReceiptType.Earned;
+
+            string reason = "Participation in event ID " + EventID;
+            string reference = "Event ID " + EventID + ", Admin ID " + adminID;
+            string notes = "Auto-generated receipt for your(" + UserID + ") event(" + EventID + ") participation, for the amount of " + amount + " points.";
+
+            /////================ Insert into PointsReceipt ===================///
+
+            const string sql = "insert into PointsReceipt(UserID, EventParticipationID, AdminID, ReceiptDate, Type, Amount, Reason, Reference, AffectsAllTime, Notes) values(@UserID, @EventParticipationID, @AdminID, @ReceiptDate, @Type, @Amount, @Reason, @Reference, @AffectsAllTime, @Notes)";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", UserID);
+            cmd.Parameters.AddWithValue("@EventParticipationID", eventParticipationID);
+            cmd.Parameters.AddWithValue("@AdminID", adminID);
+            cmd.Parameters.AddWithValue("@ReceiptDate", receiptDate);
+            cmd.Parameters.AddWithValue("@Type", pointsReceiptType);
+            cmd.Parameters.AddWithValue("@Amount", amount);
+            cmd.Parameters.AddWithValue("@Reason", reason);
+            cmd.Parameters.AddWithValue("@Reference", reference);
+            cmd.Parameters.AddWithValue("@AffectsAllTime", SqlDbType.Bit).Value = affectsAllTime;
+            cmd.Parameters.AddWithValue("@Notes", notes);
 
             constring.Open();
             cmd.ExecuteNonQuery();

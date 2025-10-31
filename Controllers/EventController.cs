@@ -115,7 +115,19 @@ namespace J_Tutors_Web_Platform.Controllers
 
             Console.WriteLine("deleted user from event");
 
-            return RedirectToAction("AEventDetails");
+            return RedirectToAction("AEventDetails", EventID);
+        }
+
+        [HttpPost]
+        public IActionResult GenerateReceipt(int EventID, int UserID)
+        {
+            Console.WriteLine("entered GenerateReceipt with: " + EventID + " " + UserID);
+
+            _as.GenerateReceiptFromEvent(EventID, UserID);
+
+            Console.WriteLine("Generated Receipt");
+
+            return RedirectToAction("AEventDetails", EventID);
         }
     }
 }

@@ -238,9 +238,9 @@
                                     <td class="caption">@user.JoinDate</td>
                                     <td class="text-end">
                                         <form asp-controller="Event" asp-action="GenerateReceipt" method="post">
-                                            <input type="hidden" class="caption" value="@user.UserID"></input>
+                                            <input type="hidden" class="caption" name="UserID" value="@user.UserID"></input>
                                             <input type="hidden" class="caption" name="EventID" value="@user.EventID"></input>
-                                            <button class="btn btn-sm btn-outline-secondary">Confirm Attendance</button>
+                                            <button class="btn btn-sm btn-outline-secondary">Generate Receipt</button>
                                         </form>
                                         <form asp-controller="Event" asp-action="DeleteUserFromEvent" method="post">
                                             <input type="hidden" class="caption" name="UserID" value="@user.UserID"></input>

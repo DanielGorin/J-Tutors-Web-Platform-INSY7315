@@ -118,53 +118,6 @@
         <a asp-controller="Admin" asp-action="ADashboard" class="btn btn-secondary">← Back to Dashboard</a>
     </div>
 
-    <!-- ======= Inline Create (UI placeholder) ======= -->
-    <form asp-controller="Event" asp-action="CreateEvent" id="createForm" class="card shadow p-24 inline-form mb-16">
-        <h4>Create Event (UI only for now)</h4>
-        <div class="row g-3">
-            <div class="col-lg-6">
-                <label class="form-label" for="evName">Event Name</label>
-                <input id="evName" name="Title" class="form-control" placeholder="Event 8" />
-            </div>
-            <div class="col-lg-6">
-                <label class="form-label" for="evLocation">Location</label>
-                <input id="evLocation" name="Location" class="form-control" placeholder="Community Centre" />
-            </div>
-            <div class="col-6 col-lg-4">
-                <label class="form-label" for="evDate">Date</label>
-                <input id="evDate" name="EventDate" type="date" class="form-control" />
-            </div>
-            <div class="col-6 col-lg-4">
-                <label class="form-label" for="evStart">Start</label>
-                <input id="evStart" name="StartTime" type="time" class="form-control" />
-            </div>
-            <div class="col-6 col-lg-4">
-                <label class="form-label" for="evDuration">Duration (minutes)</label>
-                <input id="evDuration" name="DurationMinutes" type="number" class="form-control" placeholder="120" />
-            </div>
-            <div class="col-6 col-lg-4">
-                <label class="form-label" for="evPoints">Points Reward</label>
-                <input id="evPoints" name="PointsReward" type="number" class="form-control" placeholder="25" />
-            </div>
-            <div class="col-6 col-lg-4">
-                <label class="form-label" for="evGoal">Goal Participants</label>
-                <input id="evGoal" name="GoalParticipants" type="number" class="form-control" placeholder="20" />
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="evWhatsappURL">Whatsapp group URL</label>
-                <input id="evWhatsappURL" name="WhatsappGroupUrl" type="text" class="form-control" placeholder="placeholder.url" />
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="evDescription">Description</label>
-                <textarea id="evDescription" name="Description" rows="3" class="form-control" placeholder="Description: What the event is about. The quick brown fox jumped over the lazy dog."></textarea>
-            </div>
-            <input id="evStatus" name="Status" type="hidden" value="Draft" class="form-control" />
-            <div class="col-12 d-flex gap-2">
-                <a class="btn btn-outline-secondary" href="#top">Cancel</a>
-            </div>
-        </div>
-    </form>
-
     <!-- Tabs + Create button -->
     <div class="card shadow p-24 mb-16">
         <div class="d-flex flex-wrap align-items-center justify-content-between">
@@ -285,9 +238,9 @@
                                     <td><span class="chip chip-open">Open</span></td>
                                 }
                                 <td class="text-end">
-                                    <form asp-action="JoinEvent" asp-controller="Event">
-                                            <input type="hidden" name="EventID" value="@evnt.EventID"/>
-                                            <button class="btn btn-sm btn-outline-primary">Join</button>
+                                    <form asp-action="AEventDetails" asp-controller="Event">
+                                        <input type="hidden" name="EventID" value="@evnt.EventID" />
+                                        <button class="btn btn-sm btn-outline-primary">Edit</button>
                                     </form>
                                 </td>
                             </tr>
@@ -369,6 +322,54 @@
             </table>
         </div>
     </div>
+
+    <!-- ======= Inline Create (UI placeholder) ======= -->
+    <form asp-controller="Event" asp-action="CreateEvent" id="createForm" class="card shadow p-24 inline-form mb-16">
+        <h4>Create Event (UI only for now)</h4>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label" for="evName">Event Name</label>
+                <input id="evName" name="Title" class="form-control" placeholder="Event 8" />
+            </div>
+            <div class="col-lg-6">
+                <label class="form-label" for="evLocation">Location</label>
+                <input id="evLocation" name="Location" class="form-control" placeholder="Community Centre" />
+            </div>
+            <div class="col-6 col-lg-4">
+                <label class="form-label" for="evDate">Date</label>
+                <input id="evDate" name="EventDate" type="date" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-4">
+                <label class="form-label" for="evStart">Start</label>
+                <input id="evStart" name="StartTime" type="time" class="form-control" />
+            </div>
+            <div class="col-6 col-lg-4">
+                <label class="form-label" for="evDuration">Duration (minutes)</label>
+                <input id="evDuration" name="DurationMinutes" type="number" class="form-control" placeholder="120" />
+            </div>
+            <div class="col-6 col-lg-4">
+                <label class="form-label" for="evPoints">Points Reward</label>
+                <input id="evPoints" name="PointsReward" type="number" class="form-control" placeholder="25" />
+            </div>
+            <div class="col-6 col-lg-4">
+                <label class="form-label" for="evGoal">Goal Participants</label>
+                <input id="evGoal" name="GoalParticipants" type="number" class="form-control" placeholder="20" />
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="evWhatsappURL">Whatsapp group URL</label>
+                <input id="evWhatsappURL" name="WhatsappGroupUrl" type="text" class="form-control" placeholder="placeholder.url" />
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="evDescription">Description</label>
+                <textarea id="evDescription" name="Description" rows="3" class="form-control" placeholder="Description: What the event is about. The quick brown fox jumped over the lazy dog."></textarea>
+            </div>
+            <input id="evStatus" name="Status" type="hidden" value="Draft" class="form-control" />
+            <div class="col-12 d-flex gap-2">
+                <button type="syubmit " class="btn btn-outline-primary" href="#top">Add Event</button>
+            </div>
+        </div>
+    </form>
+
 </div>
 
 @* --------------------------------------------------------------------

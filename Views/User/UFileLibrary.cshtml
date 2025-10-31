@@ -1,4 +1,7 @@
-﻿@{
+﻿@model J_Tutors_Web_Platform.ViewModels.AFilesViewModel
+@using J_Tutors_Web_Platform.Models.Shared
+
+@{
     ViewData["Title"] = "File Library";
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["NavSection"] = "User";
@@ -118,7 +121,6 @@
                 <thead>
                     <tr>
                         <th scope="col">File</th>
-                        <th scope="col">Size</th>
                         <th scope="col">Uploaded</th>
                         <th scope="col">Expires</th>
                         <th scope="col" class="text-end">Actions</th>
@@ -126,48 +128,32 @@
                 </thead>
                 <tbody>
                     @* Demo rows for the UI preview. Remove when binding real data. *@
-                    <tr>
-                        <td>
-                            <div class="d-flex flex-column">
-                                <span>File 1.pdf</span>
-                                <span class="caption">File description</span>
-                            </div>
-                        </td>
-                        <td>1.2 MB</td>
-                        <td>2025-09-01</td>
-                        <td><span class="badge-chip badge-active">No expiry</span></td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-primary">Download</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="d-flex flex-column">
-                                <span>File 2.xlsx</span>
-                                <span class="caption">File description)</span>
-                            </div>
-                        </td>
-                        <td>640 KB</td>
-                        <td>2025-09-27</td>
-                        <td><span class="badge-chip badge-soon">Expires in 3 days</span></td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-primary">Download</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="d-flex flex-column">
-                                <span>File 3.mp4</span>
-                                <span class="caption">File description</span>
-                            </div>
-                        </td>
-                        <td>24.5 MB</td>
-                        <td>2025-08-20</td>
-                        <td><span class="badge-chip badge-expired">Expired</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
-                        </td>
-                    </tr>
+                    
+                    @if (Model != null)
+                    {
+                        @foreach (var file in Model.FSAR)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span>@file.FileName</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge-chip badge-active">@file.StartDate</span></td>
+                                <td><span class="badge-chip badge-expired">@file.EndDate</span></td>
+                                <td class="text-end">
+                                    @if (DateTime.Now <= file.EndDate)
+                                    {
+                                        <a class="btn btn-outline-primary btn-sm" asp-action="FileShareDownload" asp-route-name="@file.FileName">Download</a>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline-primary btn-sm" disabled>Download</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
 
                     @* Keep this as the empty state when there are no files:
                     <tr>

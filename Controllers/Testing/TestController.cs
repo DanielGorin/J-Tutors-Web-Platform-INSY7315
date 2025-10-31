@@ -3,6 +3,7 @@ using J_Tutors_Web_Platform.Services.Storage;
 using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace J_Tutors_Web_Platform.Controllers.Testing
 {
@@ -24,13 +25,13 @@ namespace J_Tutors_Web_Platform.Controllers.Testing
         [RequestSizeLimit(524_288_000)]
         public async Task<IActionResult> FileShareUpload(IFormFile file)
         {
-            string Username = User.FindFirst(ClaimTypes.Name)?.Value;
+            string username = User.FindFirst(ClaimTypes.Name)?.Value;
 
             if (file is null || file.Length == 0)
                 return RedirectToAction("GetFileShareRows", "Test");
 
             using var s = file.OpenReadStream();
-            await _fs.UploadAsync(Username,s, file.Length, file.FileName);
+            await _fs.UploadAsync(username,s, file.Length, file.FileName);
             return RedirectToAction("GetFileShareRows", "Test");
         }
 
@@ -83,6 +84,21 @@ namespace J_Tutors_Web_Platform.Controllers.Testing
             _fs.AddFileAccess(FileID, Username, StartDate, EndDate);
 
             return RedirectToAction("ManageAccess", "Test");
+        }
+
+        public IActionResult GetUserFiles() 
+        {
+
+            string username = User.FindFirst(ClaimTypes.Name)?.Value;
+
+            Console.WriteLine("Getting user files" + username);
+
+            var AFilesVM = new AFilesViewModel
+            {
+                FSAR = _fs.GetUserFileShares(username)
+            };
+
+            return View("~/Views/User/UFileLibrary.cshtml", AFilesVM);
         }
     }
 }

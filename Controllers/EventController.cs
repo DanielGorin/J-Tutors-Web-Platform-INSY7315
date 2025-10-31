@@ -47,7 +47,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 DetailedEventRows = _as.GetUserEventHistory(User.FindFirst(ClaimTypes.Name)?.Value)
             };
 
-            return View("~/Views/User/UEvents.cshtml", eventViewModel);
+            return View("~/Views/User/UEventHistory.cshtml", eventViewModel);
         }
 
         public IActionResult CreateEvent(string Title, string description, string Location, DateOnly EventDate, TimeOnly StartTime, int DurationMinutes, int PointsReward, int GoalParticipants, string WhatsappGroupURL, string Status)
@@ -103,7 +103,7 @@ namespace J_Tutors_Web_Platform.Controllers
                 DetailedEventRows = _as.GetUserEvents(User.FindFirst(ClaimTypes.Name)?.Value)
             };
 
-            return RedirectToAction("~Views/Admin/UEventHistory.cshtml", eventViewModel);
+            return View("~Views/Admin/UEventHistory.cshtml", eventViewModel);
         }
     }
 }

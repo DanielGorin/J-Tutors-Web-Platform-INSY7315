@@ -1,11 +1,14 @@
 ﻿using Azure.Storage.Files.Shares;
 using J_Tutors_Web_Platform.Models.AppFiles;
+using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
@@ -365,7 +368,42 @@ namespace J_Tutors_Web_Platform.Services.Storage
             constring.Close();
         }
 
+        public List<FileShareAccessRow> GetUserFileShares(string Username) 
+        {
+            List<FileShareAccessRow> fsarList = new List<FileShareAccessRow>();
+            int userID = GetUserID(Username);
+            
+            Console.WriteLine("Getting file shares for userID: " + userID);
 
+            const string sql = "select * from FileAccess where UserID = @UserID";
+            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
+            using var cmd = new SqlCommand(sql, constring);
+
+            cmd.Parameters.AddWithValue("@UserID", userID);
+
+            constring.Open();
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                string fileName = GetFileName(reader.GetInt32(1));
+
+                fsarList.Add(new FileShareAccessRow
+                {
+                    FileAccessID = reader.GetInt32(0),
+                    FileID = reader.GetInt32(1),
+                    FileName = fileName,
+                    UserID = userID,
+                    StartDate = reader.GetDateTime(3),
+                    EndDate = reader.GetDateTime(4)
+                });
+            }
+
+            constring.Close(); 
+            
+            return fsarList;
+
+        }
 
     }
 }

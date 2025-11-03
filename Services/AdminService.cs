@@ -16,7 +16,12 @@ namespace J_Tutors_Web_Platform.Services
         {
             _connectionString = connectionString; //initializing connection string
         }
-        //============================== Universal ========================================
+
+        // ==================================================================================================
+        //  CONTROLLER: void
+        //  PURPOSE:
+        //          - Smaller methods to solve specific tasks for methods within this class
+        // ==================================================================================================
 
         public int GetAdminID(string Username)
         {
@@ -116,108 +121,6 @@ namespace J_Tutors_Web_Platform.Services
             return (int)totalPoints;
         }
 
-        //============================== DashBoard ========================================
-
-
-
-        //============================== Sessions & Calender ==============================
-
-        public List<TutoringSession> GetTutoringSessions()
-        {
-            Console.WriteLine("Inside GetTutoringSessions method");
-
-            var Sessionlist = new List<TutoringSession>();
-
-            //const string sql = "select * from TutoringSession";
-            //using var constring = new SqlConnection(_connectionString);
-            //using var cmd = new SqlCommand(sql, constring);
-
-            //constring.Open();
-
-            //using SqlDataReader reader = cmd.ExecuteReader();
-
-            ////Console.WriteLine("before while");
-
-            //while (reader.Read())
-            //{
-            //    Sessionlist.Add(new TutoringSession
-            //    {
-            //        TutoringSessionID = Convert.ToInt32(reader["TutoringSessionID"]),
-            //        UserID = Convert.ToInt32(reader["UserID"]),
-            //        AdminID = Convert.ToInt32(reader["AdminID"]),
-            //        SubjectID = Convert.ToInt32(reader["SubjectID"]),
-            //        SessionDate = DateOnly.FromDateTime((DateTime)reader["SessionDate"]),
-            //        DurationHours = Convert.ToDecimal(reader["DurationHours"]),
-            //        BaseCost = Convert.ToDecimal(reader["BaseCost"]),
-            //        PointsSpent = Convert.ToInt32(reader["PointsSpent"]),
-            //        Status = Enum.Parse<TutoringSessionStatus>(reader["Status"].ToString()!),
-            //        CancellationDate = reader["CancellationDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["CancellationDate"]),
-            //        PaidDate = reader["PaidDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(reader["PaidDate"])
-            //    });
-            //}
-
-            Console.WriteLine("outside while");
-            return Sessionlist;
-        }
-
-        public List<AvailabilityBlock> GetAvailabilityBlocks()
-        {
-            Console.WriteLine("Inside GetAvailabilityBlocks method");
-
-            var avList = new List<AvailabilityBlock>();
-
-            const string sql = "select * from AvailabilityBlock"; // add where admin id = @AdminId - not adding this as cannot login and nav to sessionandclaender yet
-            using var constring = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand(sql, constring);
-
-            constring.Open();
-
-            using SqlDataReader reader = cmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                avList.Add(new AvailabilityBlock
-                {
-                    AvailabilityBlockID = Convert.ToInt32(reader["AvailabilityBlockID"]),
-                    AdminID = Convert.ToInt32(reader["AdminID"]),
-                    BlockDate = Convert.ToDateTime(reader["BlockDate"]),
-                    StartTime = reader.GetTimeSpan(reader.GetOrdinal("StartTime")),
-                    EndTime = reader.GetTimeSpan(reader.GetOrdinal("EndTime"))
-                });
-            }
-
-            foreach (var item in avList)
-            {
-                Console.WriteLine($"ID: {item.AvailabilityBlockID}, Date: {item.BlockDate}, Start: {item.StartTime}, End: {item.EndTime}");
-            }
-
-            return avList;
-        }
-
-        public string CreateAvailabilitySlot(string Username, DateTime BlockDate, TimeOnly StartTime, int Duration)
-        {
-            int adminId = GetAdminID(Username);
-            TimeSpan endTime = StartTime.ToTimeSpan().Add(new TimeSpan(0, Duration, 0));
-
-            const string sql = "insert into AvailabilityBlock (AdminID, BlockDate, StartTime, EndTime) " +
-                               "values (@AdminID, @BlockDate, @StartTime, @EndTime)";
-            using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
-            using var cmd = new SqlCommand(sql, constring);
-
-            //adding parameters to prevent sql injection
-            cmd.Parameters.AddWithValue("@AdminID", adminId);
-            cmd.Parameters.AddWithValue("@BlockDate", BlockDate);
-            cmd.Parameters.AddWithValue("@StartTime", StartTime);
-            cmd.Parameters.AddWithValue("@EndTime", endTime);
-
-            //executing the command
-            constring.Open();
-            cmd.ExecuteNonQuery();
-
-            Console.WriteLine("Availability block created successfully");
-            return "Successfully created availability block";
-        }
-
         //============================== Users ==============================
 
         public List<UserDirectoryRow> GetAllUsers(string Username)
@@ -268,104 +171,12 @@ namespace J_Tutors_Web_Platform.Services
             return userList;
         }
 
-        public List<UserDirectoryRow> FilterSearch(string searchUsers, string visFilter, string unpaidFilter)
-        {
-            var userList = new List<UserDirectoryRow>();
-            //var filteredUserList = new List<UserDirectoryRow>();
-            //int totalPoints;
-            //int pointsSpent;
-            //int currentPoints;
-            //bool isVisible;
-            //int unPaidSessions;
-            //double unPaidAmount;
-            //DateTime lastActivity;
-
-            //const string sql = "select * from Users";
-            //using var constring = new SqlConnection(_connectionString); //using connection string to connect to database, using ensures connection is closed after use
-            //using var cmd = new SqlCommand(sql, constring);
-
-            //constring.Open();
-            //using SqlDataReader reader = cmd.ExecuteReader();
-
-            ////reading through returned data
-            //while (reader.Read())
-            //{
-            //    totalPoints = GetTotalPoints(reader["Username"].ToString());
-            //    pointsSpent = GetPointsSpent(reader["Username"].ToString());
-            //    currentPoints = totalPoints - pointsSpent;
-
-            //    isVisible = IsLeaderboardVisible(reader["Username"].ToString());
-
-            //    unPaidSessions = 0; //add funcionality later after sessions can be booked
-            //    unPaidAmount = 0.0; //add funcionality later after sessions can be booked
-
-            //    lastActivity = DateTime.Now;
-
-            //    userList.Add(new UserDirectoryRow
-            //    {
-            //        Username = reader["Username"].ToString()!,
-            //        UnpaidSessions = unPaidSessions,
-            //        UnpaidAmount = unPaidAmount,
-            //        CurrentPoints = currentPoints,
-            //        TotalPoints = totalPoints,
-            //        LastActivity = lastActivity,
-            //        LeaderboardVisible = isVisible
-            //    });
-
-            //    if (searchUsers == null) 
-            //    {
-            //        if (unpaidFilter.Equals("all")) 
-            //        {
-            //            if (isVisible.Equals("all"))
-            //            { }
-
-            //            if (isVisible.Equals("hidden"))
-            //            { }
-
-            //            if (isVisible.Equals("visible"))
-            //            { }
-            //        }
-
-            //        if (unpaidFilter.Equals("has"))
-            //        {
-            //            if (isVisible.Equals("all"))
-            //            { }
-
-            //            if (isVisible.Equals("hidden"))
-            //            { }
-
-            //            if (isVisible.Equals("visible"))
-            //            { }
-            //        }
-
-            //        if (unpaidFilter.Equals("none"))
-            //        {
-            //            if (isVisible.Equals("all"))
-            //            { }
-
-            //            if (isVisible.Equals("hidden"))
-            //            { }
-
-            //            if (isVisible.Equals("visible"))
-            //            { }
-            //        }
-            //    }
-            //}
-
-            //constring.Close();
-            return userList;
-        }
-
-
-        //============================== Events ==============================
-
-
-
-        //============================== Files ==============================
-
-
-
-        // ============================== Quotations ==============================
+        // ==================================================================================================
+        //  QUOTATIONS
+        //  CONTROLLER: AdminController
+        //  PURPOSE:
+        //          - Management of pricing rules for subjects
+        // ==================================================================================================
 
         public List<Subject> GetAllSubjects()
         {
@@ -480,11 +291,12 @@ namespace J_Tutors_Web_Platform.Services
 
 
 
-        //============================== Analytics ==============================
-
-
-
-        //============================== Admin Account ==============================
+        // ==================================================================================================
+        //  THEME PREFERENCE
+        //  CONTROLLER: AdminController
+        //  PURPOSE:
+        //          - Change theme preference in db for admin.
+        // ==================================================================================================
 
         public async Task ChangeTheme(string Username, string pref) 
         {

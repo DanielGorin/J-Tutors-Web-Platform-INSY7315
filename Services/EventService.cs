@@ -22,7 +22,13 @@ namespace J_Tutors_Web_Platform.Services
             _connectionString = connectionString;
         }
 
-        //====================UNIVERSAL METHODS====================//
+        // ==================================================================================================
+        //  UNIVERSAL METHODS
+        //  CONTROLLER: EventController
+        //  PURPOSE:
+        //          - getting ids from usernames and vice versa
+        // ==================================================================================================
+
         public int GetAdminID(string Username)
         {
             const string sql = "select AdminId from Admins where Username = @Username";
@@ -75,7 +81,13 @@ namespace J_Tutors_Web_Platform.Services
             return username;
         }
 
-        //======================INNER METHODS======================//
+        // ==================================================================================================
+        //  INNER METHODS
+        //  CONTROLLER: EventController
+        //  PURPOSE:
+        //          - getting current participants for an event
+        //          - checking if a user is participating in a specific event
+        // ==================================================================================================
 
         public int GetCurrentParticipants(int EventID)
         {

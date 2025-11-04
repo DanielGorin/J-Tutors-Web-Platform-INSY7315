@@ -48,7 +48,6 @@ namespace J_Tutors_Web_Platform.Controllers
                 //Console.WriteLine(User.FindFirst(ClaimTypes.Name)?.Value);
                 //Console.WriteLine(User.FindFirst(ClaimTypes.Role)?.Value);
 
-
                 return RedirectToAction("UDashboard", "Home");
             }
             else

@@ -13,6 +13,8 @@ namespace J_Tutors_Web_Platform.Services
             _connectionString = connectionString;
         }
 
+        
+
         //public string UpdateLastActive(string Username)
         //{
         //    const string sql = "update Users set LastActive = @LastActive where Username = @Username";
@@ -49,6 +51,8 @@ namespace J_Tutors_Web_Platform.Services
                 }
             }
 
+            constring.Close();
+
             return "Incorrect username or password";
 
         }
@@ -77,6 +81,7 @@ namespace J_Tutors_Web_Platform.Services
                 }
             }
             Console.WriteLine("Admin login failed");
+            constring.Close();
 
             return "Incorrect username or password";
 

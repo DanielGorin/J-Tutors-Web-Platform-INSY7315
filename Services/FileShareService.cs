@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
-namespace J_Tutors_Web_Platform.Services.Storage
+namespace J_Tutors_Web_Platform.Services
 {
     public sealed class FileShareService
     {
@@ -87,7 +87,7 @@ namespace J_Tutors_Web_Platform.Services.Storage
         //----------------------------------------------------------------------------------------------------------------------------
 
 
-        public FileShareService(Microsoft.Extensions.Configuration.IConfiguration config, string connectionString)
+        public FileShareService(IConfiguration config, string connectionString)
         {
             var cs = config["AzureStorage:ConnectionString"]
                   ?? config.GetConnectionString("StorageAccount");
@@ -248,7 +248,6 @@ namespace J_Tutors_Web_Platform.Services.Storage
             cmd.ExecuteNonQuery();
             constring.Close();
 
-
         }
 
         public int GetFileID(string FileName) 
@@ -341,7 +340,7 @@ namespace J_Tutors_Web_Platform.Services.Storage
             constring.Close();
         }
 
-        public void UpdateFileAccess(int FileId, int UserID, DateTime StartDate, DateTime? EndDate)
+        public void UpdateFileAccess(int FileId, int UserID, DateOnly StartDate, DateOnly EndDate)
         {
             const string sql = "update FileAccess set StartDate = @StartDate, EndDate = @EndDate where FileID = @FileID and UserID = @UserID";
             using var constring = new SqlConnection(_connectionString);
@@ -350,7 +349,7 @@ namespace J_Tutors_Web_Platform.Services.Storage
             cmd.Parameters.AddWithValue("@FileID", FileId);
             cmd.Parameters.AddWithValue("@UserID", UserID);
             cmd.Parameters.AddWithValue("@StartDate", StartDate);
-            cmd.Parameters.AddWithValue("@EndDate", EndDate.HasValue ? (object)EndDate.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@EndDate", EndDate);
 
             constring.Open();
             cmd.ExecuteNonQuery();

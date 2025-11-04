@@ -135,11 +135,11 @@
                                     <td class="text-center"><span class="badge-chip badge-active">@file.UserCount</span></td>
                                     <td class="text-end">
                                         <a class="btn btn-outline-primary btn-sm" asp-action="FileShareDownload" asp-route-name="@file.FileName">Download</a>
-                                        <form asp-action="ManageAccess" asp-controller="Test">
+                                        <form asp-action="ManageAccess" asp-controller="File">
                                             <input type="hidden" name="fileName" value="@file.FileName" />
                                             <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Manage Access</button>
                                         </form>
-                                        <form asp-action="DeleteFile" asp-controller="Test">
+                                        <form asp-action="DeleteFile" asp-controller="File">    
                                             <input type="hidden" name="fileName" value="@file.FileName"/>
                                             <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Delete</button>
                                         </form>

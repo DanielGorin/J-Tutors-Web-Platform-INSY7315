@@ -18,7 +18,7 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ==================================================================================================
-        //  CONTROLLER: void
+        //
         //  PURPOSE:
         //          - Smaller methods to solve specific tasks for methods within this class
         // ==================================================================================================
@@ -121,7 +121,12 @@ namespace J_Tutors_Web_Platform.Services
             return (int)totalPoints;
         }
 
-        //============================== Users ==============================
+        // ==================================================================================================
+        //  PULLING LIST OF USERS
+        //  CONTROLLER: AdminController
+        //  PURPOSE:
+        //          - fetch list of all users
+        // ==================================================================================================
 
         public List<UserDirectoryRow> GetAllUsers(string Username)
         {
@@ -283,13 +288,6 @@ namespace J_Tutors_Web_Platform.Services
 
             cmd.ExecuteNonQuery();
         }
-
-
-
-
-        //============================== Leaderboard ==============================
-
-
 
         // ==================================================================================================
         //  THEME PREFERENCE

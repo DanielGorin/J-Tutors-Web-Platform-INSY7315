@@ -252,38 +252,38 @@ namespace J_Tutors_Web_Platform.Controllers
         /// LEGACY: GET /Admin/ASessionCalender
         /// Older calendar/sessions page.
         /// </summary>
-        [HttpGet]
-        public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
-        {
-            ViewData["NavSection"] = "Admin";
-            Console.WriteLine("LEGACY: Inside ASessionCalender GET method");
+        //[HttpGet]
+        //public IActionResult ASessionCalender(DateTime BlockDate, TimeOnly StartTime, TimeOnly EndTime)
+        //{
+        //    ViewData["NavSection"] = "Admin";
+        //    Console.WriteLine("LEGACY: Inside ASessionCalender GET method");
 
-            // current admin
-            var username = User.Identity?.Name ?? string.Empty;
+        //    // current admin
+        //    var username = User.Identity?.Name ?? string.Empty;
 
-            // load data the old way
-            var tutoringSessions = _adminService.GetTutoringSessions();
-            var availabilitySlots = _adminService.GetAvailabilityBlocks();
+        //    // load data the old way
+        //    var tutoringSessions = _adminService.GetTutoringSessions();
+        //    var availabilitySlots = _adminService.GetAvailabilityBlocks();
 
-            // build old VM
-            var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
-            {
-                TutoringSessions = tutoringSessions,
-                AvailabilityBlock = availabilitySlots
-            };
+        //    // build old VM
+        //    var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
+        //    {
+        //        TutoringSessions = tutoringSessions,
+        //        AvailabilityBlock = availabilitySlots
+        //    };
 
-            // -----------------------------
-            // DEBUG: leave for now
-            // -----------------------------
-            foreach (var slot in availabilitySlots)
-            {
-                Console.WriteLine(
-                    $"[LEGACY] Availability ID: {slot.AvailabilityBlockID}, " +
-                    $"Date: {slot.BlockDate:yyyy-MM-dd}, Start: {slot.StartTime}, End: {slot.EndTime}");
-            }
+        //    // -----------------------------
+        //    // DEBUG: leave for now
+        //    // -----------------------------
+        //    foreach (var slot in availabilitySlots)
+        //    {
+        //        Console.WriteLine(
+        //            $"[LEGACY] Availability ID: {slot.AvailabilityBlockID}, " +
+        //            $"Date: {slot.BlockDate:yyyy-MM-dd}, Start: {slot.StartTime}, End: {slot.EndTime}");
+        //    }
 
-            return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
-        }
+        //    return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
+        //}
 
         /// <summary>
         /// LEGACY: POST /Admin/CreateAvailabilitySlot
@@ -291,27 +291,27 @@ namespace J_Tutors_Web_Platform.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateAvailabilitySlot(DateTime BlockDate, TimeOnly StartTime, int Duration)
-        {
-            ViewData["NavSection"] = "Admin";
+        //public IActionResult CreateAvailabilitySlot(DateTime BlockDate, TimeOnly StartTime, int Duration)
+        //{
+        //    ViewData["NavSection"] = "Admin";
 
-            var username = User.Identity?.Name ?? string.Empty;
+        //    var username = User.Identity?.Name ?? string.Empty;
 
-            // create via legacy service
-            _adminService.CreateAvailabilitySlot(username, BlockDate, StartTime, Duration);
+        //    // create via legacy service
+        //    _adminService.CreateAvailabilitySlot(username, BlockDate, StartTime, Duration);
 
-            // reload legacy data
-            var tutoringSessions = _adminService.GetTutoringSessions();
-            var availabilitySlots = _adminService.GetAvailabilityBlocks();
+        //    // reload legacy data
+        //    var tutoringSessions = _adminService.GetTutoringSessions();
+        //    var availabilitySlots = _adminService.GetAvailabilityBlocks();
 
-            var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
-            {
-                TutoringSessions = tutoringSessions,
-                AvailabilityBlock = availabilitySlots
-            };
+        //    var calenderViewModel = new ViewModels.ASessionsCalenderViewModel
+        //    {
+        //        TutoringSessions = tutoringSessions,
+        //        AvailabilityBlock = availabilitySlots
+        //    };
 
-            return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
-        }
+        //    return View("~/Views/Admin/ASessionsCalendar.cshtml", calenderViewModel);
+        //}
 
         // ========================================================================
         // ===================== ACCOUNT / PROFILE STUFF ==========================

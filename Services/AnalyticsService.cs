@@ -1,10 +1,12 @@
 ﻿using J_Tutors_Web_Platform.Models.Admins;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
-using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.Models.Subjects;
-using Microsoft.Data.SqlClient;
+using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
+using NuGet.Configuration;
 using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Services
@@ -16,6 +18,12 @@ namespace J_Tutors_Web_Platform.Services
         {
             _connectionString = connectionString;
         }
+
+        // ==================================================================================================
+        //  CONTROLLER: AnalyticsController
+        //  PURPOSE:
+        //          - getting all points earned from all users on the site
+        // ==================================================================================================
 
         public int CalculateGlobalPoints()
         {
@@ -34,11 +42,15 @@ namespace J_Tutors_Web_Platform.Services
             return globalPoints;
         }
 
-        //
-        // -------------------------  methods for calculations of average attendance -----------------------------------------
-        //
+        // ==================================================================================================
+        //  CONTROLLER: AnalyticsController
+        //  PURPOSE:
+        //          - getting total sessions from all users
+        //          - getting total missed sessions from all users
+        //          - using the above two methods to calculate average attendance
+        // ==================================================================================================
 
-        public int GetTotalSessions()
+        public int GetTotalSessions() // for use within CalculateAverageAttendance
         {
             int totalSessions;
 
@@ -52,7 +64,7 @@ namespace J_Tutors_Web_Platform.Services
 
             return totalSessions;
         }
-        public int GetTotalMissed()
+        public int GetTotalMissed() // for use within CalculateAverageAttendance
         {
             int totalSessions;
 
@@ -76,12 +88,11 @@ namespace J_Tutors_Web_Platform.Services
             return averageAttendance;
         }
 
-        //----------------------------------------------------------------------------------------------------------------------
-
-
-        //
-        // method that pulls all unpaid amounts from accepted sessions
-        //
+        // ==================================================================================================
+        //  CONTROLLER: AnalyticsController
+        //  PURPOSE:
+        //          - method that pulls all unpaid amounts from accepted sessions
+        // ==================================================================================================
 
         public double CalculateAmountUnpaid()
         {
@@ -100,9 +111,11 @@ namespace J_Tutors_Web_Platform.Services
             return amountUnpaid;
         }
 
-        //
-        // method for calculating total monthly revenue, basicly tallying up all paid sessions in the current month and yearr
-        //
+        // ==================================================================================================
+        //  CONTROLLER: AnalyticsController
+        //  PURPOSE:
+        //          - method for calculating total monthly revenue, basicly tallying up all paid sessions in the current month and yearr
+        // ==================================================================================================
 
         public double MonthlyRevenue() 
         {

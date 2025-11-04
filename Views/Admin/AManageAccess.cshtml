@@ -152,26 +152,31 @@
                             @foreach (var file in Model.FSAR) //not completed
                             {
                                 <tr>
-                                    <form>
+                                    <form asp-controller="File" asp-action="UpdateFileAccess">
                                     <td>
                                         <div class="d-flex flex-column">
                                             <strong>@file.Username</strong>
                                         </div>
                                     </td>
-                                    <td class="text-center"><span type="date" name="StartDate" class="badge-chip badge-active">@file.StartDate</span></td>
-                                    <td class="text-center"><span type="date" name="EndDate" class="badge-chip badge-active">@file.EndDate</span></td>
+                                    <td>
+                                        <input name="StartDate" value="@file.StartDate.ToString("yyyy-MM-dd")" type="date" />
+                                    </td>
+                                    <td>
+                                        <input name="EndDate" value="@file.EndDate.ToString("yyyy-MM-dd")" type="date" />
+                                    </td>
                                     <td class="text-end">
                                         <input type="hidden" name="FileID" value="@file.FileID" />
                                         <input type="hidden" name="UserID" value="@file.UserID" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Save Changes</button>
-                                            
-                                        <form>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Save Changes</button>
+                                    </td>
+                                    </form>
+                                    <td>
+                                        <form asp-controller="File" asp-action="RemoveFileAccess" method="post">
                                             <input type="hidden" name="FileID" value="@file.FileID" />
                                             <input type="hidden" name="UserID" value="@file.UserID" />
                                             <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Remove Access</button>
                                         </form>
                                     </td>
-                                    </form>
                                 </tr>
                             }
                         </tbody>

@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserLedgerService
+ * File Purpose:
+ * This is a service that handles user ledger methods
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -58,7 +72,7 @@ ORDER BY ReceiptDate DESC;";
             return rows;
         }
 
-        // ---- Helper: maps DB "Type" (0/1/2 OR "0"/"1"/"2" OR "Earned"/"Spent"/"Adjustment") to enum
+        // Helper: maps DB "Type" (0/1/2 OR "0"/"1"/"2" OR "Earned"/"Spent"/"Adjustment") to enum
         private static LedgerRowKind ParseKindFromDb(object? dbVal)
         {
             if (dbVal is null || dbVal is DBNull) return LedgerRowKind.Adjustment;

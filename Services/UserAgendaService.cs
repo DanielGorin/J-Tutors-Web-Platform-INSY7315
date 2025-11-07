@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserAgendaService
+ * File Purpose:
+ * This is a service that handles admin methods for managing agenda/calender data
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,27 +26,6 @@ using J_Tutors_Web_Platform.Models.Shared;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    /// <summary>
-    /// Read-only user agenda service (ADO.NET).
-    /// Users can view a month calendar of THEIR sessions and view minimal details for a selected session.
-    ///
-    /// Tables used:
-    ///   - TutoringSession (
-    ///       TutoringSessionID INT PK,
-    ///       UserID INT,
-    ///       AdminID INT,
-    ///       SubjectID INT,
-    ///       SessionDate DATE,
-    ///       StartTime TIME,
-    ///       DurationHours DECIMAL(4,2),
-    ///       BaseCost DECIMAL(10,2),
-    ///       PointsSpent INT,
-    ///       Status NVARCHAR(...) -- stored as string values like 'Requested','Accepted','Paid','Cancelled'
-    ///       ... PaidDate, CancellationDate (not needed here)
-    ///     )
-    ///
-    /// Connection string name: "AzureSql"
-    /// </summary>
     public sealed class UserAgendaService
     {
         private readonly IConfiguration _config;
@@ -44,10 +37,7 @@ namespace J_Tutors_Web_Platform.Services
         // Public API
         // ------------------------------------------------------------
 
-        /// <summary>
-        /// Returns the current user's sessions for the given month.
-        /// Set includeRequested=false to hide 'Requested' rows server-side.
-        /// </summary>
+        // Returns the current user's sessions for the given month.
         public async Task<IReadOnlyList<TutoringSession>> GetUserSessionsForCalendarAsync(
             int userId, int year, int month, bool includeRequested)
         {
@@ -75,10 +65,6 @@ ORDER BY SessionDate ASC, StartTime ASC;";
             return await QueryListAsync(cmd, MapTutoringSession);
         }
 
-        /// <summary>
-        /// Returns minimal, read-only details for a single session that belongs to the given user.
-        /// Fields: Status, Date, Start, Duration, FinalRand, PointsSpent.
-        /// </summary>
         public async Task<UserSessionDetailsVM?> GetUserSessionDetailsAsync(int userId, int sessionId)
         {
             const string sql = @"
@@ -177,10 +163,7 @@ WHERE TutoringSessionID = @sid AND UserID = @uid;";
         // Mapping
         // ------------------------------------------------------------
 
-        /// <summary>
-        /// Maps a data record to your EF model class TutoringSession.
-        /// Only fields used by the calendar are populated (others remain default).
-        /// </summary>
+        // Maps a data record to EF model class TutoringSession.
         private static TutoringSession MapTutoringSession(IDataRecord rec)
         {
             object V(string name) => rec[name];

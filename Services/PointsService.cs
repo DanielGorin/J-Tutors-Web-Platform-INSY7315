@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * PointsService
+ * File Purpose:
+ * This is a service that handles points related methods
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Data;
 using System.Globalization;
@@ -101,7 +115,7 @@ WHERE UserID = @uid;";
                 return (existing == null || existing is DBNull) ? null : Convert.ToInt32(existing, CultureInfo.InvariantCulture);
             }
 
-            // NOTE: No SessionID column here — we link purely via Reference = "TS-{sessionId}"
+            // No SessionID column here — we link purely via Reference = "TS-{sessionId}"
             const string insertSql = @"
 INSERT INTO dbo.PointsReceipt
 (UserID, AdminID, ReceiptDate, Type, Amount, Reason, Reference, AffectsAllTime, Notes)

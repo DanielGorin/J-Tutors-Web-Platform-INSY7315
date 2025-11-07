@@ -1,4 +1,18 @@
-﻿using System;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * BloblStorageService
+ * File Purpose:
+ * This is a service that has gone unused as we did not have sufficient time to add this part of the project yet
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;

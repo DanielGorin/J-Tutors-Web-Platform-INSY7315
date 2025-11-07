@@ -1,4 +1,18 @@
-﻿using System.Data;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserLeaderboardService
+ * File Purpose:
+ * This is a service that handles user leaderboard methods
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using System.Data;
 using System.Data.SqlTypes;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -7,17 +21,11 @@ using J_Tutors_Web_Platform.ViewModels;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    // SERVICE: UserLeaderboardService
-    // PURPOSE: Build the leaderboard page VM using raw ADO.NET.
-    // NOTES:
-    // - No search (UI removed)
-    // - Modes: Current | Total
-    // - Shows ALL users (even with 0 points)
     public class UserLeaderboardService
     {
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // CONFIG & LOGGING
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private readonly string _connStr;
         private readonly ILogger<UserLeaderboardService> _log;
 
@@ -27,9 +35,9 @@ namespace J_Tutors_Web_Platform.Services
             _log = log;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // API: Build leaderboard page VM (no search)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<LeaderboardPageVM> GetPageAsync(
             string? currentUsername,
             LeaderboardViewMode mode,
@@ -153,9 +161,9 @@ GROUP BY UserID;";
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // HELPER: timeframe calculator (UTC) — concrete bounds for all modes
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private static (DateTime startUtc, DateTime endUtc) ComputeWindowUtc(LeaderboardTimeFilter time)
         {
             // Use concrete bounds (no nulls), and clamp AllTime start to SQL datetime minimum

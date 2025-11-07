@@ -1,4 +1,18 @@
-﻿using J_Tutors_Web_Platform.Models.Admins;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AnalyticsService
+ * File Purpose:
+ * This is a service that handles methods for anyltic calculations for admins
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using J_Tutors_Web_Platform.Models.Admins;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Subjects;
@@ -20,7 +34,6 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ==================================================================================================
-        //  CONTROLLER: AnalyticsController
         //  PURPOSE:
         //          - getting all points earned from all users on the site
         // ==================================================================================================
@@ -43,7 +56,6 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ==================================================================================================
-        //  CONTROLLER: AnalyticsController
         //  PURPOSE:
         //          - getting total sessions from all users
         //          - getting total missed sessions from all users
@@ -89,7 +101,6 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ==================================================================================================
-        //  CONTROLLER: AnalyticsController
         //  PURPOSE:
         //          - method that pulls all unpaid amounts from accepted sessions
         // ==================================================================================================
@@ -112,7 +123,6 @@ namespace J_Tutors_Web_Platform.Services
         }
 
         // ==================================================================================================
-        //  CONTROLLER: AnalyticsController
         //  PURPOSE:
         //          - method for calculating total monthly revenue, basicly tallying up all paid sessions in the current month and yearr
         // ==================================================================================================

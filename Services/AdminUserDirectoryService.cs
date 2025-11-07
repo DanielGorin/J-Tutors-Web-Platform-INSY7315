@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AdminUserDirectoryService
+ * File Purpose:
+ * This is a service that handles admin methods for retreiving user info
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -188,10 +202,6 @@ namespace J_Tutors_Web_Platform.Services
                 Rows = rows
             };
         }
-
-        // NOTE: If Adjustments are Type=2 in your schema (as per PointsService),
-        // you may want to update the CASE above accordingly. That’s a data logic tweak,
-        // not related to this compile fix.
 
         public async Task<AdminUserDetailsViewModel?> GetUserBasicsAsync(int userId)
         {

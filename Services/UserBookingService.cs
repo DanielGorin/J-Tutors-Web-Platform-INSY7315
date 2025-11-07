@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserBookingService
+ * File Purpose:
+ * This is a service that handles user booking methods for when they try book sessions with a tutor
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,14 +26,6 @@ using Microsoft.Extensions.Configuration;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    /// <summary>
-    /// User booking flow using ADO.NET (no EF).
-    /// Tables used:
-    ///  - Subjects(SubjectID, SubjectName, IsActive, ...)
-    ///  - PricingRule(PricingRuleID, SubjectID, HourlyRate, MinHours, MaxHours, MaxPointDiscount, ...)
-    ///  - AvailabilityBlock(AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime)
-    ///  - TutoringSession(..., UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status, ...)
-    /// </summary>
     public sealed class UserBookingService
     {
         private readonly IConfiguration _config;
@@ -34,9 +40,9 @@ namespace J_Tutors_Web_Platform.Services
             _points = points;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Connection helpers
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private string GetConnectionString()
             => _config.GetConnectionString(ConnName)
                ?? throw new InvalidOperationException($"Connection string '{ConnName}' not found.");
@@ -57,9 +63,9 @@ namespace J_Tutors_Web_Platform.Services
             return cmd;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Subjects (dropdown)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public IReadOnlyList<SubjectListItemVM> GetSubjectsForBooking()
         {
             const string sql = @"
@@ -85,9 +91,9 @@ ORDER BY SubjectName;";
             return list;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Subject config from latest PricingRule
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public SubjectConfigVM? GetSubjectConfig(int subjectId)
         {
             const string sql = @"
@@ -131,9 +137,9 @@ ORDER BY pr.PricingRuleID DESC;";
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------ 
         // Quote
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public QuoteVM CalculateQuote(int subjectId, int durationMinutes, int discountPercentRaw)
         {
             var cfg = GetSubjectConfig(subjectId) ?? throw new InvalidOperationException("Subject not found.");
@@ -160,9 +166,9 @@ ORDER BY pr.PricingRuleID DESC;";
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Month availability (uses AdminAgendaService for slots, SQL for sessions)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<AvailabilityMonthVM> GetAvailabilityMonthAsync(
             int subjectId, int durationMinutes, int year, int month, int? adminId)
         {
@@ -174,10 +180,10 @@ ORDER BY pr.PricingRuleID DESC;";
             var next = first.AddMonths(1);
             var cutoffDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
 
-            // A) Availability blocks (re-use AdminAgendaService)
+            // Availability blocks (re-use AdminAgendaService)
             var blocks = await _agenda.GetAvailabilityBlocksAsync(first, next, adminId);
 
-            // B) Sessions that block time: Requested/Accepted/Paid — ACROSS ALL SUBJECTS
+            // Sessions that block time: Requested/Accepted/Paid — ACROSS ALL SUBJECTS
             const string sql = @"
 SELECT SessionDate, StartTime, DurationHours, AdminID
 FROM TutoringSession
@@ -270,9 +276,9 @@ WHERE SessionDate >= @from AND SessionDate < @to
             return new AvailabilityMonthVM { Year = year, Month = month, Days = days };
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Create booking request (validates range + conflicts) + points charge (atomic)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<BookingResult> RequestBooking(int userId, BookingRequestVM dto, int? adminIdForSlotOwner = null)
         {
             var cfg = GetSubjectConfig(dto.SubjectId) ?? throw new InvalidOperationException("Subject not found.");
@@ -291,7 +297,7 @@ WHERE SessionDate >= @from AND SessionDate < @to
             var durationTs = TimeSpan.FromMinutes(duration);
             var endTs = startTs + durationTs;
 
-            // ≥ 2 days away
+            // ~ 2 days away
             var cutoff = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
             if (dto.SessionDate < cutoff)
                 return new BookingResult { Ok = false, Message = "Selected date must be at least 2 days in the future." };
@@ -305,7 +311,7 @@ WHERE SessionDate >= @from AND SessionDate < @to
 
             try
             {
-                // 1) Find containing availability block (in tx scope)
+                // Find containing availability block (in tx scope)
                 const string findBlockSql = @"
 SELECT TOP 1 AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime
 FROM AvailabilityBlock
@@ -332,7 +338,7 @@ ORDER BY StartTime;";
                     blockAdminId = r.GetInt32(r.GetOrdinal("AdminID"));
                 }
 
-                // 2) Check conflict in SQL (left as-is per your preference)
+                // Check conflict in SQL (left as-is per your preference)
                 const string conflictSql = @"
 SELECT COUNT(*) 
 FROM TutoringSession
@@ -361,7 +367,7 @@ WHERE SessionDate = @date
                     return new BookingResult { Ok = false, Message = "That time is no longer available." };
                 }
 
-                // 3) Gate by CURRENT points balance — computed inside the SAME tx/connection
+                // Gate by CURRENT points balance — computed inside the SAME tx/connection
                 var currentPoints = await _points.GetCurrentAsync(userId, con, (SqlTransaction)tx);
                 if (currentPoints < quote.PointsToCharge)
                 {
@@ -369,7 +375,7 @@ WHERE SessionDate = @date
                     return new BookingResult { Ok = false, Message = "Insufficient points for this booking's discount." };
                 }
 
-                // 4) Insert session
+                // Insert session
                 const string insertSql = @"
 INSERT INTO TutoringSession
 (UserID, AdminID, SubjectID, SessionDate, StartTime, DurationHours, BaseCost, PointsSpent, Status)
@@ -401,7 +407,7 @@ VALUES
                     }
                 }
 
-                // 5) Create Spent receipt only if points > 0
+                // Create Spent receipt only if points > 0
                 if (quote.PointsToCharge > 0)
                 {
                     var spentReceiptId = await _points.CreateSpentForSessionIdempotentAsync(
@@ -419,7 +425,7 @@ VALUES
                     }
                 }
 
-                // 6) Commit everything
+                // Commit everything
                 await tx.CommitAsync();
 
                 return new BookingResult
@@ -436,9 +442,9 @@ VALUES
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // Helpers
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private static int ClampToStep(int value, int min, int max, int step)
         {
             if (value < min) value = min;

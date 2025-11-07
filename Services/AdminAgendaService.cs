@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AdminAgendaService
+ * File Purpose:
+ * This is a service that handles admin methods relating to agenda/caledner
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,24 +26,16 @@ using J_Tutors_Web_Platform.ViewModels;
 
 namespace J_Tutors_Web_Platform.Services
 {
-    /// <summary>
-    /// Admin Agenda service (SQL / ADO.NET, no EF).
-    /// Tables:
-    ///  - AvailabilityBlock(AvailabilityBlockID, AdminID, BlockDate, StartTime, EndTime)
-    ///  - TutoringSession(..., SessionDate, Status, AdminID, ...)
-    /// 
-    /// Connection: ConnectionStrings:AzureSql
-    /// </summary>
     public sealed class AdminAgendaService
     {
         private readonly IConfiguration _config;
-        private const string ConnName = "AzureSql"; // matches your appsettings.json
-        private readonly PointsService _points;     // <-- add
+        private const string ConnName = "AzureSql";
+        private readonly PointsService _points;   
 
-        public AdminAgendaService(IConfiguration config, PointsService points) // <-- add param
+        public AdminAgendaService(IConfiguration config, PointsService points) 
         {
             _config = config;
-            _points = points;                       // <-- add
+            _points = points;          
         }
 
 
@@ -218,15 +224,14 @@ ORDER BY SessionDate ASC;";
             return list;
         }
 
-        /// <summary>
-        /// Reflection-based mapper. IMPORTANT: handle DateOnly/TimeOnly BEFORE generic Convert.ChangeType.
-        /// </summary>
+        // ====================================================================
+        // maps database records to new instance
+        // ====================================================================
         private static T MapRecordTo<T>(IDataRecord record) where T : new()
         {
             var t = new T();
             var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            // column name → ordinal
             var colOrd = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < record.FieldCount; i++)
             {
@@ -252,7 +257,7 @@ ORDER BY SessionDate ASC;";
                         continue;
                     }
 
-                    // First: special cases for DateOnly / TimeOnly / TimeSpan / DateTime / Enums
+                    // First: special cases for DateOnly /TimeOnly / TimeSpan /DateTime /Enums
                     if (target == typeof(DateOnly))
                     {
                         if (val is DateOnly donly) p.SetValue(t, donly);
@@ -301,7 +306,7 @@ ORDER BY SessionDate ASC;";
         }
         private async Task<IReadOnlyList<AgendaInboxRowVM>> QueryInboxRowsByStatusAsync(int? adminId, string status)
         {
-            // NOTE: Status is stored as a string in DB (per your confirmation).
+            // Status is stored as a string in DB.
             const string sql = @"SELECT ts.TutoringSessionID, s.SubjectName, ts.DurationHours, (u.FirstName + ' ' + u.Surname) AS RequestingFullName, ts.BaseCost, ts.PointsSpent, ts.Status FROM TutoringSession ts JOIN Users u ON ts.UserID   = u.UserID JOIN Subjects s  ON ts.SubjectID = s.SubjectID WHERE ts.Status = @status AND (@adminId IS NULL OR ts.AdminID = @adminId) ORDER BY ts.SessionDate ASC, ts.StartTime ASC;";
 
             var p = new Dictionary<string, object?>
@@ -310,7 +315,7 @@ ORDER BY SessionDate ASC;";
                 ["@adminId"] = (object?)adminId ?? DBNull.Value
             };
 
-            // Manual projection (don’t use reflection mapper here; types differ)
+            // Manual projection
             var list = new List<AgendaInboxRowVM>();
             using var con = await OpenAsync();
             using var cmd = BuildCommand(con, sql, p);
@@ -452,12 +457,5 @@ ORDER BY SessionDate ASC;";
                 throw;
             }
         }
-
-
-
-
-
-
-
     }
 }

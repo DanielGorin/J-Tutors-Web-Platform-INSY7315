@@ -1,4 +1,18 @@
-﻿using System.Data;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserProfileService
+ * File Purpose:
+ * This is a service that handles user profile methods
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using System.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -12,9 +26,9 @@ namespace J_Tutors_Web_Platform.Services
 
     public class UserProfileService
     {
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // CONFIG & LOGGING
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private readonly string _connStr;
         private readonly ILogger<UserProfileService> _log;
 
@@ -24,10 +38,10 @@ namespace J_Tutors_Web_Platform.Services
             _log = log;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // READ: Get user profile by Username
         // RETURNS: UserProfileViewModel (or null if not found)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<UserProfileViewModel?> GetProfileAsync(string username)
         {
             var sql = @"SELECT TOP 1 * FROM Users WHERE Username = @u";
@@ -59,9 +73,9 @@ namespace J_Tutors_Web_Platform.Services
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // READ: Resolve (UserID, Username) for the currently signed-in Username
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<(int userId, string existingUsername)?> GetUserIdAndUsernameAsync(string currentUsername)
         {
             await using var conn = new SqlConnection(_connStr);
@@ -75,9 +89,9 @@ namespace J_Tutors_Web_Platform.Services
             return (r.GetInt32(0), r.GetString(1));
         }
 
-        // ───────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // READ: Username taken?
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task<bool> IsUsernameTakenAsync(string username)
         {
             await using var conn = new SqlConnection(_connStr);
@@ -89,10 +103,10 @@ namespace J_Tutors_Web_Platform.Services
             return count > 0;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // WRITE: Update the editable fields for a user by UserID
         // RETURNS: void (controller decides on cookie refresh etc)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task UpdateProfileAsync(
             int userId,
             UserProfileViewModel form)
@@ -113,9 +127,9 @@ namespace J_Tutors_Web_Platform.Services
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // WRITE: Persist ThemePreference for a signed-in user
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         public async Task UpdateThemePreferenceAsync(string username, string pref)
         {
             await using var conn = new SqlConnection(_connStr);
@@ -128,9 +142,9 @@ namespace J_Tutors_Web_Platform.Services
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         // UTILITIES (local)
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ------------------------------------------------------------
         private static object? NullIfEmpty(string? s) =>
             string.IsNullOrWhiteSpace(s) ? null : s;
 

@@ -1,4 +1,17 @@
-﻿
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AuthService
+ * File Purpose:
+ * This is a service that handles all methods relating to loggin in and registering for both admins and users
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
 using Microsoft.Data.SqlClient;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,8 +25,6 @@ namespace J_Tutors_Web_Platform.Services
         {
             _connectionString = connectionString;
         }
-
-        
 
         //public string UpdateLastActive(string Username)
         //{

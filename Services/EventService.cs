@@ -1,4 +1,18 @@
-﻿using J_Tutors_Web_Platform.Models.Admins;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * EventService
+ * File Purpose:
+ * This is a service that handles all event methods for both admins and users
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using J_Tutors_Web_Platform.Models.Admins;
 using J_Tutors_Web_Platform.Models.Events;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;

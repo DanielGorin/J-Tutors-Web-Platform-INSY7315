@@ -1,4 +1,18 @@
-﻿using J_Tutors_Web_Platform.Models.Admins;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AdminService
+ * File Purpose:
+ * This is a service that handles general admin methods
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using J_Tutors_Web_Platform.Models.Admins;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Models.Users;
@@ -16,12 +30,6 @@ namespace J_Tutors_Web_Platform.Services
         {
             _connectionString = connectionString; //initializing connection string
         }
-
-        // ==================================================================================================
-        //
-        //  PURPOSE:
-        //          - Smaller methods to solve specific tasks for methods within this class
-        // ==================================================================================================
 
         public int GetAdminID(string Username)
         {
@@ -121,13 +129,6 @@ namespace J_Tutors_Web_Platform.Services
             return (int)totalPoints;
         }
 
-        // ==================================================================================================
-        //  PULLING LIST OF USERS
-        //  CONTROLLER: AdminController
-        //  PURPOSE:
-        //          - fetch list of all users
-        // ==================================================================================================
-
         public List<UserDirectoryRow> GetAllUsers(string Username)
         {
             var userList = new List<UserDirectoryRow>();
@@ -178,7 +179,6 @@ namespace J_Tutors_Web_Platform.Services
 
         // ==================================================================================================
         //  QUOTATIONS
-        //  CONTROLLER: AdminController
         //  PURPOSE:
         //          - Management of pricing rules for subjects
         // ==================================================================================================

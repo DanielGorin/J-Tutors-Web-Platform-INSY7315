@@ -1,4 +1,19 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * AdminAgendaController
+ * File Purpose:
+ * Supports the admin's agenda UI which allows admins to create and delete availability slots view all sessions, ciew session details, accepte/deny requested sessions and cancel or mark as paid accepted sessions.
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+
+#nullable enable
 using System;
 using System.Globalization;
 using System.Security.Claims;
@@ -13,20 +28,16 @@ using J_Tutors_Web_Platform.Models.Scheduling;
 namespace J_Tutors_Web_Platform.Controllers
 {
     // -------------------------
-    // CONTROLLER: AdminAgendaController (admin agenda: slots, inbox, calendar)
+    // CONTROLLER: ADminAgendaController (slots, inbox, calendar)
     // -------------------------
     [Authorize(Roles = "Admin")]
     public sealed class AdminAgendaController : Controller
     {
-        // -------------------------
-        // DEPENDENCIES (services for agenda logic and admin lookup)
-        // -------------------------
+
         private readonly AdminAgendaService _agenda;
         private readonly AdminService _adminService;
 
-        // -------------------------
-        // CTOR (wire up dependencies)
-        // -------------------------
+
         public AdminAgendaController(AdminAgendaService agenda, AdminService adminService)
         {
             _agenda = agenda;
@@ -46,7 +57,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // Helper: TryParseHHmm (accepts “HH:mm”, “H:mm”, or generic TimeSpan)
+        // Helper: TryParseHHmm
         // -------------------------
         private static bool TryParseHHmm(string value, out TimeSpan ts)
         {
@@ -56,7 +67,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // Helper: NormalizeRange (ensure a valid [from, to] date window)
+        // Helper: NormalizeRange (ensure a valid date window)
         // -------------------------
         private static (DateTime from, DateTime to) NormalizeRange(DateTime? from, DateTime? to)
         {
@@ -68,7 +79,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // GET: Agenda (load hub page: counts, slots, calendar data)
+        // GET: Agenda (loads the hub page)
         // -------------------------
         [HttpGet]
         public async Task<IActionResult> Agenda(
@@ -131,7 +142,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // GET: Slots (list all availability blocks for this admin)
+        // GET Slots (List all availability blocks for this admin)
         // -------------------------
         [HttpGet]
         public async Task<IActionResult> Slots(DateTime? from = null, DateTime? to = null)
@@ -155,7 +166,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: CreateSlot (validate time/duration and create availability)
+        // POST; CreateSlot (validate time and duration and create availability)
         // -------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -194,7 +205,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: DeleteSlot (remove an availability block by id)
+        // POST: DeleteSlot (removes a availability block)
         // -------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -245,7 +256,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // GET: Calendar (month view with optional requested sessions)
+        // GET: Calendar ( MOnth view with optional requested sessions)
         // -------------------------
         [HttpGet]
         public async Task<IActionResult> Calendar(int? year = null, int? month = null, bool includeRequested = true)
@@ -294,7 +305,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: Accept (mark a session as Accepted, return updated partial)
+        // POST: Accept ( mark a session as Accepted)
         // -------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -313,7 +324,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: Deny (mark a session as Denied, return updated partial)
+        // POST: Deny (marks a session as denied)
         // -------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -332,7 +343,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: Cancel (mark a session as Cancelled, return updated partial)
+        // POST: Cancel (mark a session as Cancelled)
         // -------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -351,7 +362,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // POST: MarkPaid (mark a session as Paid, return updated partial)
+        // POST: MarkPaid (mark a session as Paid removing it dfomr total unpaid sessions)
         // -------------------------
 
         [HttpPost]
@@ -371,7 +382,7 @@ namespace J_Tutors_Web_Platform.Controllers
         }
 
         // -------------------------
-        // GET: InboxLists (refresh the inbox lists via partial)
+        // GET: InboxLists (refresh the inbox lists)
         // -------------------------
         [HttpGet]
         public async Task<IActionResult> InboxLists()

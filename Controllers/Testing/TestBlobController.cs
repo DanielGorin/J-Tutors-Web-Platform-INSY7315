@@ -1,4 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * TestBlobController
+ * File Purpose:
+ * This is usesd to access the Blob storage inclsu9ing displaying all items ina  gallery and uploading new images.
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+
+using Microsoft.AspNetCore.Mvc;
 using J_Tutors_Web_Platform.Services.Storage;
 
 namespace J_Tutors_Web_Platform.Controllers.Testing

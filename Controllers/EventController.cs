@@ -1,4 +1,19 @@
-﻿using AspNetCoreGeneratedDocument;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * EventController
+ * File Purpose:
+ * This is a controller used by the events side of the website
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+
+using AspNetCoreGeneratedDocument;
 using J_Tutors_Web_Platform.Models.Scheduling;
 using J_Tutors_Web_Platform.Models.Shared;
 using J_Tutors_Web_Platform.Services;
@@ -8,19 +23,27 @@ using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
+    // -------------------------
+    // CONTROLLER: EventController admin/user events: list, details, create/update, join, receipts
+    // -------------------------
     public class EventController : Controller
     {
+        // -------------------------
+        // DEPENDENCIES
+        // -------------------------
         private readonly EventService _as;
 
+        // -------------------------
+        // CTOR
+        // -------------------------
         public EventController(EventService eventService)
         {
             _as = eventService;
         }
 
-        //
-        // Get event of lists for admin, that dispays 
-        //
-
+        // -------------------------
+        // GET: GetAEventList (A list of admin events)
+        // ------------------------
         [HttpGet]
         public IActionResult GetAEventList()
         {
@@ -32,6 +55,9 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/Admin/AEventList.cshtml", eventViewModel);
         }
 
+        // -------------------------
+        // GET: GetUEventList (Events that are visible to the user)
+        // -------------------------
         [HttpGet]
         public IActionResult GetUEventList()
         {
@@ -43,6 +69,10 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~/Views/User/UEvents.cshtml", eventViewModel);
         }
 
+        // -------------------------
+        // GET: GetUEventHistory (all historic evetns the user has signed up for)
+        // -------------------------
+
         [HttpGet]
         public IActionResult GetUEventHistory()
         {
@@ -53,6 +83,10 @@ namespace J_Tutors_Web_Platform.Controllers
 
             return View("~/Views/User/UEventHistory.cshtml", eventViewModel);
         }
+
+        // -------------------------
+        // Action: CreateEvent (admin creates a new event)
+        // -------------------------
 
         public IActionResult CreateEvent(string Title, string description, string Location, DateOnly EventDate, TimeOnly StartTime, int DurationMinutes, int PointsReward, int GoalParticipants, string WhatsappGroupURL, string Status)
         {
@@ -69,6 +103,9 @@ namespace J_Tutors_Web_Platform.Controllers
             return RedirectToAction("GetAEventList");
         }
 
+        // -------------------------
+        // GET: AEventDetails ( takes admin to a page showing event details + participants)
+        // -------------------------
         public IActionResult AEventDetails(int EventID)
         {
             string username = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -80,6 +117,11 @@ namespace J_Tutors_Web_Platform.Controllers
 
             return View("~/Views/Admin/AEventDetails.cshtml", eventViewModel);
         }
+
+
+        // -------------------------
+        // ACTION: UpdateEvent (admin updates an event)
+        // -------------------------
 
         public IActionResult UpdateEvent(int EventID,string Title, string Description, string Location, DateOnly EventDate, TimeOnly StartTime, int DurationMinutes, int PointsReward, int GoalParticipants, string WhatsappGroupURL, string Status)
         {
@@ -94,6 +136,9 @@ namespace J_Tutors_Web_Platform.Controllers
 
             return RedirectToAction("GetAEventList");
         }
+        // -------------------------
+        // ACTION: JoinEvent (user joins the event
+        // -------------------------
 
         public IActionResult JoinEvent(int EventID)
         {
@@ -111,6 +156,10 @@ namespace J_Tutors_Web_Platform.Controllers
             return View("~Views/Admin/UEventHistory.cshtml", eventViewModel);
         }
 
+        // -------------------------
+        // ACTION: DeleteUserFromEven (admin can remove a user from the event)
+        // -------------------------
+
         public IActionResult DeleteUserFromEvent(int EventID, int UserID) 
         {
             //Console.WriteLine("entered delete user from event with: " + EventID + " " + UserID);
@@ -121,7 +170,9 @@ namespace J_Tutors_Web_Platform.Controllers
 
             return RedirectToAction("AEventDetails", EventID);
         }
-
+        // -------------------------
+        // POST: GenerateReceipt (admin creates points receipt for users distributing points)
+        // -------------------------
         [HttpPost]
         public IActionResult GenerateReceipt(int EventID, int UserID)
         {

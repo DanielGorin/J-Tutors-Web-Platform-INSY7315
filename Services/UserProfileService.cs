@@ -75,7 +75,7 @@ namespace J_Tutors_Web_Platform.Services
             return (r.GetInt32(0), r.GetString(1));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+        // ───────────────────────────────────────────────────────────────────────────
         // READ: Username taken?
         // ─────────────────────────────────────────────────────────────────────────────
         public async Task<bool> IsUsernameTakenAsync(string username)

@@ -8,7 +8,7 @@
  * File Name:
  * FileController
  * File Purpose:
- * This is a controller used by the events side of the website
+ * This is a controller used by the file side of the website
  * AI Usage:
  * AI has been used at points throughout this project AI declaration available in the ReadMe
  */

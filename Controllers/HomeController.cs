@@ -1,3 +1,17 @@
+/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * HomeController
+ * File Purpose:
+ * This is a controller used by the _ side of the website
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
 using J_Tutors_Web_Platform.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -6,8 +20,14 @@ namespace J_Tutors_Web_Platform.Controllers
 {
     public class HomeController : Controller
     {
+        // -------------------------
+        // DEPENDENCIES
+        // -------------------------
         private readonly ILogger<HomeController> _logger;
 
+        // -------------------------
+        // CTOR
+        // -------------------------
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;

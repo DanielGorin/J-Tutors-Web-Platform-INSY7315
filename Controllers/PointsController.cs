@@ -1,4 +1,18 @@
-﻿#nullable enable
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * PointsController
+ * File Purpose:
+ * This is a controller used by the points system part of the website, this includes 
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+#nullable enable
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -7,56 +21,21 @@ using System.Security.Claims;
 
 namespace J_Tutors_Web_Platform.Controllers
 {
-    // ====================================================================================
-    // POINTS API (ADMIN-ONLY)
-    // ====================================================================================
-    //
-    // What this controller is for:
-    //
-    //  - Small, focused JSON endpoints for reading and modifying "points receipts".
-    //  - These endpoints DO NOT run the core business flows for booking or agenda.
-    //    Those flows already call PointsService directly inside their own services.
-    //
-    // What is exposed here:
-    //
-    //  1) GET totals      -> Current and All-Time totals for a specific user.
-    //  2) GET receipts    -> Full list of that user's receipts (for a ledger/statement).
-    //  3) POST adjust     -> Create a manual ADJUSTMENT (positive or negative).
-    //  4) DELETE by-ref   -> Delete all receipts that share a given Reference string.
-    //  5) POST spend-for-session (TEST) -> Helper to simulate a session spend (not used in prod).
-    //
-    // Why this is helpful for the teammate doing "Finish Event → Semi-Auto Apply Points":
-    //
-    //  - They can re-use the same PointsService methods from their event code.
-    //  - They can give all event awards a consistent Reference pattern ("EV-{eventId}").
-    //    This makes undoing mistakes easy: DELETE /Points/by-ref?reference=EV-{eventId}.
-    //
-    // Security:
-    //  - Admin-only (role check at the controller level).
-    //  - POST endpoints use anti-forgery to match the rest of the project style.
-    //
-    // ====================================================================================
-
     [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("[controller]")]
     public sealed class PointsController : ControllerBase
     {
-        // ----------------------------------------------------------------------
-        // Dependencies (injected by DI)
-        // ----------------------------------------------------------------------
-        //
-        // PointsService:    Core CRUD/compute logic for receipts and balances.
-        // UserLedgerService:Read-only listing/totals (used by "receipts" call).
-        // AdminService:     Resolve AdminID for the currently logged-in admin.
-        //
-        // NOTE: Keep this controller thin. Put business rules in services.
-        // ----------------------------------------------------------------------
-
+        // -------------------------
+        // DEPENDENCIES
+        // -------------------------
         private readonly PointsService _points;
         private readonly UserLedgerService _ledger;
         private readonly AdminService _adminService;
 
+        // -------------------------
+        // CTOR
+        // -------------------------
         public PointsController(PointsService points, UserLedgerService ledger, AdminService adminService)
         {
             _points = points;
@@ -64,26 +43,9 @@ namespace J_Tutors_Web_Platform.Controllers
             _adminService = adminService;
         }
 
-        // ====================================================================================
-        // SECTION 1: READ TOTALS / CURRENT
-        // ====================================================================================
-        //
-        // Endpoint: GET /Points/totals?userId=123
-        //
-        // Returns two numbers for the given user:
-        //    - total   : All-Time style number (Earned + eligible Adjustments - negative Adjustments).
-        //    - current : total minus all Spent.
-        //
-        // When to use:
-        //   - Admin "User Details" header.
-        //   - Quick checks before manual actions.
-        //   - UI widgets that show a user's current balance.
-        //
-        // ------------------------------------------------------------------------------------
-
-        /// <summary>
-        /// Returns { total, current } for a user.
-        /// </summary>
+        // -------------------------
+        //  GET: GetTotals (Gets total points of specific user)
+        // -------------------------
         [HttpGet("totals")]
         public async Task<IActionResult> GetTotals([FromQuery] int userId)
         {
@@ -95,51 +57,15 @@ namespace J_Tutors_Web_Platform.Controllers
             return Ok(new { userId, total, current });
         }
 
-        // ====================================================================================
-        // SECTION 2: READ RECEIPTS (LEDGER)
-        // ====================================================================================
-        //
-        // Endpoint: GET /Points/receipts?userId=123
-        //
-        // What it does:
-        //   - Returns all the user's receipts (newest first).
-        //   - Intended for a "ledger view" (think of a bank statement but for points).
-        //
-        // Why this exists:
-        //   - Transparency for the user and admin: see exactly what happened when.
-        //
-        // ------------------------------------------------------------------------------------
-
-        /// <summary>
-        /// Returns all receipts for a user (newest → oldest).
-        /// </summary>
+        // -------------------------
+        //  GET: GetReceipts (Gets list of receipts belonging to user)
+        // -------------------------
         [HttpGet("receipts")]
         public async Task<IActionResult> GetReceipts([FromQuery] int userId)
         {
             var rows = await _ledger.GetReceiptRowsAsync(userId);
             return Ok(rows); // returns List<UserLedgerRowViewModel>
         }
-
-
-        // ====================================================================================
-        // SECTION 3: MANUAL ADJUSTMENT (+ / -)  — Admin use only
-        // ====================================================================================
-        //
-        // Endpoint: POST /Points/adjust
-        //
-        // What it does:
-        //   - Creates an ADJUSTMENT receipt for a single user.
-        //   - Amount can be positive (grant points) or negative (remove points).
-        //
-        // When to use:
-        //   - One-off fixes, goodwill credits, correcting mistakes.
-        //   - NOT recommended for bulk event awards (do those in your event service
-        //     using PointsService to create Earned receipts with a shared Reference).
-        //
-        // Anti-forgery:
-        //   - This action expects a Form POST with a valid anti-forgery token.
-        //
-        // ------------------------------------------------------------------------------------
 
         /// <summary>
         /// Request body for POST /Points/adjust
@@ -170,10 +96,9 @@ namespace J_Tutors_Web_Platform.Controllers
             public string? Notes { get; set; }
         }
 
-        /// <summary>
-        /// Creates a manual ADJUSTMENT receipt (positive or negative).
-        /// Returns the new receipt id and refreshed totals.
-        /// </summary>
+        // -------------------------
+        // POST: Adjust (admin manually asjusting points from user)
+        // -------------------------
         [HttpPost("adjust")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Adjust([FromForm] AdjustDto dto)

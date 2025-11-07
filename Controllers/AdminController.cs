@@ -59,7 +59,7 @@ namespace J_Tutors_Web_Platform.Controllers
 
 
         // -------------------------
-        // GET APRicing subjects list with optional pricing editor
+        // GET APricing subjects list with optional pricing editor
         // -------------------------
         [HttpGet]
         public IActionResult APricing(int? subjectId)

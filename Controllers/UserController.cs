@@ -1,4 +1,18 @@
-﻿using System;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * UserController
+ * File Purpose:
+ * This is a controller used by the User part of the website, this includes most user views excluding file and agenda/calender
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -21,6 +35,9 @@ namespace J_Tutors_Web_Platform.Controllers
     /// </summary>
     public class UserController : Controller
     {
+        // -------------------------
+        // DEPENDENCIES
+        // -------------------------
         private readonly UserProfileService _profiles;
         private readonly UserLeaderboardService _leaderboard;
         private readonly UserLedgerService _ledger;
@@ -28,6 +45,9 @@ namespace J_Tutors_Web_Platform.Controllers
         private readonly ILogger<UserController> _log;
         private readonly UserAgendaService _uagenda;
 
+        // -------------------------
+        // CTOR
+        // -------------------------
         public UserController(
             UserProfileService profiles,
             UserLeaderboardService leaderboard,
@@ -64,7 +84,7 @@ namespace J_Tutors_Web_Platform.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UProfile(
+        public async Task<IActionResult> UProfile( 
             [Bind("Username,Phone,Email,SubjectInterest,LeaderboardVisible,ThemePreference")]
             UserProfileViewModel form)
         {

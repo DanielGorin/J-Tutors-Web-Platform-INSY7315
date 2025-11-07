@@ -1,4 +1,18 @@
-﻿using Azure.Storage.Files.Shares;
+﻿/*
+ * Developed By:
+ * Fourloop (Daniel Gorin, William McPetrie, Moegammad-Yaseen Salie, Michael Amm)
+ * For:
+ * Varsity College INSY7315 WIL Project
+ * Client:
+ * J-Tutors
+ * File Name:
+ * FileShareService
+ * File Purpose:
+ * This is a service which holds methods relating to the azure file share
+ * AI Usage:
+ * AI has been used at points throughout this project AI declaration available in the ReadMe
+ */
+using Azure.Storage.Files.Shares;
 using J_Tutors_Web_Platform.Models.AppFiles;
 using J_Tutors_Web_Platform.Models.Users;
 using J_Tutors_Web_Platform.ViewModels;
@@ -20,6 +34,11 @@ namespace J_Tutors_Web_Platform.Services
         private readonly ShareClient _share;
         private readonly string _connectionString;
 
+        // --------------------------------Univeral methods---------------------------------
+        
+        //--------------------------
+        // fetches admin id from username
+        // -------------------------
         public int GetAdminID(string Username)
         {
             const string sql = "select AdminId from Admins where Username = @Username";
@@ -36,6 +55,9 @@ namespace J_Tutors_Web_Platform.Services
             return id;
         }
 
+        //--------------------------
+        // fetches user id from username
+        // -------------------------
         public int GetUserID(string Username)
         {
             const string sql = "select UserId from Users where Username = @Username";
@@ -52,6 +74,9 @@ namespace J_Tutors_Web_Platform.Services
             return id;
         }
 
+        //--------------------------
+        // fetches user username from id
+        // -------------------------
         public string GetUsername(int UserID)
         {
             const string sql = "select Username from Users where UserID = @UserID";
@@ -68,6 +93,9 @@ namespace J_Tutors_Web_Platform.Services
             return username;
         }
 
+        //--------------------------
+        // fetches count of users who have access to a specific file
+        // -------------------------
         public int GetUserCount(int FileID)
         {
             const string sql = "select count(*) from FileAccess where FileID = @FileID";
@@ -86,7 +114,9 @@ namespace J_Tutors_Web_Platform.Services
 
         //----------------------------------------------------------------------------------------------------------------------------
 
-
+        //--------------------------
+        // establishing connection to fileshare
+        // -------------------------
         public FileShareService(IConfiguration config, string connectionString)
         {
             var cs = config["AzureStorage:ConnectionString"]
@@ -146,6 +176,9 @@ namespace J_Tutors_Web_Platform.Services
             return file.Name;
         }
 
+        //--------------------------
+        // fetch list of file share details from sql database
+        // -------------------------
         public List<FileShareRow> GetFileShareRows(string Username) 
         {
             var fsrList = new List<FileShareRow>();
@@ -179,6 +212,9 @@ namespace J_Tutors_Web_Platform.Services
             return fsrList;
         }
 
+        //--------------------------
+        // fetch list of files from file share
+        // -------------------------
         public async Task<IReadOnlyList<string>> ListAsync(CancellationToken ct = default)
         {
             await _share.CreateIfNotExistsAsync(cancellationToken: ct);
@@ -192,6 +228,9 @@ namespace J_Tutors_Web_Platform.Services
             return list;
         }
 
+        //--------------------------
+        // downloads file from the file share
+        // -------------------------
         public async Task<Stream> DownloadAsync(string fileName, CancellationToken ct = default)
         {
             await _share.CreateIfNotExistsAsync(cancellationToken: ct);
